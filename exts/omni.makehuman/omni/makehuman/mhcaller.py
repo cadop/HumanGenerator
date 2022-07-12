@@ -67,15 +67,6 @@ class MHCaller:
         return meshes
 
     def store_obj(self, filepath=None):
-        """store object on disk
-
-        Parameters
-        ----------
-        filepath : str
-            _description_
-        mesh : makehuman.mesh
-            _description_
-        """
 
         if filepath is None:
             filepath = self.filepath
