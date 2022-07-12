@@ -1,6 +1,7 @@
 import omni.ext
+from omni.makehuman import mh_ui
 import omni.ui as ui
-from . import mhcaller
+from omni.makehuman import mhcaller
 import omni
 
 # from . import assetconverter
@@ -27,12 +28,7 @@ class MyExtension(omni.ext.IExt):
         with self._window.frame:
             with ui.VStack():
                 with ui.CollapsableFrame("Phenotype"):
-                    with ui.HStack():
-                        ui.Label("Age", height=15, width=50)
-                        field = ui.FloatField(height=15, width=50)
-                        ui.FloatSlider(min=1, max=89, step=0.25, model=field.model)
-                        field.model.add_value_changed_fn(lambda m: mh_call.set_age(m.get_value_as_int()))
-
+                    mh_ui.SliderEntry(mh_call, "Age", mh_call.set_age, min=3, max=89)
                 with ui.HStack():
                     ui.Button(
                         "add_to_scene",
