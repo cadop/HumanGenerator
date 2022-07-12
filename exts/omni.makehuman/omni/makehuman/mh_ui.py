@@ -34,3 +34,18 @@ class SliderEntry:
         if getval() > self.max:
             m.set_value(self.max)
         self.fn(m.get_value_as_float())
+
+
+class Macrodetails:
+    def __init__(self) -> None:
+        pass
+
+
+class Breastshape:
+    def __init__(self) -> None:
+        pass
+
+
+class Race:
+    def __init__(self) -> None:
+        pass
