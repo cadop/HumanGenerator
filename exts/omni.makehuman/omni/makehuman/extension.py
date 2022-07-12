@@ -28,7 +28,7 @@ class MyExtension(omni.ext.IExt):
         with self._window.frame:
             with ui.VStack():
                 with ui.CollapsableFrame("Phenotype"):
-                    mh_ui.SliderEntry(mh_call, "Age", mh_call.set_age, min=3, max=89)
+                    mh_ui.SliderEntry(mh_call, "Age", mh_call.set_age, min=1.99, max=89.99)
                 with ui.HStack():
                     ui.Button(
                         "add_to_scene",
