@@ -1,8 +1,10 @@
 import omni.ext
 from omni.makehuman import mh_ui
+from omni.makehuman.mh_ui import Param
 import omni.ui as ui
 from omni.makehuman import mhcaller
 import omni
+import carb
 
 # from . import assetconverter
 
@@ -21,14 +23,29 @@ class MyExtension(omni.ext.IExt):
         # Create instance of manager class
         mh_call = mhcaller.MHCaller()
         mh_call.filepath = "D:/human.obj"
-
         primpath = "/World/human"
+
+        human = mh_call.human
+        macro_params = (
+            Param("Gender", human.setGender),
+            Param("Age", human.setAge),
+            Param("African", human.setAfrican),
+            Param("Asian", human.setAsian),
+            Param("Caucasian", human.setCaucasian),
+        )
+
+        # body_params = (
+        #     Param("Muscle", human.setMuscle),
+        #     Param("Weight", human.setWeight),
+        #     Param("Height", human.setHeight),
+        #     Param("Proportions", human.setBodyProportions),
+        # )
 
         self._window = ui.Window("Makehuman", width=300, height=300)
         with self._window.frame:
             with ui.VStack():
                 with ui.CollapsableFrame("Phenotype"):
-                    mh_ui.SliderEntry(mh_call, "Age", mh_call.set_age, min=1.99, max=89.99)
+                    mh_ui.Panel("Macrodetails", macro_params)
                 with ui.HStack():
                     ui.Button(
                         "add_to_scene",
