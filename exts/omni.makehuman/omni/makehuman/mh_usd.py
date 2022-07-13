@@ -13,8 +13,8 @@ def add_to_scene(object3d):
     # Get root path.
     rootPath = "/"
     if defaultPrim.IsValid():
-        rootPath = rootPath + defaultPrim.GetPath().pathString
-        carb.log_info(rootPath)
+        rootPath = defaultPrim.GetPath().pathString
+    carb.log_info(rootPath)
 
     # Create mesh.
     meshGeom = UsdGeom.Mesh.Define(stage, rootPath + "/mesh")
@@ -29,29 +29,25 @@ def add_to_scene(object3d):
     meshGeom.SetNormalsInterpolation("vertex")
 
     # Set face vertex count.
-    meshGeom.CreateFaceVertexCountsAttr([4])
+    meshGeom.CreateFaceVertexCountsAttr(object3d.nfaces)
     # meshGeom.CreateFaceVertexCountsAttr([4])
 
     # Set face vertex indices.
-    meshGeom.CreateFaceVertexIndicesAttr(object3d.getFaceVerts)
-    # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+    meshGeom.CreateFaceVertexIndicesAttr(object3d.index)
+    # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
 
-    # Set uvs.
-    texCoords = meshGeom.CreatePrimvar(
-        "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex
-    )
-    texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
+    # # Set uvs.
+    # texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
+    # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
 
-    # Subdivision is set to none.
-    meshGeom.CreateSubdivisionSchemeAttr().Set("none")
+    # # Subdivision is set to none.
+    # meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
-    # Set position.
-    UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
+    # # Set position.
+    # UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
 
-    # Set rotation.
-    UsdGeom.XformCommonAPI(meshGeom).SetRotate(
-        (0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ
-    )
+    # # Set rotation.
+    # UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
 
-    # Set scale.
-    UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
+    # # Set scale.
+    # UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
