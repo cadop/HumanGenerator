@@ -1,10 +1,11 @@
 import omni.ext
-from omni.makehuman import mh_ui
-from omni.makehuman.mh_ui import Param
+from . import mh_ui
+from .mh_ui import Param
 import omni.ui as ui
 from omni.makehuman import mhcaller
 import omni
 import carb
+from . import mh_usd
 
 # from . import assetconverter
 
@@ -49,21 +50,21 @@ class MyExtension(omni.ext.IExt):
                 with ui.HStack():
                     ui.Button(
                         "add_to_scene",
-                        clicked_fn=lambda: self.add_to_scene(mh_call.filepath, primpath),
+                        clicked_fn=lambda: mh_usd.add_to_scene(human.mesh),
                     )
                     ui.Button("Save Human", clicked_fn=lambda: mh_call.store_obj())
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
 
-    def add_to_scene(self, input_obj, primpath):
+    # def add_to_scene(self, input_obj, primpath):
 
-        usd_context = omni.usd.get_context()
+    #     usd_context = omni.usd.get_context()
 
-        omni.kit.commands.execute(
-            "CreateReferenceCommand",
-            usd_context=usd_context,
-            path_to=primpath,
-            asset_path=input_obj,
-            instanceable=True,
-        )
+    #     omni.kit.commands.execute(
+    #         "CreateReferenceCommand",
+    #         usd_context=usd_context,
+    #         path_to=primpath,
+    #         asset_path=input_obj,
+    #         instanceable=True,
+    #     )
