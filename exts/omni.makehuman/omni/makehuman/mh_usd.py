@@ -1,6 +1,7 @@
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf
 import omni.usd
 import carb
+import numpy as np
 
 
 def add_to_scene(object3d):
@@ -24,16 +25,17 @@ def add_to_scene(object3d):
     # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
 
     # Set normals.
-    meshGeom.CreateNormalsAttr(object3d.getNormals())
+    # meshGeom.CreateNormalsAttr(object3d.getNormals())
     # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
-    meshGeom.SetNormalsInterpolation("vertex")
+    # meshGeom.SetNormalsInterpolation("vertex")
 
     # Set face vertex count.
     meshGeom.CreateFaceVertexCountsAttr(object3d.nfaces)
     # meshGeom.CreateFaceVertexCountsAttr([4])
 
     # Set face vertex indices.
-    meshGeom.CreateFaceVertexIndicesAttr(object3d.index)
+    # indices = list([i + 1 for i in object3d.index])
+    meshGeom.CreateFaceVertexIndicesAttr(object3d.fvert)
     # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
 
     # # Set uvs.

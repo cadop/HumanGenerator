@@ -50,7 +50,7 @@ class MakeHumanExtension(omni.ext.IExt):
                 with ui.HStack():
                     ui.Button(
                         "add_to_scene",
-                        clicked_fn=lambda: mh_usd.add_to_scene(human.mesh),
+                        clicked_fn=lambda: mh_usd.add_to_scene(human.getObjects()[0].getSubdivisionMesh()),
                     )
                     ui.Button("Save Human", clicked_fn=lambda: mh_call.store_obj())
 
