@@ -14,12 +14,12 @@ from . import mh_usd
 # on_shutdown() is called.
 
 
-class MyExtension(omni.ext.IExt):
+class MakeHumanExtension(omni.ext.IExt):
     # ext_id is current extension id. It can be used with extension manager to query additional information, like where
     # this extension is located on filesystem.
 
     def on_startup(self, ext_id):
-        print("[omni.makehuman] MyExtension startup")
+        print("[omni.makehuman] MakeHumanExtension startup")
 
         # Create instance of manager class
         mh_call = mhcaller.MHCaller()
@@ -42,7 +42,7 @@ class MyExtension(omni.ext.IExt):
         #     Param("Proportions", human.setBodyProportions),
         # )
 
-        self._window = ui.Window("Makehuman", width=300, height=300)
+        self._window = ui.Window("MakeHuman", width=300, height=300)
         with self._window.frame:
             with ui.VStack():
                 with ui.CollapsableFrame("Phenotype"):

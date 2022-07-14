@@ -4,7 +4,7 @@ version = "1.0.0"
 
 # The title and description fields are primarily for displaying extension info in UI
 title = "Makehuman for Omniverse"
-description="The simplest python extension example. Use it as a starting point for your extensions."
+description="MakeHuman Extension for Omniverse. Create and customize humans in your Omniverse scenes."
 
 # Path (relative to the root) or content of readme markdown file for UI.
 readme  = "docs/README.md"
@@ -27,3 +27,8 @@ keywords = ["kit", "example"]
 # Main python module this extension provides, it will be publicly available as "import omni.hello.world".
 [[python.module]]
 name = "omni.makehuman"
+
+# [python.pipapi]
+# archiveDirs = ["../../mh/dist/makehuman-1.2.0-py3-none-any.whl"]
+
+requirements = ["makehuman"]
