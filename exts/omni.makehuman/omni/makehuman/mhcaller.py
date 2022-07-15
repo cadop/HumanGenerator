@@ -11,6 +11,7 @@ from core import G
 from mhmain import MHApplication
 from shared import wavefront
 import humanmodifier
+from . import mh_usd
 
 
 class MHCaller:
@@ -71,4 +72,4 @@ class MHCaller:
         if filepath is None:
             filepath = self.filepath
 
-        wavefront.writeObjFile(filepath, self.mesh)
+        mh_usd.writeObjFile(filepath, self.mesh)
