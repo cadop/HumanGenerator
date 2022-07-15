@@ -4,21 +4,23 @@ import omni
 from typing import Tuple
 from dataclasses import dataclass
 import carb
+from . import styles
 
 
 class SliderEntry:
-    def __init__(self, label: str, fn: object, step=0.01, min=None, max=None, default=None):
+    def __init__(self, label: str, fn: object, step=0.01, min=None, max=None, default=None, style=None):
         self.label = label
         self.fn = fn
         self.step = step
         self.min = min
         self.max = max
         self.default = default
+        self.style = style
         self._build_widget()
 
     def _build_widget(self):
-        with ui.HStack(width=ui.Percent(100), height=0):
-            ui.Label(self.label, height=15)
+        with ui.HStack(width=ui.Percent(100), height=0, style=styles.sliderentry_style):
+            ui.Label(self.label, height=15, alignment=ui.Alignment.RIGHT, name="label_param")
             # self.model = ui.SimpleFloatModel()
             self.drag = ui.FloatDrag(step=self.step)
             if self.min is not None:
@@ -53,9 +55,9 @@ class Panel:
         self._build_widget()
 
     def _build_widget(self):
-        with ui.ZStack():
-            ui.Rectangle()
-            with ui.VStack():
-                ui.Label(self.label)
+        with ui.ZStack(style=styles.panel_style):
+            ui.Rectangle(name="group_rect")
+            with ui.VStack(name="contents"):
+                ui.Label(self.label, height=0)
                 for p in self.params:
                     SliderEntry(p.name, p.fn, min=p.min, max=p.max, default=p.default)
