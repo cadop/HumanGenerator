@@ -9,18 +9,26 @@ def add_to_scene(meshes):
     if not isinstance(meshes, list):
         meshes = [meshes]
 
-    # Filter out polygons we aren't meant to see
+    # Filter out vertices we aren't meant to see
     meshes = [m.clone(filterMaskedVerts=True) for m in meshes]
 
     mesh = meshes[0]
     nPerFace = mesh.vertsPerFaceForExport
+    newvertindices = []
+    newuvindices = []
 
-    # only include a set number of vertices per face
-    regularfvert = []
-    for fv in mesh.fvert:
-        regularfvert += [(fv[n]) for n in range(nPerFace)]
+    coords = mesh.getCoords()
+    for fn, fv in enumerate(mesh.fvert):
+        if not mesh.face_mask[fn]:
+            continue
+        # only include <nPerFace> verts for each face, and order them consecutively
+        newvertindices += [(fv[n]) for n in range(nPerFace)]
+        fuv = mesh.fuvs[fn]
+        # build an array of (u,v)s for each face
+        newuvindices += [(fuv[n]) for n in range(nPerFace)]
 
-    regularfvert = np.array(regularfvert)
+    newvertindices = np.array(newvertindices)
+
     # Get stage.
     stage = omni.usd.get_context().get_stage()
 
@@ -37,7 +45,7 @@ def add_to_scene(meshes):
     meshGeom = UsdGeom.Mesh.Define(stage, rootPath + "/mesh")
 
     # Set vertices.
-    meshGeom.CreatePointsAttr(mesh.getCoords())
+    meshGeom.CreatePointsAttr(coords)
     # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
 
     # Set normals.
@@ -51,21 +59,22 @@ def add_to_scene(meshes):
     # meshGeom.CreateFaceVertexCountsAttr([4])
 
     # Set face vertex indices.
-    meshGeom.CreateFaceVertexIndicesAttr(regularfvert)
+    meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
     # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
 
     # # Set uvs.
-    texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
-    texCoords.Set(mesh.getUVs())
+    texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
+    texCoords.Set(mesh.getUVs(newuvindices))
+    # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
 
     # # Subdivision is set to none.
     meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
-    # # Set position.
-    UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
+    # # # Set position.
+    # UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
 
-    # # Set rotation.
-    UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
+    # # # Set rotation.
+    # UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
 
-    # # Set scale.
-    UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
+    # # # Set scale.
+    # UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
