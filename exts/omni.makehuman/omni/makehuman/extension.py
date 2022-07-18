@@ -60,15 +60,3 @@ class MakeHumanExtension(omni.ext.IExt):
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
-
-    # def add_to_scene(self, input_obj, primpath):
-
-    #     usd_context = omni.usd.get_context()
-
-    #     omni.kit.commands.execute(
-    #         "CreateReferenceCommand",
-    #         usd_context=usd_context,
-    #         path_to=primpath,
-    #         asset_path=input_obj,
-    #         instanceable=True,
-    #     )
