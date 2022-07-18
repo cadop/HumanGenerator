@@ -1,8 +1,6 @@
 panel_style = {
     "Rectangle::group_rect": {
-        "background_color": 0xFF888888,
-        "border_color": 0xFF222222,
-        "border_width": 2.0,
+        "background_color": 0xFF2B2E2E,
         "border_radius": 5,
         "margin": 5,
     },
@@ -14,5 +12,11 @@ panel_style = {
 sliderentry_style = {
     "Label::label_param": {
         "margin_width": 10,
+    },
+}
+
+frame_style = {
+    "CollapsableFrame": {
+        "background_color": 0xFF1F2123,
     },
 }

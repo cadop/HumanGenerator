@@ -55,7 +55,7 @@ class Panel:
         self._build_widget()
 
     def _build_widget(self):
-        with ui.ZStack(style=styles.panel_style):
+        with ui.ZStack(style=styles.panel_style, height=0):
             ui.Rectangle(name="group_rect")
             with ui.VStack(name="contents"):
                 ui.Label(self.label, height=0)

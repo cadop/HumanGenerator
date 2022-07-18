@@ -46,7 +46,7 @@ class MakeHumanExtension(omni.ext.IExt):
         with self._window.frame:
             with ui.ScrollingFrame():
                 with ui.VStack():
-                    with ui.CollapsableFrame("Phenotype"):
+                    with ui.CollapsableFrame("Phenotype", style=styles.frame_style, height=0):
                         with ui.VStack():
                             mh_ui.Panel("Macrodetails", macro_params)
                             mh_ui.Panel("Race", race_params)
