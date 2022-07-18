@@ -13,16 +13,17 @@ readme  = "docs/README.md"
 repository = ""
 
 # One of categories for UI.
-category = "Example"
+category = "Services"
 
 # Keywords for the extension
-keywords = ["kit", "example"]
+keywords = ["kit", "makehuman","human","character"]
 
 
 # Use omni.ui to build simple UI
 [dependencies]
 "omni.kit.uiapp" = {}
 "omni.kit.asset_converter" = {}
+"omni.kit.window.filepicker" = {}
 
 # Main python module this extension provides, it will be publicly available as "import omni.hello.world".
 [[python.module]]

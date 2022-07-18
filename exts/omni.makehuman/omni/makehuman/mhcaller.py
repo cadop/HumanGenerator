@@ -10,7 +10,9 @@ import mh
 from core import G
 from mhmain import MHApplication
 from shared import wavefront
-import humanmodifier
+import humanmodifier, proxy, gui3d, events3d
+import numpy as np
+import carb
 
 
 class MHCaller:
@@ -72,3 +74,35 @@ class MHCaller:
             filepath = self.filepath
 
         wavefront.writeObjFile(filepath, self.mesh)
+
+    def add_proxy(self, proxyfile):
+        #  Derived from work by @tomtom92 at the MH-Community forums
+        print(proxyfile)
+        pxy = proxy.loadProxy(self.human, proxyfile, type="Shoes")
+        mesh, obj = pxy.loadMeshAndObject(self.human)
+        mesh.setPickable(True)
+        gui3d.app.addObject(obj)
+        mesh2 = obj.getSeedMesh()
+        fit_to_posed = True
+        pxy.update(mesh2, fit_to_posed)
+        mesh2.update()
+        obj.setSubdivided(self.human.isSubdivided())
+        self.human.addClothesProxy(pxy)
+        vertsMask = np.ones(self.human.meshData.getVertexCount(), dtype=bool)
+        proxyVertMask = proxy.transferVertexMaskToProxy(vertsMask, pxy)
+        # Apply accumulated mask from previous clothes layers on this clothing piece
+        obj.changeVertexMask(proxyVertMask)
+        if pxy.deleteVerts is not None and len(pxy.deleteVerts > 0):
+            carb.log_info(
+                "Loaded %s deleted verts (%s faces) from %s proxy.",
+                np.count_nonzero(pxy.deleteVerts),
+                len(human.meshData.getFacesForVertices(np.argwhere(pxy.deleteVerts)[..., 0])),
+                pxy.name,
+            )
+        # Modify accumulated (basemesh) verts mask
+        verts = np.argwhere(pxy.deleteVerts)[..., 0]
+        vertsMask[verts] = False
+        self.human.changeVertexMask(vertsMask)
+        event = events3d.HumanEvent(self.human, "proxy")
+        event.pxy = "shoes"
+        self.human.callEvent("onChanged", event)
