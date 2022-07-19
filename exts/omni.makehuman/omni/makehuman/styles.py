@@ -1,6 +1,6 @@
 panel_style = {
     "Rectangle::group_rect": {
-        "background_color": 0xFF2B2E2E,
+        "background_color": 0xFF313333,
         "border_radius": 5,
         "margin": 5,
     },

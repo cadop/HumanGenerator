@@ -50,13 +50,9 @@ class MakeHumanExtension(omni.ext.IExt):
                         with ui.VStack():
                             mh_ui.Panel("Macrodetails", macro_params)
                             mh_ui.Panel("Race", race_params)
-                    with ui.HStack(height=0):
-                        ui.Button(
-                            "add_to_scene",
-                            clicked_fn=lambda: mh_usd.add_to_scene(human.mesh),
-                            # clicked_fn=lambda: mh_usd.add_to_scene(human.getObjects()[0].getSubdivisionMesh()),
-                        )
-                        ui.Button("Save Human", clicked_fn=lambda: mh_call.store_obj())
+                    with ui.HStack():
+                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(human.mesh))
+                        ui.Button("store_obj", clicked_fn=lambda: mh_call.store_obj()),
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
