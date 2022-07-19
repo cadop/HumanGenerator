@@ -55,7 +55,10 @@ class MHCaller:
         # G.app.mhapi.exports.exportAsOBJ("D:/human.obj")
 
     @property
-    def mesh(self):
+    def meshes(self):
+        # Make sure proxies are up-to-date
+        self.update()
+
         objects = self.human.getObjects()
         meshes = [o.mesh for o in objects]
 
@@ -72,6 +75,13 @@ class MHCaller:
         #         m.calcNormals()
         #         m.updateIndexBuffer()
         return meshes
+
+    def update(self):
+        for obj in self.human.getObjects[1:]:
+            mesh = obj.getSeedMesh()
+            pxy = obj.getProxy()
+            pxy.update(mesh, False)
+            mesh.update()
 
     def store_obj(self, filepath=None):
 

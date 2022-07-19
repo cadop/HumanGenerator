@@ -28,19 +28,19 @@ class MakeHumanExtension(omni.ext.IExt):
         self.mh_call.filepath = "D:/human.obj"
         primpath = "/World/human"
 
-        self.human = self.mh_call.human
+        human = self.mh_call.human
         macro_params = (
-            Param("Gender", self.human.setGender),
-            Param("Age", self.human.setAge),
-            Param("Muscle", self.human.setMuscle),
-            Param("Weight", self.human.setWeight),
-            Param("Height", self.human.setHeight),
-            Param("Proportions", self.human.setBodyProportions),
+            Param("Gender", human.setGender),
+            Param("Age", human.setAge),
+            Param("Muscle", human.setMuscle),
+            Param("Weight", human.setWeight),
+            Param("Height", human.setHeight),
+            Param("Proportions", human.setBodyProportions),
         )
         race_params = (
-            Param("African", self.human.setAfrican),
-            Param("Asian", self.human.setAsian),
-            Param("Caucasian", self.human.setCaucasian),
+            Param("African", human.setAfrican),
+            Param("Asian", human.setAsian),
+            Param("Caucasian", human.setCaucasian),
         )
 
         self._window = ui.Window("MakeHuman", width=300, height=300)
@@ -52,18 +52,8 @@ class MakeHumanExtension(omni.ext.IExt):
                             mh_ui.Panel("Macrodetails", macro_params)
                             mh_ui.Panel("Race", race_params)
                     with ui.HStack():
-                        ui.Button("add_to_scene", clicked_fn=lambda: self.add_to_scene())
+                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(human.meshes))
                         ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj()),
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
-
-    def add_to_scene(self):
-        objects = self.human.getObjects()
-        for obj in objects[1:]:
-            mesh = obj.getSeedMesh()
-            pxy = obj.getProxy()
-            pxy.update(mesh, False)
-            mesh.update()
-        meshes = [o.mesh for o in objects]
-        mh_usd.add_to_scene(meshes)
