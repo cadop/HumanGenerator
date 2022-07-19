@@ -83,5 +83,7 @@ def add_to_scene(meshes):
 
 
 def sanitize(s: str):
-    s = s.replace(".", "_")
+    illegal = (".", "-")
+    for c in illegal:
+        s = s.replace(c, "_")
     return s
