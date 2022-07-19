@@ -29,8 +29,7 @@ class MHWindow(ui.Window):
             Param("Caucasian", human.setCaucasian),
         )
 
-        self._window = ui.Window()
-        with self._window.frame:
+        with self.frame:
             with ui.ScrollingFrame():
                 with ui.VStack():
                     with ui.CollapsableFrame("Phenotype", style=styles.frame_style, height=0):
