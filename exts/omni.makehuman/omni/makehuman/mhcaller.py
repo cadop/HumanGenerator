@@ -10,7 +10,8 @@ import mh
 from core import G
 from mhmain import MHApplication
 from shared import wavefront
-import humanmodifier, proxy, gui3d, events3d
+import humanmodifier
+import proxy, gui3d, events3d
 import numpy as np
 import carb
 
@@ -36,6 +37,9 @@ class MHCaller:
         self.human = human.Human(files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
         humanmodifier.loadModifiers("data/modifiers/modeling_modifiers.json", self.human)
         self.G.app.selectedHuman = self.human
+        self.add_proxy(
+            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\low-poly\\low-poly.mhpxy"
+        )
 
     def set_age(self, age):
         if not (age > 1 and age < 89):
@@ -75,10 +79,10 @@ class MHCaller:
 
         wavefront.writeObjFile(filepath, self.mesh)
 
-    def add_proxy(self, proxyfile):
+    def add_proxy(self, proxypath):
         #  Derived from work by @tomtom92 at the MH-Community forums
-        print(proxyfile)
-        pxy = proxy.loadProxy(self.human, proxyfile, type="Shoes")
+        print(proxypath)
+        pxy = proxy.loadProxy(self.human, proxypath, type="Eyes")
         mesh, obj = pxy.loadMeshAndObject(self.human)
         mesh.setPickable(True)
         gui3d.app.addObject(obj)
@@ -92,17 +96,19 @@ class MHCaller:
         proxyVertMask = proxy.transferVertexMaskToProxy(vertsMask, pxy)
         # Apply accumulated mask from previous clothes layers on this clothing piece
         obj.changeVertexMask(proxyVertMask)
-        if pxy.deleteVerts is not None and len(pxy.deleteVerts > 0):
-            carb.log_info(
-                "Loaded %s deleted verts (%s faces) from %s proxy.",
-                np.count_nonzero(pxy.deleteVerts),
-                len(human.meshData.getFacesForVertices(np.argwhere(pxy.deleteVerts)[..., 0])),
-                pxy.name,
-            )
+        # if pxy.deleteVerts is not None and len(pxy.deleteVerts > 0):
+        #     # carb.log_info(
+        #     #     (
+        #     #         "Loaded %s deleted verts (%s faces) from %s proxy.",
+        #     #         np.count_nonzero(pxy.deleteVerts),
+        #     #         len(self.human.meshData.getFacesForVertices(np.argwhere(pxy.deleteVerts)[..., 0])),
+        #     #         pxy.name,
+        #     #     )
+        #     # )
         # Modify accumulated (basemesh) verts mask
         verts = np.argwhere(pxy.deleteVerts)[..., 0]
         vertsMask[verts] = False
         self.human.changeVertexMask(vertsMask)
         event = events3d.HumanEvent(self.human, "proxy")
-        event.pxy = "shoes"
+        event.pxy = "eyes"
         self.human.callEvent("onChanged", event)
