@@ -1,13 +1,8 @@
 import omni.ext
-from . import mh_ui
-from .mh_ui import Param
-import omni.ui as ui
-from omni.makehuman import mhcaller
+import omni.makehuman
+from .mh_ui import MHWindow
 import omni
-import carb
-from . import mh_usd
-from . import styles
-import events3d, proxy, module3d
+
 
 # from . import assetconverter
 
@@ -22,38 +17,7 @@ class MakeHumanExtension(omni.ext.IExt):
 
     def on_startup(self, ext_id):
         print("[omni.makehuman] MakeHumanExtension startup")
-
-        # Create instance of manager class
-        self.mh_call = mhcaller.MHCaller()
-        self.mh_call.filepath = "D:/human.obj"
-        primpath = "/World/human"
-
-        human = self.mh_call.human
-        macro_params = (
-            Param("Gender", human.setGender),
-            Param("Age", human.setAge),
-            Param("Muscle", human.setMuscle),
-            Param("Weight", human.setWeight),
-            Param("Height", human.setHeight),
-            Param("Proportions", human.setBodyProportions),
-        )
-        race_params = (
-            Param("African", human.setAfrican),
-            Param("Asian", human.setAsian),
-            Param("Caucasian", human.setCaucasian),
-        )
-
-        self._window = ui.Window("MakeHuman", width=300, height=300)
-        with self._window.frame:
-            with ui.ScrollingFrame():
-                with ui.VStack():
-                    with ui.CollapsableFrame("Phenotype", style=styles.frame_style, height=0):
-                        with ui.VStack():
-                            mh_ui.Panel("Macrodetails", macro_params)
-                            mh_ui.Panel("Race", race_params)
-                    with ui.HStack():
-                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(human.meshes))
-                        ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj()),
+        self._window = MHWindow("MakeHuman", width=300, height=300)
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
