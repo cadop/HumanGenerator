@@ -7,7 +7,7 @@ import omni
 import carb
 from . import mh_usd
 from . import styles
-import events3d
+import events3d, proxy, module3d
 
 # from . import assetconverter
 
@@ -24,11 +24,11 @@ class MakeHumanExtension(omni.ext.IExt):
         print("[omni.makehuman] MakeHumanExtension startup")
 
         # Create instance of manager class
-        mh_call = mhcaller.MHCaller()
-        mh_call.filepath = "D:/human.obj"
+        self.mh_call = mhcaller.MHCaller()
+        self.mh_call.filepath = "D:/human.obj"
         primpath = "/World/human"
 
-        self.human = mh_call.human
+        self.human = self.mh_call.human
         macro_params = (
             Param("Gender", self.human.setGender),
             Param("Age", self.human.setAge),
@@ -52,8 +52,18 @@ class MakeHumanExtension(omni.ext.IExt):
                             mh_ui.Panel("Macrodetails", macro_params)
                             mh_ui.Panel("Race", race_params)
                     with ui.HStack():
-                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(mh_call.mesh))
-                        ui.Button("store_obj", clicked_fn=lambda: mh_call.store_obj()),
+                        ui.Button("add_to_scene", clicked_fn=lambda: self.add_to_scene())
+                        ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj()),
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
+
+    def add_to_scene(self):
+        objects = self.human.getObjects()
+        for obj in objects[1:]:
+            mesh = obj.getSeedMesh()
+            pxy = obj.getProxy()
+            pxy.update(mesh, False)
+            mesh.update()
+        meshes = [o.mesh for o in objects]
+        mh_usd.add_to_scene(meshes)

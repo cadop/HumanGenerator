@@ -37,6 +37,7 @@ class MHCaller:
         self.human = human.Human(files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
         humanmodifier.loadModifiers("data/modifiers/modeling_modifiers.json", self.human)
         self.G.app.selectedHuman = self.human
+        self.human.applyAllTargets()
         self.add_proxy(
             "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\low-poly\\low-poly.mhpxy"
         )
@@ -91,7 +92,7 @@ class MHCaller:
         pxy.update(mesh2, fit_to_posed)
         mesh2.update()
         obj.setSubdivided(self.human.isSubdivided())
-        self.human.addClothesProxy(pxy)
+        self.human.setEyesProxy(pxy)
         vertsMask = np.ones(self.human.meshData.getVertexCount(), dtype=bool)
         proxyVertMask = proxy.transferVertexMaskToProxy(vertsMask, pxy)
         # Apply accumulated mask from previous clothes layers on this clothing piece
@@ -110,5 +111,8 @@ class MHCaller:
         vertsMask[verts] = False
         self.human.changeVertexMask(vertsMask)
         event = events3d.HumanEvent(self.human, "proxy")
-        event.pxy = "eyes"
+        event.proxy = "eyes"
         self.human.callEvent("onChanged", event)
+
+    # def update_proxies(self):
+    #     for
