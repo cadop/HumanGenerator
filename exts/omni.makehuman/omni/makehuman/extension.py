@@ -7,6 +7,7 @@ import omni
 import carb
 from . import mh_usd
 from . import styles
+import events3d
 
 # from . import assetconverter
 
@@ -51,13 +52,8 @@ class MakeHumanExtension(omni.ext.IExt):
                             mh_ui.Panel("Macrodetails", macro_params)
                             mh_ui.Panel("Race", race_params)
                     with ui.HStack():
-                        ui.Button("add_to_scene", clicked_fn=lambda: self.add_to_scene())
+                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(mh_call.mesh))
                         ui.Button("store_obj", clicked_fn=lambda: mh_call.store_obj()),
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
-
-    def add_to_scene(self):
-        objects = self.human.getObjects(excludeZeroFaceObjs=True)
-        meshes = [o.mesh for o in objects]
-        mh_usd.add_to_scene(meshes)
