@@ -37,5 +37,5 @@ class MHWindow(ui.Window):
                             ui_widgets.Panel("Macrodetails", macro_params)
                             ui_widgets.Panel("Race", race_params)
                     with ui.HStack():
-                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(mh_call.meshes))
+                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(mh_call.objects))
                         ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj()),
