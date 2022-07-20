@@ -77,7 +77,7 @@ class MHCaller:
         return meshes
 
     def update(self):
-        for obj in self.human.getObjects[1:]:
+        for obj in self.human.getObjects()[1:]:
             mesh = obj.getSeedMesh()
             pxy = obj.getProxy()
             pxy.update(mesh, False)

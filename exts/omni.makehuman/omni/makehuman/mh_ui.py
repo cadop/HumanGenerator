@@ -11,10 +11,10 @@ class MHWindow(ui.Window):
         super().__init__(*args, **kwargs)
 
         # Create instance of manager class
-        self.mh_call = mhcaller.MHCaller()
-        self.mh_call.filepath = "D:/human.obj"
+        mh_call = mhcaller.MHCaller()
+        mh_call.filepath = "D:/human.obj"
 
-        human = self.mh_call.human
+        human = mh_call.human
         macro_params = (
             Param("Gender", human.setGender),
             Param("Age", human.setAge),
@@ -37,5 +37,5 @@ class MHWindow(ui.Window):
                             ui_widgets.Panel("Macrodetails", macro_params)
                             ui_widgets.Panel("Race", race_params)
                     with ui.HStack():
-                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(human.meshes))
+                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(mh_call.meshes))
                         ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj()),
