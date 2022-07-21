@@ -8,7 +8,7 @@ import re
 
 def add_to_scene(objects):
 
-    scale = 100
+    scale = 10
     human = objects[0]
 
     skel = human.getSkeleton()
@@ -26,6 +26,8 @@ def add_to_scene(objects):
         skel = skel.scaled(scale)
 
     # Apply weights to the meshes (internal makehuman objects)
+    # Do we need to do this if we're applying deformation through imported skeletons?
+    # Can we sync it back to the human model
     # Generate bone weights for all meshes up front so they can be reused for all
     if skel:
         rawWeights = human.getVertexWeights(human.getSkeleton())  # Basemesh weights
@@ -58,18 +60,33 @@ def add_to_scene(objects):
         rootPath = defaultPrim.GetPath().pathString
     carb.log_info(rootPath)
 
-    human_primpath = rootPath + "/human"
-
     # Import skeleton to USD
     if skel:
-        skelPrim = UsdSkel.Skeleton.Define(stage, human_primpath)
-        # add_joints(stage, human_primpath + "/", scene.rootnode)
-        # usd_skel = UsdSkel.Skeleton(skelPrim)
-        # joints_rel = usd_skel.GetJointsRel()
-        # for joint in joint_paths:
+        skel_root_path = rootPath + "/human"
+        skel_prim_path = skel_root_path + "/skeleton"
+
+        # Put meshes in our skeleton root, if we have one
+        rootPath = skel_root_path
+
+        skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
+        usd_skel = UsdSkel.Skeleton.Define(stage, skel_prim_path)
+
+        skel_data = {
+            "joint_paths": [],
+            "rest_transforms": [],
+            "joint_to_path": {},
+        }
+
+        add_joints(stage, skel_prim_path + "/", skel.roots[0], skel_data)
+
+        usd_skel.CreateJointsAttr(skel_data["joint_paths"])
+
+        # joints_rel =
+
+        # for joint in skel_data["joint_paths"]:
         #     joints_rel.AppendTarget(joint)
 
-        # usd_skel.CreateRestTransformsAttr(rest_transforms)
+        usd_skel.CreateRestTransformsAttr(skel_data["rest_transforms"])
 
     # import meshes to USD
     for mesh in meshes:
@@ -119,14 +136,33 @@ def add_to_scene(objects):
         # # Subdivision is set to none.
         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
-        # # # Set position.
-        UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
+        # # # # Set position.
+        # UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
 
-        # # # Set rotation.
-        UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
+        # # # # Set rotation.
+        # UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
 
-        # # # Set scale.
-        UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
+        # # # # Set scale.
+        # UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
+
+
+def add_joints(stage, path, node, skel_data):
+
+    s = skel_data
+
+    global joint_paths
+    path += str(node)
+    s["joint_paths"].append(path)
+
+    s["joint_to_path"][str(node)] = path
+
+    xform = node.matRestRelative
+    rest_transform = Gf.Matrix4d(xform.tolist())
+
+    s["rest_transforms"].append(rest_transform)
+
+    for child in node.children:
+        add_joints(stage, path + "/", child, skel_data)
 
 
 def sanitize(s: str):
