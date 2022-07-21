@@ -10,7 +10,7 @@ import mh
 from core import G
 from mhmain import MHApplication
 from shared import wavefront
-import humanmodifier
+import humanmodifier, skeleton
 import proxy, gui3d, events3d
 import numpy as np
 import carb
@@ -36,11 +36,11 @@ class MHCaller:
     def init_human(self):
         self.human = human.Human(files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
         humanmodifier.loadModifiers("data/modifiers/modeling_modifiers.json", self.human)
-        self.G.app.selectedHuman = self.human
+        self.add_proxy(mh.getSysOath("eyes/low-poly/low-poly.mhpxy"))
+        base_skel = skeleton.load(mh.getSysDataPath("rigs/default.mhskel"), self.selectedHuman.meshData)
+        self.human.setBaseSkeleton(base_skel)
         self.human.applyAllTargets()
-        self.add_proxy(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\low-poly\\low-poly.mhpxy"
-        )
+        self.G.app.selectedHuman = self.human
 
     def set_age(self, age):
         if not (age > 1 and age < 89):
