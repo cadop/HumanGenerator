@@ -77,9 +77,11 @@ def add_to_scene(objects):
             "joint_to_path": {},
         }
 
-        add_joints(stage, skel_prim_path + "/", skel.roots[0], skel_data)
+        add_joints("", skel.roots[0], skel_data)
+        # add_joints(stage, skel_prim_path + "/", skel.roots[0], skel_data)
 
         usd_skel.CreateJointsAttr(skel_data["joint_paths"])
+        usd_skel.CreateJointNamesAttr([key for key in skel_data["joint_to_path"]])
 
         # joints_rel =
 
@@ -146,15 +148,15 @@ def add_to_scene(objects):
         # UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
 
 
-def add_joints(stage, path, node, skel_data):
+def add_joints(path, node, skel_data):
 
     s = skel_data
+    name = sanitize(node.name)
 
-    global joint_paths
-    path += str(node)
+    path += name
     s["joint_paths"].append(path)
 
-    s["joint_to_path"][str(node)] = path
+    s["joint_to_path"][name] = path
 
     xform = node.matRestRelative
     rest_transform = Gf.Matrix4d(xform.tolist())
@@ -162,7 +164,7 @@ def add_joints(stage, path, node, skel_data):
     s["rest_transforms"].append(rest_transform)
 
     for child in node.children:
-        add_joints(stage, path + "/", child, skel_data)
+        add_joints(path + "/", child, skel_data)
 
 
 def sanitize(s: str):
