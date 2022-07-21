@@ -154,7 +154,7 @@ def add_joints(path, node, skel_data):
 
     s["joint_to_path"][name] = path
 
-    rxform = node.getRestMatrix()
+    rxform = node.getRelativeMatrix()
     rest_transform = Gf.Matrix4d(rxform.tolist())
     s["rest_transforms"].append(rest_transform)
 
