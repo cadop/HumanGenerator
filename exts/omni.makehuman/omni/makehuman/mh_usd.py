@@ -74,6 +74,7 @@ def add_to_scene(objects):
         skel_data = {
             "joint_paths": [],
             "rest_transforms": [],
+            "bind_transforms": [],
             "joint_to_path": {},
         }
 
@@ -82,12 +83,7 @@ def add_to_scene(objects):
 
         usd_skel.CreateJointsAttr(skel_data["joint_paths"])
         usd_skel.CreateJointNamesAttr([key for key in skel_data["joint_to_path"]])
-
-        # joints_rel =
-
-        # for joint in skel_data["joint_paths"]:
-        #     joints_rel.AppendTarget(joint)
-
+        usd_skel.CreateBindTransformsAttr(skel_data["bind_transforms"])
         usd_skel.CreateRestTransformsAttr(skel_data["rest_transforms"])
 
     # import meshes to USD
@@ -158,10 +154,13 @@ def add_joints(path, node, skel_data):
 
     s["joint_to_path"][name] = path
 
-    xform = node.matRestRelative
-    rest_transform = Gf.Matrix4d(xform.tolist())
-
+    rxform = node.getRestMatrix()
+    rest_transform = Gf.Matrix4d(rxform.tolist())
     s["rest_transforms"].append(rest_transform)
+
+    bxform = node.getBindMatrix()
+    bind_transform = Gf.Matrix4d(bxform[0].tolist())
+    s["bind_transforms"].append(bind_transform)
 
     for child in node.children:
         add_joints(path + "/", child, skel_data)
