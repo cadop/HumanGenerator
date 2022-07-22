@@ -35,18 +35,20 @@ class MHCaller:
 
     def init_human(self):
         self.human = human.Human(files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
+        # set the makehuman instance human so that features (eg skeletons) can access it globally
+        self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         self.add_proxy(
             "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\low-poly\\low-poly.mhpxy"
         )
         base_skel = skeleton.load(mh.getSysDataPath("rigs/default.mhskel"), self.human.meshData)
+        # base_skel = skeleton.load(mh.getSysDataPath("rigs/default.mhskel"), self.human.meshData)
         # Setting the base skeleton doesn't add it to the human
         # Why do we need to do this?
         self.human.setBaseSkeleton(base_skel)
         # Actually add the skeleton
         self.human.setSkeleton(base_skel)
         self.human.applyAllTargets()
-        self.G.app.selectedHuman = self.human
 
     def set_age(self, age):
         if not (age > 1 and age < 89):
