@@ -5,7 +5,6 @@ import numpy as np
 import io, os
 import re
 import skeleton
-from .convert_mh_usd import converter
 
 
 def add_to_scene(objects):
@@ -50,23 +49,69 @@ def add_to_scene(objects):
         for mesh in meshes:
             mesh.vertexWeights = None
 
+    # Bones are returned breadth-first (parents-first). This is convenient, as USD
+    # requires it
+    bones = skel.getBones()
+    skel_data = get_joint_data(skeleton=skel)
+
     # Get stage.
     stage = omni.usd.get_context().get_stage()
-
-    # Get default prim.
-    defaultPrim = stage.GetDefaultPrim()
-
     # Get root path.
     rootPath = "/"
+    # Get default prim.
+
+    defaultPrim = stage.GetDefaultPrim()
     if defaultPrim.IsValid():
         rootPath = defaultPrim.GetPath().pathString
 
-    skel_data = get_joint_data(skeleton=skel)
     root_node = skel_data["joint_paths"][0]
     skel_root_path = rootPath + "/human"
 
+    skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
+    usdSkel = UsdSkel.Skeleton.Define(stage, skel_root_path)
+
+    # add joints to skeleton by path
+    add_joints_to_skel(skel_data["joint_paths"], usdSkel)
+
+    # Add bind transforms to skeleton
+    usdSkel.CreateBindTransformsAttr(skel_data["bind_transforms"])
+
+    # setup rest transforms in joint-local space
+    usdSkel.CreateRestTransformsAttr(skel_data["rel_transforms"])
+
+
+def add_joints_to_skel(joints, skeleton):
+
+    attribute = skeleton.GetJointsAttr()
+    attribute.Set(joints)
+
 
 def get_joint_data(path=None, node=None, skel_data=None, skeleton: skeleton.Skeleton = None):
+    """Recursively traverses skeleton (breadth-first) and encapsulates joint data in a convenient object for later reference.
+
+    Parameters
+    ----------
+    path : _type_, optional
+        _description_, by default None
+    node : _type_, optional
+        _description_, by default None
+    skel_data : _type_, optional
+        _description_, by default None
+    skeleton : skeleton.Skeleton, optional
+        _description_, by default None
+
+    Returns
+    -------
+    dict
+         skel_data = {
+             "joint_paths": [],
+             "joint_to_path": {},
+             "rel_transforms": [],
+             "global_transforms": [],
+             "bind_transforms": [],
+         }
+    """
+
     if skeleton:
         skel_data = {
             "joint_paths": [],
@@ -87,12 +132,12 @@ def get_joint_data(path=None, node=None, skel_data=None, skeleton: skeleton.Skel
         s["joint_to_path"][name] = path
 
         relxform = node.matRestRelative
-        # relxform = relxform.transpose()
+        relxform = relxform.transpose()
         relative_transform = Gf.Matrix4d(relxform.tolist())
         s["rel_transforms"].append(relative_transform)
 
         gxform = node.matRestGlobal
-        # gxform = gxform.transpose()
+        gxform = gxform.transpose()
         global_transform = Gf.Matrix4d(gxform.tolist())
         s["global_transforms"].append(global_transform)
 
