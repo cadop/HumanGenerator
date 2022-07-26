@@ -52,18 +52,23 @@ def add_to_scene(objects):
     # Bones are returned breadth-first (parents-first). This is convenient, as USD
     # requires it
     bones = skel.getBones()
-    skel_data = get_joint_data(skeleton=skel)
 
-    # Get stage.
+    # Get stage from open file
     stage = omni.usd.get_context().get_stage()
+
     # Get root path.
     rootPath = "/"
-    # Get default prim.
 
+    # Get default prim.
     defaultPrim = stage.GetDefaultPrim()
     if defaultPrim.IsValid():
         rootPath = defaultPrim.GetPath().pathString
 
+    setup_skeleton(rootPath, stage, skel)
+
+
+def setup_skeleton(rootPath, stage, skeleton):
+    skel_data = get_joint_data(skeleton=skeleton)
     root_node = skel_data["joint_paths"][0]
     skel_root_path = rootPath + "/human"
 
