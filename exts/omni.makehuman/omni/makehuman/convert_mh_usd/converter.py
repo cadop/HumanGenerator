@@ -21,6 +21,8 @@ import os
 
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdSkel, Vt
 
+import omni.usd
+
 from . import animator, common, helper, mesher, skinner
 
 LOGGER = logging.getLogger(__name__)
@@ -465,7 +467,7 @@ def _validate_topology(paths):
     return topology
 
 
-def write_rig_as_usdskel(node, root_path, animation_path, folder, times=None):
+def write_rig_as_usdskel(data, root_path, animation_path, times=None):
     """Write an animated USD Skeleton to-disk.
 
     If no time range is given then a start/end range is found by looking
@@ -473,6 +475,9 @@ def write_rig_as_usdskel(node, root_path, animation_path, folder, times=None):
     given nodes.
 
     Args:
+        data (dict of list: str)
+            The skeleton data containing usd-formatted paths to all joints
+                "
         node (str):
             The path to a joint on the Maya skeleton which will be the
             basis of the USD Skeleton. Any joint is fine but the root
@@ -485,19 +490,20 @@ def write_rig_as_usdskel(node, root_path, animation_path, folder, times=None):
             the recorded Skeleton animation. Usually, this path is
             located outside of the `root_path` SkeletonRoot. e.g.
             "/SkeletonAnimation".
-        folder (str):
-            The directory on-disk where all of the different USD layers
-            will be written.
         times (tuple[float or int, float or int]):
             The start and end frames of animation to record. If no
             start/end is given then the times will be automatically
             found using animation on the Skeleton.
 
     """
-    if not os.path.isdir(folder):
-        os.makedirs(folder)
+
+    folder = "D:\skel_scene"
+
+    # The root node of the skeleton
+    node = data["joint_paths"][0]
 
     skeleton_stage = Usd.Stage.CreateNew(os.path.join(folder, "skeleton.usda"))
+    # stage = omni.usd.get_context().get_stage()
 
     root = UsdSkel.Root.Define(skeleton_stage, root_path)
     root.GetPrim().SetMetadata(
@@ -505,7 +511,7 @@ def write_rig_as_usdskel(node, root_path, animation_path, folder, times=None):
         "This is the start of any skeleton definition. Skeleton USD objects " "and mesh data go inside of here.",
     )
     skeleton = _setup_skeleton(root.GetPrim(), root_path + "/Skeleton")
-    joints, nodes = helper.get_all_joints(node)
+    joints, nodes = (data["joint_paths"], data["joint_paths"])
 
     topology = _validate_topology(joints)
 
@@ -565,9 +571,9 @@ def write_rig_as_usdskel(node, root_path, animation_path, folder, times=None):
     _setup_cached_extents_hints(main_stage, root.GetPrim().GetPath(), meshes, times)
     skinner.setup_skinning(data, nodes)
 
-    skeleton_stage.GetRootLayer().Save()
+    stage.GetRootLayer().Save()
 
-    for stage_ in (skeleton_stage, animation_stage):
+    for stage_ in (stage, animation_stage):
         main_stage.GetRootLayer().subLayerPaths.append(os.path.relpath(stage_.GetRootLayer().identifier, folder))
 
     main_stage.Save()
