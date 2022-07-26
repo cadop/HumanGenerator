@@ -142,8 +142,10 @@ def get_joint_data(path=None, node=None, skel_data=None, skeleton: skeleton.Skel
         s["global_transforms"].append(global_transform)
 
         bxform = node.getBindMatrix()
-        # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix
-        bxform = bxform[0]
+        # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix,
+        # however USD uses row first while mh uses column first, so we use the
+        # transpose/inverse
+        bxform = bxform[1]
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity()
         s["bind_transforms"].append(bind_transform)
