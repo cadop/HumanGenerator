@@ -64,17 +64,16 @@ def add_to_scene(objects):
     skel_data = get_joint_data(skeleton=skel)
     root_node = skel_data["joint_paths"][0]
     skel_root_path = rootPath + "/human"
-    animation_path = rootPath + "/SkeletonAnimation"
-    converter.write_rig_as_usdskel(skel_data, skel_root_path, animation_path)
 
 
 def get_joint_data(path=None, node=None, skel_data=None, skeleton: skeleton.Skeleton = None):
     if skeleton:
         skel_data = {
             "joint_paths": [],
-            "rest_transforms": [],
-            "bind_transforms": [],
             "joint_to_path": {},
+            "rel_transforms": [],
+            "global_transforms": [],
+            "bind_transforms": [],
         }
         get_joint_data("", skeleton.roots[0], skel_data)
         return skel_data
@@ -87,12 +86,18 @@ def get_joint_data(path=None, node=None, skel_data=None, skeleton: skeleton.Skel
 
         s["joint_to_path"][name] = path
 
-        rxform = node.getRelativeMatrix()
-        rxform = rxform.transpose()
-        rest_transform = Gf.Matrix4d(rxform.tolist())
-        s["rest_transforms"].append(rest_transform)
+        relxform = node.matRestRelative
+        # relxform = relxform.transpose()
+        relative_transform = Gf.Matrix4d(relxform.tolist())
+        s["rel_transforms"].append(relative_transform)
+
+        gxform = node.matRestGlobal
+        # gxform = gxform.transpose()
+        global_transform = Gf.Matrix4d(gxform.tolist())
+        s["global_transforms"].append(global_transform)
 
         bxform = node.getBindMatrix()
+        # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix
         bxform = bxform[0]
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity()
