@@ -1,9 +1,11 @@
-from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel
+from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import omni.usd
 import carb
 import numpy as np
 import io, os
 import re
+import skeleton
+from .convert_mh_usd import converter
 
 
 def add_to_scene(objects):
@@ -13,7 +15,7 @@ def add_to_scene(objects):
 
     skel = human.getSkeleton()
 
-    meshes = [o.mesh for o in objects]
+    meshes = [o.mesh for o in objects][0]
 
     if not isinstance(meshes, list):
         meshes = [meshes]
@@ -58,124 +60,46 @@ def add_to_scene(objects):
     rootPath = "/"
     if defaultPrim.IsValid():
         rootPath = defaultPrim.GetPath().pathString
-    carb.log_info(rootPath)
 
-    # usd_skel = None
-    # Import skeleton to USD
-    if skel:
-        skel_root_path = rootPath + "/human"
-        skel_prim_path = skel_root_path + "/skeleton"
+    skel_data = get_joint_data(skeleton=skel)
+    root_node = skel_data["joint_paths"][0]
+    skel_root_path = rootPath + "/human"
+    animation_path = rootPath + "/SkeletonAnimation"
+    converter.write_rig_as_usdskel(skel_data, skel_root_path, animation_path)
 
-        # Put meshes in our skeleton root, if we have one
-        rootPath = skel_root_path
 
-        skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
-        usd_skel = UsdSkel.Skeleton.Define(stage, skel_prim_path)
-
+def get_joint_data(path=None, node=None, skel_data=None, skeleton: skeleton.Skeleton = None):
+    if skeleton:
         skel_data = {
             "joint_paths": [],
             "rest_transforms": [],
             "bind_transforms": [],
             "joint_to_path": {},
         }
+        get_joint_data("", skeleton.roots[0], skel_data)
+        return skel_data
+    else:
+        s = skel_data
+        name = sanitize(node.name)
 
-        add_joints("", skel.roots[0], skel_data)
-        # add_joints(stage, skel_prim_path + "/", skel.roots[0], skel_data)
+        path += name
+        s["joint_paths"].append(path)
 
-        usd_skel.CreateJointsAttr(skel_data["joint_paths"])
-        usd_skel.CreateJointNamesAttr([key for key in skel_data["joint_to_path"]])
-        usd_skel.CreateBindTransformsAttr(skel_data["bind_transforms"])
-        usd_skel.CreateRestTransformsAttr(skel_data["rest_transforms"])
+        s["joint_to_path"][name] = path
 
-    usd_mesh_paths = []
+        rxform = node.getRelativeMatrix()
+        rxform = rxform.transpose()
+        rest_transform = Gf.Matrix4d(rxform.tolist())
+        s["rest_transforms"].append(rest_transform)
 
-    # import meshes to USD
-    for mesh in meshes:
-        nPerFace = mesh.vertsPerFaceForExport
-        newvertindices = []
-        newuvindices = []
+        bxform = node.getBindMatrix()
+        bxform = bxform[0]
+        bind_transform = Gf.Matrix4d(bxform.tolist())
+        # bind_transform = Gf.Matrix4d().SetIdentity()
+        s["bind_transforms"].append(bind_transform)
 
-        coords = mesh.getCoords()
-        for fn, fv in enumerate(mesh.fvert):
-            if not mesh.face_mask[fn]:
-                continue
-            # only include <nPerFace> verts for each face, and order them consecutively
-            newvertindices += [(fv[n]) for n in range(nPerFace)]
-            fuv = mesh.fuvs[fn]
-            # build an array of (u,v)s for each face
-            newuvindices += [(fuv[n]) for n in range(nPerFace)]
-
-        newvertindices = np.array(newvertindices)
-
-        # Create mesh.
-        name = sanitize(mesh.name)
-        usd_mesh_path = rootPath + "/" + name
-        usd_mesh_paths.append(usd_mesh_path)
-        meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
-
-        # Set vertices.
-        meshGeom.CreatePointsAttr(coords)
-        # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
-
-        # Set normals.
-        meshGeom.CreateNormalsAttr(mesh.getNormals())
-        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
-        meshGeom.SetNormalsInterpolation("vertex")
-
-        # Set face vertex count.
-        nface = [mesh.vertsPerFaceForExport] * len(mesh.nfaces)
-        meshGeom.CreateFaceVertexCountsAttr(nface)
-        # meshGeom.CreateFaceVertexCountsAttr([4])
-
-        # Set face vertex indices.
-        meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
-        # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
-
-        # # Set uvs.
-        texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
-        texCoords.Set(mesh.getUVs(newuvindices))
-        # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
-
-        # # Subdivision is set to none.
-        meshGeom.CreateSubdivisionSchemeAttr().Set("none")
-
-        # # # # Set position.
-        # UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
-
-        # # # # Set rotation.
-        # UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
-
-        # # # # Set scale.
-        # UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
-
-    sdf_mesh_paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
-
-    # root = skelRoot.GetPrim()
-    _create_mesh_bindings(sdf_mesh_paths, stage, usd_skel.GetPrim())
-
-
-def add_joints(path, node, skel_data):
-
-    s = skel_data
-    name = sanitize(node.name)
-
-    path += name
-    s["joint_paths"].append(path)
-
-    s["joint_to_path"][name] = path
-
-    rxform = node.getRelativeMatrix()
-    rxform = rxform.transpose()
-    rest_transform = Gf.Matrix4d(rxform.tolist())
-    s["rest_transforms"].append(rest_transform)
-
-    bxform = node.getBindMatrix()
-    bxform = bxform[0].transpose()
-    bind_transform = Gf.Matrix4d(bxform.tolist())
-    s["bind_transforms"].append(bind_transform)
-
-    for child in node.children:
-        add_joints(path + "/", child, skel_data)
+        for child in node.children:
+            get_joint_data(path + "/", child, skel_data)
 
 
 def sanitize(s: str):
@@ -184,110 +108,158 @@ def sanitize(s: str):
         s = s.replace(c, "_")
     return s
 
-
-# Modified from:
-# https://github.com/ColinKennedy/USD-Cookbook/tree/master/tools/export_usdskel_from_scratch
-# def _setup_meshes(meshes, skeleton):
-#     """Export `meshes` and then bind their USD Prims to a skeleton.
-
-#     Args:
-#         meshes (iter[str]):
-#             The paths to each Maya mesh that must be written to-disk.
-#             e.g. ["|some|pSphere1|pSphereShape1"].
-#         skeleton (`pxr.UsdSkel.Skeleton`):
-#             The USD Skeleton that the exported meshes will be paired with.
-
-#     Raises:
-#         RuntimeError: If `skeleton` has no ancestor UsdSkelRoot Prim.
-
-#     Returns:
-#         list[tuple[str, `pxr.UsdSkel.BindingAPI`]]:
-#             The Maya mesh which represents some USD mesh and the binding
-#             schema that is used to bind that mesh to the skeleton. We
-#             return these two values as pairs so that they don't have any
-#             chance of getting mixed up when other functions use them.
-
-#     """
+    # usd_skel = None
+    # Import skeleton to USD
 
 
-def _get_default_prim_path(path):
-    """`pxr.Sdf.Path`: Get the path of the defaultPrim of some USD file."""
-    stage = Usd.Stage.Open(path)
-    prim = stage.GetDefaultPrim()
+#     if skel:
+#         skel_root_path = rootPath + "/human"
+#         skel_prim_path = skel_root_path + "/skeleton"
 
-    return prim.GetPath()
+#         # Put meshes in our skeleton root, if we have one
+#         rootPath = skel_root_path
 
-
-def _add_mesh_group_reference(stage, path, root):
-    """Add the meshes in some USD `path` file onto the given `stage` starting at `root`.
-
-    Important:
-        `default_added_to_root` must exist on stage before this function is called.
-
-    """
-    # Example:
-    #     default = Sdf.Path("/group1")
-    #     root = Sdf.Path("/Something/SkeletonRoot")
-    #     default_added_to_root = Sdf.Path("/Something/SkeletonRoot/group1")
-    #
-    default = _get_default_prim_path(path)
-    default_added_to_root = root.GetPath().AppendChild(str(default.MakeRelativePath("/")))
-    stage.GetPrimAtPath(default_added_to_root).GetReferences().AddReference(
-        os.path.relpath(path, os.path.dirname(stage.GetRootLayer().identifier))
-    )
+#         skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
+#         usd_skel = UsdSkel.Skeleton.Define(stage, skel_prim_path)
 
 
-def _create_mesh_bindings(paths, stage, skeleton):
-    bindings = []
+#         add_joints("", skel.roots[0], skel_data)
+#         # add_joints(stage, skel_prim_path + "/", skel.roots[0], skel_data)
 
-    comment = "The values in this attribute were sorted by elementSize."
+#         usd_skel.CreateJointsAttr(skel_data["joint_paths"])
+#         usd_skel.CreateJointNamesAttr([key for key in skel_data["joint_to_path"]])
+#         usd_skel.CreateBindTransformsAttr(skel_data["bind_transforms"])
+#         usd_skel.CreateRestTransformsAttr(skel_data["rest_transforms"])
 
-    for usd_path in paths:
-        # `usd_path` is referenced under the UsdSkelRoot so we need to add
-        # its name to the path
-        #
-        prim = stage.GetPrimAtPath(usd_path)
-        binding = UsdSkel.BindingAPI.Apply(prim)
-        binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
-        bindings.append(binding)
+# #     usd_mesh_paths = []
 
-    return bindings
+#     # import meshes to USD
+#     for mesh in meshes:
+#         nPerFace = mesh.vertsPerFaceForExport
+#         newvertindices = []
+#         newuvindices = []
+
+#         coords = mesh.getCoords()
+#         for fn, fv in enumerate(mesh.fvert):
+#             if not mesh.face_mask[fn]:
+#                 continue
+#             # only include <nPerFace> verts for each face, and order them consecutively
+#             newvertindices += [(fv[n]) for n in range(nPerFace)]
+#             fuv = mesh.fuvs[fn]
+#             # build an array of (u,v)s for each face
+#             newuvindices += [(fuv[n]) for n in range(nPerFace)]
+
+#         newvertindices = np.array(newvertindices)
+
+#         # Create mesh.
+#         name = sanitize(mesh.name)
+#         usd_mesh_path = rootPath + "/" + name
+#         usd_mesh_paths.append(usd_mesh_path)
+#         meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+
+#         # Set vertices.
+#         meshGeom.CreatePointsAttr(coords)
+#         # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
+
+#         # Set normals.
+#         meshGeom.CreateNormalsAttr(mesh.getNormals())
+#         # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
+#         meshGeom.SetNormalsInterpolation("vertex")
+
+#         # Set face vertex count.
+#         nface = [mesh.vertsPerFaceForExport] * len(mesh.nfaces)
+#         meshGeom.CreateFaceVertexCountsAttr(nface)
+#         # meshGeom.CreateFaceVertexCountsAttr([4])
+
+#         # Set face vertex indices.
+#         meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
+#         # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+
+#         # # Set uvs.
+#         texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
+#         texCoords.Set(mesh.getUVs(newuvindices))
+#         # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
+
+#         # # Subdivision is set to none.
+#         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
+
+#         # # # # Set position.
+#         # UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
+
+#         # # # # Set rotation.
+#         # UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
+
+#         # # # # Set scale.
+#         # UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
+
+#     sdf_mesh_paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
+
+#     # root = skelRoot.GetPrim()
+#     bindings = _create_mesh_bindings(sdf_mesh_paths, stage, usd_skel.GetPrim(), skel_data)
+
+#     mesh = meshes[0]
+#     binding = bindings[0]
+
+#     maximum_influences = 3
+#     indices = [i for i in range(maximum_influences)]
+#     weights = [1.0 / maximum_influences] * maximum_influences
+#     # weights = [1] * len(indices)
+
+#     indices = Vt.IntArray(indices)
+#     weights = Vt.FloatArray(weights)
+
+#     # Reference: https://graphics.pixar.com/usd/docs/api/_usd_skel__schemas.html#UsdSkel_BindingAPI_StoringInfluences
+#     # Keep weights sorted and normalized for best performance
+#     #
+#     # UsdSkel.NormalizeWeights(weights, 1)
+#     # UsdSkel.SortInfluences(indices, weights, maximum_influences)
+
+#     indices_attribute = binding.CreateJointIndicesPrimvar(constant=False, elementSize=maximum_influences)
+#     indices_attribute.Set(indices)
+
+#     weights_attribute = binding.CreateJointWeightsPrimvar(constant=False, elementSize=maximum_influences)
+#     weights_attribute.Set(weights)
+#     print()
 
 
-def _get_expected_mesh_paths(meshes, new_root):
-    """Make each mesh path relative to the given `new_root` UsdSkelRoot Prim path."""
-    relative_paths = [Sdf.Path(helper.convert_maya_path_to_usd(mesh).lstrip("/")) for mesh in meshes]
+# # Modified from:
+# # https://github.com/ColinKennedy/USD-Cookbook/tree/master/tools/export_usdskel_from_scratch
+# # def _setup_meshes(meshes, skeleton):
+# #     """Export `meshes` and then bind their USD Prims to a skeleton.
 
-    return [path_.MakeAbsolutePath(new_root) for path_ in relative_paths]
+# #     Args:
+# #         meshes (iter[str]):
+# #             The paths to each Maya mesh that must be written to-disk.
+# #             e.g. ["|some|pSphere1|pSphereShape1"].
+# #         skeleton (`pxr.UsdSkel.Skeleton`):
+# #             The USD Skeleton that the exported meshes will be paired with.
+
+# #     Raises:
+# #         RuntimeError: If `skeleton` has no ancestor UsdSkelRoot Prim.
+
+# #     Returns:
+# #         list[tuple[str, `pxr.UsdSkel.BindingAPI`]]:
+# #             The Maya mesh which represents some USD mesh and the binding
+# #             schema that is used to bind that mesh to the skeleton. We
+# #             return these two values as pairs so that they don't have any
+# #             chance of getting mixed up when other functions use them.
+
+# #     """
 
 
-# Note: This is a hacky trick but works well. We include
-# `exportSkin="auto"` to make USD export export joint influences
-# with our meshes. It also will try to link skinning to the mesh but
-# we will override those connections later.
-#
-# Basically, we use `cmds.usdExport` just for the joint influence
-# information and blow away the rest of the data it outputs in
-# other, stronger layers.
-#
-# Reference: https://graphics.pixar.com/usd/docs/Maya-USD-Plugins.html
-#
-# cmds.usdExport(meshes, file=path, exportSkin="auto")
+# def _create_mesh_bindings(paths, stage, skeleton, data):
+#     bindings = []
 
-# root = UsdSkel.Root.Find(skeleton)
+#     for mesh in paths:
+#         # `usd_path` is referenced under the UsdSkelRoot so we need to add
+#         # its name to the path
+#         #
+#         prim = stage.GetPrimAtPath(mesh)
+#         binding = UsdSkel.BindingAPI.Apply(prim)
+#         matrix = Gf.Matrix4d()
+#         matrix.SetIdentity()
+#         binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+#         binding.CreateGeomBindTransformAttr().Set(matrix)
+#         bindings.append(binding)
 
-# if not root:
-#     raise RuntimeError('Skeleton "{skeleton}" has no UsdSkelRoot.'.format(skeleton=skeleton.GetPath()))
-
-# root = root.GetPrim()
-# stage = root.GetStage()
-# bindings = _create_mesh_bindings(_get_expected_mesh_paths(meshes, root.GetPath()))
-# # Note: We add the mesh into an explicit `over` Prim instead of
-# # adding it directly onto `root` as a reference. This is so that we
-# # can have better control over what kind of meshes are loaded. e.g.
-# # In the future, we can switch this part to use a variant set to
-# # load different mesh LODs, for example.
-# #
-# _add_mesh_group_reference(stage, path, root)
-
-# return list(zip(meshes, bindings))
+#     return bindings
