@@ -4,7 +4,7 @@ import carb
 import numpy as np
 import io, os
 import re
-import skeleton
+import skeleton as mhskeleton
 
 
 def add_to_scene(objects):
@@ -12,7 +12,7 @@ def add_to_scene(objects):
     scale = 10
     human = objects[0]
 
-    skel = human.getSkeleton()
+    mhskel = human.getSkeleton()
 
     meshes = [o.mesh for o in objects][0]
 
@@ -23,14 +23,14 @@ def add_to_scene(objects):
     meshes = [m.clone(scale, filterMaskedVerts=True) for m in meshes]
 
     # Scale our skeleton to match our human
-    if skel:
-        skel = skel.scaled(scale)
+    if mhskel:
+        mhskel = mhskel.scaled(scale)
 
     # Apply weights to the meshes (internal makehuman objects)
     # Do we need to do this if we're applying deformation through imported skeletons?
     # Can we sync it back to the human model
     # Generate bone weights for all meshes up front so they can be reused for all
-    if skel:
+    if mhskel:
         rawWeights = human.getVertexWeights(human.getSkeleton())  # Basemesh weights
         for mesh in meshes:
             if mesh.object.proxy:
@@ -51,29 +51,107 @@ def add_to_scene(objects):
 
     # Bones are returned breadth-first (parents-first). This is convenient, as USD
     # requires it
-    bones = skel.getBones()
+    # bones = skel.getBones()
 
     # Get stage from open file
     stage = omni.usd.get_context().get_stage()
 
-    # Get root path.
+    # Get stage root path.
     rootPath = "/"
 
     # Get default prim.
     defaultPrim = stage.GetDefaultPrim()
     if defaultPrim.IsValid():
+        # Set the rootpath under the stage's default prim
         rootPath = defaultPrim.GetPath().pathString
 
-    setup_skeleton(rootPath, stage, skel)
+    # Create the USD skeleton in our stage using the mhskel data
+    skel_data, usdSkel, skelRoot = setup_skeleton(rootPath, stage, mhskel)
+
+    # for mesh in meshes:
+
+    print()
 
 
 def setup_skeleton(rootPath, stage, skeleton):
+    def add_joints_to_skel(joints, skeleton):
+        attribute = skeleton.GetJointsAttr()
+        attribute.Set(joints)
+
+    def get_joint_data(path=None, node=None, skel_data=None, skeleton: mhskeleton.Skeleton = None):
+        """Recursively traverses skeleton (breadth-first) and encapsulates joint data in a convenient object for later reference.
+
+        Parameters
+        ----------
+        path : _type_, optional
+            _description_, by default None
+        node : _type_, optional
+            _description_, by default None
+        skel_data : _type_, optional
+            _description_, by default None
+        skeleton : skeleton.Skeleton, optional
+            _description_, by default None
+
+        Returns
+        -------
+        dict
+            skel_data = {
+                "joint_paths": [],
+                "joint_to_path": {},
+                "rel_transforms": [],
+                "global_transforms": [],
+                "bind_transforms": [],
+            }
+        """
+
+        if skeleton:
+            skel_data = {
+                "joint_paths": [],
+                "joint_to_path": {},
+                "rel_transforms": [],
+                "global_transforms": [],
+                "bind_transforms": [],
+            }
+            get_joint_data("", skeleton.roots[0], skel_data)
+            return skel_data
+        else:
+            s = skel_data
+            name = sanitize(node.name)
+
+            path += name
+            s["joint_paths"].append(path)
+
+            s["joint_to_path"][name] = path
+
+            relxform = node.matRestRelative
+            relxform = relxform.transpose()
+            relative_transform = Gf.Matrix4d(relxform.tolist())
+            s["rel_transforms"].append(relative_transform)
+
+            gxform = node.matRestGlobal
+            gxform = gxform.transpose()
+            global_transform = Gf.Matrix4d(gxform.tolist())
+            s["global_transforms"].append(global_transform)
+
+            bxform = node.getBindMatrix()
+            # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix,
+            # however USD uses row first while mh uses column first, so we use the
+            # transpose/inverse
+            bxform = bxform[1]
+            bind_transform = Gf.Matrix4d(bxform.tolist())
+            # bind_transform = Gf.Matrix4d().SetIdentity()
+            s["bind_transforms"].append(bind_transform)
+
+            for child in node.children:
+                get_joint_data(path + "/", child, skel_data)
+
     skel_data = get_joint_data(skeleton=skeleton)
-    root_node = skel_data["joint_paths"][0]
+    # root_node = skel_data["joint_paths"][0]
     skel_root_path = rootPath + "/human"
+    skeleton_path = skel_root_path + "/Skeleton"
 
     skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
-    usdSkel = UsdSkel.Skeleton.Define(stage, skel_root_path)
+    usdSkel = UsdSkel.Skeleton.Define(stage, skeleton_path)
 
     # add joints to skeleton by path
     add_joints_to_skel(skel_data["joint_paths"], usdSkel)
@@ -84,79 +162,7 @@ def setup_skeleton(rootPath, stage, skeleton):
     # setup rest transforms in joint-local space
     usdSkel.CreateRestTransformsAttr(skel_data["rel_transforms"])
 
-
-def add_joints_to_skel(joints, skeleton):
-
-    attribute = skeleton.GetJointsAttr()
-    attribute.Set(joints)
-
-
-def get_joint_data(path=None, node=None, skel_data=None, skeleton: skeleton.Skeleton = None):
-    """Recursively traverses skeleton (breadth-first) and encapsulates joint data in a convenient object for later reference.
-
-    Parameters
-    ----------
-    path : _type_, optional
-        _description_, by default None
-    node : _type_, optional
-        _description_, by default None
-    skel_data : _type_, optional
-        _description_, by default None
-    skeleton : skeleton.Skeleton, optional
-        _description_, by default None
-
-    Returns
-    -------
-    dict
-         skel_data = {
-             "joint_paths": [],
-             "joint_to_path": {},
-             "rel_transforms": [],
-             "global_transforms": [],
-             "bind_transforms": [],
-         }
-    """
-
-    if skeleton:
-        skel_data = {
-            "joint_paths": [],
-            "joint_to_path": {},
-            "rel_transforms": [],
-            "global_transforms": [],
-            "bind_transforms": [],
-        }
-        get_joint_data("", skeleton.roots[0], skel_data)
-        return skel_data
-    else:
-        s = skel_data
-        name = sanitize(node.name)
-
-        path += name
-        s["joint_paths"].append(path)
-
-        s["joint_to_path"][name] = path
-
-        relxform = node.matRestRelative
-        relxform = relxform.transpose()
-        relative_transform = Gf.Matrix4d(relxform.tolist())
-        s["rel_transforms"].append(relative_transform)
-
-        gxform = node.matRestGlobal
-        gxform = gxform.transpose()
-        global_transform = Gf.Matrix4d(gxform.tolist())
-        s["global_transforms"].append(global_transform)
-
-        bxform = node.getBindMatrix()
-        # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix,
-        # however USD uses row first while mh uses column first, so we use the
-        # transpose/inverse
-        bxform = bxform[1]
-        bind_transform = Gf.Matrix4d(bxform.tolist())
-        # bind_transform = Gf.Matrix4d().SetIdentity()
-        s["bind_transforms"].append(bind_transform)
-
-        for child in node.children:
-            get_joint_data(path + "/", child, skel_data)
+    return skel_data, usdSkel, skelRoot
 
 
 def sanitize(s: str):
