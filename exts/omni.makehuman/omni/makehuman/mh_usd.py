@@ -1,3 +1,4 @@
+from numpy.random.tests import data
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import omni.usd
 import carb
@@ -14,13 +15,13 @@ def add_to_scene(objects):
 
     mhskel = human.getSkeleton()
 
-    meshes = [o.mesh for o in objects][0]
+    mh_meshes = [o.mesh for o in objects][0]
 
-    if not isinstance(meshes, list):
-        meshes = [meshes]
+    if not isinstance(mh_meshes, list):
+        mh_meshes = [mh_meshes]
 
     # Filter out vertices we aren't meant to see and scale up the meshes
-    meshes = [m.clone(scale, filterMaskedVerts=True) for m in meshes]
+    mh_meshes = [m.clone(scale, filterMaskedVerts=True) for m in mh_meshes]
 
     # Scale our skeleton to match our human
     if mhskel:
@@ -32,7 +33,7 @@ def add_to_scene(objects):
     # Generate bone weights for all meshes up front so they can be reused for all
     if mhskel:
         rawWeights = human.getVertexWeights(human.getSkeleton())  # Basemesh weights
-        for mesh in meshes:
+        for mesh in mh_meshes:
             if mesh.object.proxy:
                 # Transfer weights to proxy
                 parentWeights = mesh.object.proxy.getVertexWeights(rawWeights, human.getSkeleton())
@@ -46,7 +47,7 @@ def add_to_scene(objects):
             mesh.vertexWeights = weights
     else:
         # Attach trivial weights to the meshes
-        for mesh in meshes:
+        for mesh in mh_meshes:
             mesh.vertexWeights = None
 
     # Bones are returned breadth-first (parents-first). This is convenient, as USD
@@ -69,11 +70,37 @@ def add_to_scene(objects):
     skel_data, usdSkel, skel_root_path = setup_skeleton(rootPath, stage, mhskel)
 
     # Add the meshes to the USD stage under skelRoot
-    usd_meshes = setup_meshes(meshes, stage, skel_root_path)
+    usd_meshes = setup_meshes(mh_meshes, stage, skel_root_path)
 
     # Create bindings between meshes and the skeleton. Returns a list of bindings
     # the length of the number of meshes
     bindings = setup_bindings(usd_meshes, stage, usdSkel)
+
+    # Pair meshweights from mh_meshes with their corresponding usd_mesh
+    mesh_data = zip(usd_meshes, [m.vertexWeights.data for m in mh_meshes])
+    setup_weights(mesh_data, bindings)
+
+
+def setup_weights(mesh_data, bindings):
+    for mesh, binding in zip(mesh_data, bindings):
+        matrix = Gf.Matrix4d().SetIdentity()
+        # Weights are out-of USD joint order
+        weights = list(mesh)[1]
+        binding.CreateGeomBindTransformAttr().Set(matrix)
+
+        # indices = Vt.IntArray(indices)
+        # weights = Vt.FloatArray(weights)
+
+        # indices_attribute = binding.CreateJointIndicesPrimvar(
+        #     constant=False, elementSize=maximum_influences
+        # )
+        # indices_attribute.Set(indices)
+
+        # weights_attribute = binding.CreateJointWeightsPrimvar(
+        #     constant=False, elementSize=maximum_influences
+        # )
+        # weights_attribute.Set(weights)
+        # print()
 
 
 def setup_bindings(paths, stage, skeleton):
