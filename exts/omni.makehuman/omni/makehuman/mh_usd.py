@@ -66,11 +66,86 @@ def add_to_scene(objects):
         rootPath = defaultPrim.GetPath().pathString
 
     # Create the USD skeleton in our stage using the mhskel data
-    skel_data, usdSkel, skelRoot = setup_skeleton(rootPath, stage, mhskel)
+    skel_data, usdSkel, skel_root_path = setup_skeleton(rootPath, stage, mhskel)
 
-    # for mesh in meshes:
+    # Add the meshes to the USD stage under skelRoot
+    usd_meshes = setup_meshes(meshes, stage, skel_root_path)
 
-    print()
+    # Create bindings between meshes and the skeleton. Returns a list of bindings
+    # the length of the number of meshes
+    bindings = setup_bindings(usd_meshes, stage, usdSkel)
+
+
+def setup_bindings(paths, stage, skeleton):
+    bindings = []
+
+    for mesh in paths:
+        # `usd_path` is referenced under the UsdSkelRoot so we need to add
+        # its name to the path
+        #
+        prim = stage.GetPrimAtPath(mesh)
+        binding = UsdSkel.BindingAPI.Apply(prim)
+        # matrix = Gf.Matrix4d()
+        # matrix.SetIdentity()
+        binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+        # binding.CreateGeomBindTransformAttr().Set(matrix)
+        bindings.append(binding)
+    return bindings
+
+
+def setup_meshes(meshes, stage, rootPath):
+
+    usd_mesh_paths = []
+    for mesh in meshes:
+        nPerFace = mesh.vertsPerFaceForExport
+        newvertindices = []
+        newuvindices = []
+
+        coords = mesh.getCoords()
+        for fn, fv in enumerate(mesh.fvert):
+            if not mesh.face_mask[fn]:
+                continue
+            # only include <nPerFace> verts for each face, and order them consecutively
+            newvertindices += [(fv[n]) for n in range(nPerFace)]
+            fuv = mesh.fuvs[fn]
+            # build an array of (u,v)s for each face
+            newuvindices += [(fuv[n]) for n in range(nPerFace)]
+
+        newvertindices = np.array(newvertindices)
+
+        # Create mesh.
+        name = sanitize(mesh.name)
+        usd_mesh_path = rootPath + "/" + name
+        usd_mesh_paths.append(usd_mesh_path)
+        meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+
+        # Set vertices.
+        meshGeom.CreatePointsAttr(coords)
+        # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
+
+        # Set normals.
+        meshGeom.CreateNormalsAttr(mesh.getNormals())
+        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
+        meshGeom.SetNormalsInterpolation("vertex")
+
+        # Set face vertex count.
+        nface = [mesh.vertsPerFaceForExport] * len(mesh.nfaces)
+        meshGeom.CreateFaceVertexCountsAttr(nface)
+        # meshGeom.CreateFaceVertexCountsAttr([4])
+
+        # Set face vertex indices.
+        meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
+        # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+
+        # # Set uvs.
+        texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
+        texCoords.Set(mesh.getUVs(newuvindices))
+        # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
+
+        # # Subdivision is set to none.
+        meshGeom.CreateSubdivisionSchemeAttr().Set("none")
+
+    return [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
 
 
 def setup_skeleton(rootPath, stage, skeleton):
@@ -162,7 +237,7 @@ def setup_skeleton(rootPath, stage, skeleton):
     # setup rest transforms in joint-local space
     usdSkel.CreateRestTransformsAttr(skel_data["rel_transforms"])
 
-    return skel_data, usdSkel, skelRoot
+    return skel_data, usdSkel, skel_root_path
 
 
 def sanitize(s: str):
@@ -194,68 +269,6 @@ def sanitize(s: str):
 #         usd_skel.CreateBindTransformsAttr(skel_data["bind_transforms"])
 #         usd_skel.CreateRestTransformsAttr(skel_data["rest_transforms"])
 
-# #     usd_mesh_paths = []
-
-#     # import meshes to USD
-#     for mesh in meshes:
-#         nPerFace = mesh.vertsPerFaceForExport
-#         newvertindices = []
-#         newuvindices = []
-
-#         coords = mesh.getCoords()
-#         for fn, fv in enumerate(mesh.fvert):
-#             if not mesh.face_mask[fn]:
-#                 continue
-#             # only include <nPerFace> verts for each face, and order them consecutively
-#             newvertindices += [(fv[n]) for n in range(nPerFace)]
-#             fuv = mesh.fuvs[fn]
-#             # build an array of (u,v)s for each face
-#             newuvindices += [(fuv[n]) for n in range(nPerFace)]
-
-#         newvertindices = np.array(newvertindices)
-
-#         # Create mesh.
-#         name = sanitize(mesh.name)
-#         usd_mesh_path = rootPath + "/" + name
-#         usd_mesh_paths.append(usd_mesh_path)
-#         meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
-
-#         # Set vertices.
-#         meshGeom.CreatePointsAttr(coords)
-#         # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
-
-#         # Set normals.
-#         meshGeom.CreateNormalsAttr(mesh.getNormals())
-#         # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
-#         meshGeom.SetNormalsInterpolation("vertex")
-
-#         # Set face vertex count.
-#         nface = [mesh.vertsPerFaceForExport] * len(mesh.nfaces)
-#         meshGeom.CreateFaceVertexCountsAttr(nface)
-#         # meshGeom.CreateFaceVertexCountsAttr([4])
-
-#         # Set face vertex indices.
-#         meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
-#         # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
-
-#         # # Set uvs.
-#         texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
-#         texCoords.Set(mesh.getUVs(newuvindices))
-#         # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
-
-#         # # Subdivision is set to none.
-#         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
-
-#         # # # # Set position.
-#         # UsdGeom.XformCommonAPI(meshGeom).SetTranslate((0.0, 0.0, 0.0))
-
-#         # # # # Set rotation.
-#         # UsdGeom.XformCommonAPI(meshGeom).SetRotate((0.0, 0.0, 0.0), UsdGeom.XformCommonAPI.RotationOrderXYZ)
-
-#         # # # # Set scale.
-#         # UsdGeom.XformCommonAPI(meshGeom).SetScale((1.0, 1.0, 1.0))
-
-#     sdf_mesh_paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
 
 #     # root = skelRoot.GetPrim()
 #     bindings = _create_mesh_bindings(sdf_mesh_paths, stage, usd_skel.GetPrim(), skel_data)
@@ -309,20 +322,5 @@ def sanitize(s: str):
 
 # #     """
 
-
-# def _create_mesh_bindings(paths, stage, skeleton, data):
-#     bindings = []
-
-#     for mesh in paths:
-#         # `usd_path` is referenced under the UsdSkelRoot so we need to add
-#         # its name to the path
-#         #
-#         prim = stage.GetPrimAtPath(mesh)
-#         binding = UsdSkel.BindingAPI.Apply(prim)
-#         matrix = Gf.Matrix4d()
-#         matrix.SetIdentity()
-#         binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
-#         binding.CreateGeomBindTransformAttr().Set(matrix)
-#         bindings.append(binding)
 
 #     return bindings
