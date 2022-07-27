@@ -77,20 +77,40 @@ def add_to_scene(objects):
     bindings = setup_bindings(usd_meshes, stage, usdSkel)
 
     # Pair meshweights from mh_meshes with their corresponding usd_mesh
-    mesh_data = zip(usd_meshes, [m.vertexWeights.data for m in mh_meshes])
-    setup_weights(mesh_data, bindings)
+    vertex_weights_data = [m.vertexWeights.data for m in mh_meshes]
+    setup_weights(vertex_weights_data, bindings, skel_data)
 
 
-def setup_weights(mesh_data, bindings):
-    for mesh, binding in zip(mesh_data, bindings):
+def setup_weights(weights_data, bindings, skel_data):
+    for weight_data, binding in zip(weights_data, bindings):
         matrix = Gf.Matrix4d().SetIdentity()
-        # Weights are out-of USD joint order
-        weights = list(mesh)[1]
         binding.CreateGeomBindTransformAttr().Set(matrix)
 
-        # indices = Vt.IntArray(indices)
-        # weights = Vt.FloatArray(weights)
+        # Weights are out-of USD joint order, but we can look them up
+        indices = []
+        weights = []
+        # Skip first elem (root), as it doesn't have weight data
+        for joint in skel_data["joint_names"][1:]:
+            try:
+                indices += list(weight_data[joint][0])
+                weights += list(weight_data[joint][1])
+            except:
+                indices.append(0)
+                weights.append(0)
 
+        indices = list(map(int, indices))
+        weights = list(map(float, weights))
+
+        indices = Vt.IntArray(indices)
+        weights = Vt.FloatArray(weights)
+
+        indices_attribute = binding.CreateJointIndicesPrimvar(constant=False, elementSize=7)
+        indices_attribute.Set(indices)
+
+        weights_attribute = binding.CreateJointWeightsPrimvar(constant=False, elementSize=7)
+        weights_attribute.Set(weights)
+        # UsdSkel.NormalizeWeights(weights, len(binding_joints))
+        # UsdSkel.SortInfluences(indices, weights, maximum_influences)
         # indices_attribute = binding.CreateJointIndicesPrimvar(
         #     constant=False, elementSize=maximum_influences
         # )
@@ -100,7 +120,9 @@ def setup_weights(mesh_data, bindings):
         #     constant=False, elementSize=maximum_influences
         # )
         # weights_attribute.Set(weights)
-        # print()
+
+
+# def order_weights()
 
 
 def setup_bindings(paths, stage, skeleton):
@@ -199,7 +221,7 @@ def setup_skeleton(rootPath, stage, skeleton):
         dict
             skel_data = {
                 "joint_paths": [],
-                "joint_to_path": {},
+                "joint_names": [],
                 "rel_transforms": [],
                 "global_transforms": [],
                 "bind_transforms": [],
@@ -209,7 +231,7 @@ def setup_skeleton(rootPath, stage, skeleton):
         if skeleton:
             skel_data = {
                 "joint_paths": [],
-                "joint_to_path": {},
+                "joint_names": [],
                 "rel_transforms": [],
                 "global_transforms": [],
                 "bind_transforms": [],
@@ -218,12 +240,14 @@ def setup_skeleton(rootPath, stage, skeleton):
             return skel_data
         else:
             s = skel_data
-            name = sanitize(node.name)
 
+            # sanitize the name for USD paths
+            name = sanitize(node.name)
             path += name
             s["joint_paths"].append(path)
 
-            s["joint_to_path"][name] = path
+            # store original name for later joint weighting
+            s["joint_names"].append(node.name)
 
             relxform = node.matRestRelative
             relxform = relxform.transpose()
