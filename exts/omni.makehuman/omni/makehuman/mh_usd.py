@@ -76,16 +76,16 @@ def add_to_scene(objects):
     # the length of the number of meshes
     bindings = setup_bindings(usd_mesh_paths, stage, usdSkel)
 
-    setup_weights(usd_mesh_paths, mh_meshes, bindings, skel_data, stage)
+    # Setup weights for corresponding mh_meshes (which hold the data) and bindings
+    # (which link USD_meshes to the skeleton)
+    setup_weights(mh_meshes, bindings, skel_data, stage)
 
 
-def setup_weights(mesh_paths, mh_meshes, bindings, skel_data, stage):
+def setup_weights(mh_meshes, bindings, skel_data, stage):
     # Iterate through corresponding meshes and bindings
-    for path, mh_mesh, binding in zip(mesh_paths, mh_meshes, bindings):
+    for mh_mesh, binding in zip(mh_meshes, bindings):
 
-        mesh_prim = stage.GetPrimAtPath(path)
-        m = UsdGeom.Mesh(mesh_prim)
-        vertices = m.GetPointsAttr().Get()
+        vertices = list(mh_mesh.getCoords().flatten())
 
         indices, weights = calculate_influences(vertices, mh_mesh, skel_data)
 
@@ -135,17 +135,17 @@ def calculate_influences(vertices, mh_mesh, skel_data):
         # Keep track of how many influences act on the vertex
         influences = 0
         # Find out which joints have weights on this vertex
-        for joint, weight_data in all_influence_joints:
+        for joint, weight_data in all_influence_joints.items():
 
             vert_index = vertices.index(vertex)
 
             # if the vertex is weighted by the joint:
             if vert_index in weight_data[0]:
                 # Add the index of the joint from the USD-ordered list
-                indices.append(binding_joints.keys.index(joint))
+                indices.append(binding_joints.index(joint))
                 # Add the weight corresponding to the data index where the
                 # vertex index can be found
-                weights.append(weight_data[1].index(vert_index))
+                weights.append(weight_data[1][list(weight_data[0]).index(vert_index)])
                 influences += 1
         # Pad any extra indices and weights with 0's, see:
         # https://graphics.pixar.com/usd/dev/api/_usd_skel__schemas.html#UsdSkel_BindingAPI
