@@ -15,7 +15,7 @@ def add_to_scene(objects):
 
     mhskel = human.getSkeleton()
 
-    mh_meshes = [o.mesh for o in objects][0]
+    mh_meshes = [o.mesh for o in objects]
 
     if not isinstance(mh_meshes, list):
         mh_meshes = [mh_meshes]
@@ -70,33 +70,24 @@ def add_to_scene(objects):
     skel_data, usdSkel, skel_root_path = setup_skeleton(rootPath, stage, mhskel)
 
     # Add the meshes to the USD stage under skelRoot
-    usd_meshes = setup_meshes(mh_meshes, stage, skel_root_path)
+    usd_mesh_paths = setup_meshes(mh_meshes, stage, skel_root_path)
 
     # Create bindings between meshes and the skeleton. Returns a list of bindings
     # the length of the number of meshes
-    bindings = setup_bindings(usd_meshes, stage, usdSkel)
+    bindings = setup_bindings(usd_mesh_paths, stage, usdSkel)
 
-    # Pair meshweights from mh_meshes with their corresponding usd_mesh
-    vertex_weights_data = [m.vertexWeights.data for m in mh_meshes]
-    setup_weights(vertex_weights_data, bindings, skel_data)
+    setup_weights(usd_mesh_paths, mh_meshes, bindings, skel_data, stage)
 
 
-def setup_weights(weights_data, bindings, skel_data):
-    for weight_data, binding in zip(weights_data, bindings):
-        matrix = Gf.Matrix4d().SetIdentity()
-        binding.CreateGeomBindTransformAttr().Set(matrix)
+def setup_weights(mesh_paths, mh_meshes, bindings, skel_data, stage):
+    # Iterate through corresponding meshes and bindings
+    for path, mh_mesh, binding in zip(mesh_paths, mh_meshes, bindings):
 
-        # Weights are out-of USD joint order, but we can look them up
-        indices = []
-        weights = []
-        # Skip first elem (root), as it doesn't have weight data
-        for joint in skel_data["joint_names"][1:]:
-            try:
-                indices += list(weight_data[joint][0])
-                weights += list(weight_data[joint][1])
-            except:
-                indices.append(0)
-                weights.append(0)
+        mesh_prim = stage.GetPrimAtPath(path)
+        m = UsdGeom.Mesh(mesh_prim)
+        vertices = m.GetPointsAttr().Get()
+
+        indices, weights = calculate_influences(vertices, mh_mesh, skel_data)
 
         indices = list(map(int, indices))
         weights = list(map(float, weights))
@@ -104,13 +95,18 @@ def setup_weights(weights_data, bindings, skel_data):
         indices = Vt.IntArray(indices)
         weights = Vt.FloatArray(weights)
 
-        indices_attribute = binding.CreateJointIndicesPrimvar(constant=False, elementSize=7)
+        elementSize = mh_mesh.vertexWeights._nWeights
+        weight_data = mh_mesh.vertexWeights.data
+
+        UsdSkel.NormalizeWeights(weights, len(weight_data))
+        UsdSkel.SortInfluences(indices, weights, elementSize)
+
+        indices_attribute = binding.CreateJointIndicesPrimvar(constant=False, elementSize=elementSize)
         indices_attribute.Set(indices)
 
-        weights_attribute = binding.CreateJointWeightsPrimvar(constant=False, elementSize=7)
+        weights_attribute = binding.CreateJointWeightsPrimvar(constant=False, elementSize=elementSize)
         weights_attribute.Set(weights)
-        # UsdSkel.NormalizeWeights(weights, len(binding_joints))
-        # UsdSkel.SortInfluences(indices, weights, maximum_influences)
+
         # indices_attribute = binding.CreateJointIndicesPrimvar(
         #     constant=False, elementSize=maximum_influences
         # )
@@ -122,7 +118,45 @@ def setup_weights(weights_data, bindings, skel_data):
         # weights_attribute.Set(weights)
 
 
-# def order_weights()
+def calculate_influences(vertices, mh_mesh, skel_data):
+    max_influences = mh_mesh.vertexWeights._nWeights
+
+    # Named joints corresponding to vertices and weights
+    # ie. {"joint",([indices],[weights])}
+    all_influence_joints = mh_mesh.vertexWeights.data
+
+    # joints in USD order
+    binding_joints = skel_data["joint_names"]
+
+    indices = []
+    weights = []
+
+    for vertex in vertices:
+        # Keep track of how many influences act on the vertex
+        influences = 0
+        # Find out which joints have weights on this vertex
+        for joint, weight_data in all_influence_joints:
+
+            vert_index = vertices.index(vertex)
+
+            # if the vertex is weighted by the joint:
+            if vert_index in weight_data[0]:
+                # Add the index of the joint from the USD-ordered list
+                indices.append(binding_joints.keys.index(joint))
+                # Add the weight corresponding to the data index where the
+                # vertex index can be found
+                weights.append(weight_data[1].index(vert_index))
+                influences += 1
+        # Pad any extra indices and weights with 0's, see:
+        # https://graphics.pixar.com/usd/dev/api/_usd_skel__schemas.html#UsdSkel_BindingAPI
+        # "If a point has fewer influences than are needed for other points, the
+        # unused array elements of that point should be filled with 0, both for joint
+        # indices and for weights."
+        for i in range(max_influences - influences):
+            indices.append(0)
+            weights.append(0)
+
+    return indices, weights
 
 
 def setup_bindings(paths, stage, skeleton):
