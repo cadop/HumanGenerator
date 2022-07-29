@@ -85,9 +85,7 @@ def setup_weights(mh_meshes, bindings, skel_data, stage):
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
 
-        vertices = list(mh_mesh.getCoords().flatten())
-
-        indices, weights = calculate_influences(vertices, mh_mesh, skel_data)
+        indices, weights = calculate_influences(mh_mesh, skel_data)
 
         indices = list(map(int, indices))
         weights = list(map(float, weights))
@@ -118,7 +116,10 @@ def setup_weights(mh_meshes, bindings, skel_data, stage):
         # weights_attribute.Set(weights)
 
 
-def calculate_influences(vertices, mh_mesh, skel_data):
+def calculate_influences(mh_mesh, skel_data):
+
+    vertices = list(mh_mesh.getCoords().flatten())
+
     max_influences = mh_mesh.vertexWeights._nWeights
 
     # Named joints corresponding to vertices and weights
@@ -145,16 +146,18 @@ def calculate_influences(vertices, mh_mesh, skel_data):
                 indices.append(binding_joints.index(joint))
                 # Add the weight corresponding to the data index where the
                 # vertex index can be found
-                weights.append(weight_data[1][list(weight_data[0]).index(vert_index)])
+                vert_index_index = list(weight_data[0]).index(vert_index)
+                weights.append(weight_data[1][vert_index_index])
                 influences += 1
         # Pad any extra indices and weights with 0's, see:
         # https://graphics.pixar.com/usd/dev/api/_usd_skel__schemas.html#UsdSkel_BindingAPI
         # "If a point has fewer influences than are needed for other points, the
         # unused array elements of that point should be filled with 0, both for joint
         # indices and for weights."
-        for i in range(max_influences - influences):
-            indices.append(0)
-            weights.append(0)
+        if influences < max_influences:
+            leftover = max_influences - influences
+            indices += np.zeros(leftover)
+            weights += np.zeros(leftover)
 
     return indices, weights
 
