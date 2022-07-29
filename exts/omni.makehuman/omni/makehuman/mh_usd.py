@@ -78,10 +78,10 @@ def add_to_scene(objects):
 
     # Setup weights for corresponding mh_meshes (which hold the data) and bindings
     # (which link USD_meshes to the skeleton)
-    setup_weights(mh_meshes, bindings, skel_data, stage)
+    setup_weights(mh_meshes, bindings, skel_data)
 
 
-def setup_weights(mh_meshes, bindings, skel_data, stage):
+def setup_weights(mh_meshes, bindings, skel_data):
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
 
@@ -118,7 +118,7 @@ def setup_weights(mh_meshes, bindings, skel_data, stage):
 
 def calculate_influences(mh_mesh, skel_data):
 
-    vertices = list(mh_mesh.getCoords().flatten())
+    vertices = [i for i in range[len(mh_mesh.getCoords())]]
 
     max_influences = mh_mesh.vertexWeights._nWeights
 
