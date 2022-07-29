@@ -224,81 +224,77 @@ def setup_meshes(meshes, stage, rootPath):
 
 
 def setup_skeleton(rootPath, stage, skeleton):
-    def add_joints_to_skel(joints, skeleton):
-        attribute = skeleton.GetJointsAttr()
-        attribute.Set(joints)
 
-    def get_joint_data(path=None, node=None, skel_data=None, skeleton: mhskeleton.Skeleton = None):
-        """Recursively traverses skeleton (depth-first) and encapsulates joint data in a convenient object for later reference.
+    # Traverses skeleton (breadth-first) and encapsulates joint data in a
+    # convenient object for later reference.
 
-        Parameters
-        ----------
-        path : _type_, optional
-            _description_, by default None
-        node : _type_, optional
-            _description_, by default None
-        skel_data : _type_, optional
-            _description_, by default None
-        skeleton : skeleton.Skeleton, optional
-            _description_, by default None
+    skel_data = {
+        "joint_paths": [],
+        "joint_names": [],
+        "rel_transforms": [],
+        "global_transforms": [],
+        "bind_transforms": [],
+    }
 
-        Returns
-        -------
-        dict
-            skel_data = {
-                "joint_paths": [],
-                "joint_names": [],
-                "rel_transforms": [],
-                "global_transforms": [],
-                "bind_transforms": [],
-            }
-        """
+    # Process each node individually
+    def process_node(node, path):
+        s = skel_data
 
-        if skeleton:
-            skel_data = {
-                "joint_paths": [],
-                "joint_names": [],
-                "rel_transforms": [],
-                "global_transforms": [],
-                "bind_transforms": [],
-            }
-            get_joint_data("", skeleton.roots[0], skel_data)
-            return skel_data
-        else:
-            s = skel_data
+        # sanitize the name for USD paths
+        name = sanitize(node.name)
+        path += name
+        s["joint_paths"].append(path)
 
-            # sanitize the name for USD paths
-            name = sanitize(node.name)
-            path += name
-            s["joint_paths"].append(path)
+        # store original name for later joint weighting
+        s["joint_names"].append(node.name)
 
-            # store original name for later joint weighting
-            s["joint_names"].append(node.name)
+        relxform = node.matRestRelative
+        relxform = relxform.transpose()
+        relative_transform = Gf.Matrix4d(relxform.tolist())
+        s["rel_transforms"].append(relative_transform)
 
-            relxform = node.matRestRelative
-            relxform = relxform.transpose()
-            relative_transform = Gf.Matrix4d(relxform.tolist())
-            s["rel_transforms"].append(relative_transform)
+        gxform = node.matRestGlobal
+        gxform = gxform.transpose()
+        global_transform = Gf.Matrix4d(gxform.tolist())
+        s["global_transforms"].append(global_transform)
 
-            gxform = node.matRestGlobal
-            gxform = gxform.transpose()
-            global_transform = Gf.Matrix4d(gxform.tolist())
-            s["global_transforms"].append(global_transform)
+        bxform = node.getBindMatrix()
+        # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix,
+        # however USD uses row first while mh uses column first, so we use the
+        # transpose/inverse
+        bxform = bxform[1]
+        bind_transform = Gf.Matrix4d(bxform.tolist())
+        # bind_transform = Gf.Matrix4d().SetIdentity()
+        s["bind_transforms"].append(bind_transform)
 
-            bxform = node.getBindMatrix()
-            # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix,
-            # however USD uses row first while mh uses column first, so we use the
-            # transpose/inverse
-            bxform = bxform[1]
-            bind_transform = Gf.Matrix4d(bxform.tolist())
-            # bind_transform = Gf.Matrix4d().SetIdentity()
-            s["bind_transforms"].append(bind_transform)
+    visited = []  # List to keep track of visited nodes.
+    queue = []  # Initialize a queue
+    path_queue = []  # Keep track of paths in a parallel queue
 
-            for child in node.children:
-                get_joint_data(path + "/", child, skel_data)
+    # Use the root of the mh skeleton as the root node of our tree
+    node = skeleton.roots[0]
 
-    skel_data = get_joint_data(skeleton=skeleton)
-    # root_node = skel_data["joint_paths"][0]
+    visited.append(node)
+    queue.append(node)
+    name = sanitize(node.name)
+    path_queue.append(name + "/")
+
+    # joints are relative to the root, so we don't prepend a path for the root
+    process_node(node, "")
+
+    while queue:
+        v = queue.pop(0)
+        path = path_queue.pop(0)
+
+        for neighbor in v.children:
+            if neighbor not in visited:
+                visited.append(neighbor)
+                queue.append(neighbor)
+                name = sanitize(neighbor.name)
+                path_queue.append(path + name + "/")
+
+                process_node(neighbor, path)
+
     skel_root_path = rootPath + "/human"
     skeleton_path = skel_root_path + "/Skeleton"
 
@@ -306,7 +302,9 @@ def setup_skeleton(rootPath, stage, skeleton):
     usdSkel = UsdSkel.Skeleton.Define(stage, skeleton_path)
 
     # add joints to skeleton by path
-    add_joints_to_skel(skel_data["joint_paths"], usdSkel)
+    attribute = usdSkel.GetJointsAttr()
+    # exclude root
+    attribute.Set(skel_data["joint_paths"])
 
     # Add bind transforms to skeleton
     usdSkel.CreateBindTransformsAttr(skel_data["bind_transforms"])
@@ -322,82 +320,3 @@ def sanitize(s: str):
     for c in illegal:
         s = s.replace(c, "_")
     return s
-
-    # usd_skel = None
-    # Import skeleton to USD
-
-
-#     if skel:
-#         skel_root_path = rootPath + "/human"
-#         skel_prim_path = skel_root_path + "/skeleton"
-
-#         # Put meshes in our skeleton root, if we have one
-#         rootPath = skel_root_path
-
-#         skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
-#         usd_skel = UsdSkel.Skeleton.Define(stage, skel_prim_path)
-
-
-#         add_joints("", skel.roots[0], skel_data)
-#         # add_joints(stage, skel_prim_path + "/", skel.roots[0], skel_data)
-
-#         usd_skel.CreateJointsAttr(skel_data["joint_paths"])
-#         usd_skel.CreateJointNamesAttr([key for key in skel_data["joint_to_path"]])
-#         usd_skel.CreateBindTransformsAttr(skel_data["bind_transforms"])
-#         usd_skel.CreateRestTransformsAttr(skel_data["rest_transforms"])
-
-
-#     # root = skelRoot.GetPrim()
-#     bindings = _create_mesh_bindings(sdf_mesh_paths, stage, usd_skel.GetPrim(), skel_data)
-
-#     mesh = meshes[0]
-#     binding = bindings[0]
-
-#     maximum_influences = 3
-#     indices = [i for i in range(maximum_influences)]
-#     weights = [1.0 / maximum_influences] * maximum_influences
-#     # weights = [1] * len(indices)
-
-#     indices = Vt.IntArray(indices)
-#     weights = Vt.FloatArray(weights)
-
-#     # Reference: https://graphics.pixar.com/usd/docs/api/_usd_skel__schemas.html#UsdSkel_BindingAPI_StoringInfluences
-#     # Keep weights sorted and normalized for best performance
-#     #
-#     # UsdSkel.NormalizeWeights(weights, 1)
-#     # UsdSkel.SortInfluences(indices, weights, maximum_influences)
-
-#     indices_attribute = binding.CreateJointIndicesPrimvar(constant=False, elementSize=maximum_influences)
-#     indices_attribute.Set(indices)
-
-#     weights_attribute = binding.CreateJointWeightsPrimvar(constant=False, elementSize=maximum_influences)
-#     weights_attribute.Set(weights)
-#     print()
-
-
-# # Modified from:
-# # https://github.com/ColinKennedy/USD-Cookbook/tree/master/tools/export_usdskel_from_scratch
-# # def _setup_meshes(meshes, skeleton):
-# #     """Export `meshes` and then bind their USD Prims to a skeleton.
-
-# #     Args:
-# #         meshes (iter[str]):
-# #             The paths to each Maya mesh that must be written to-disk.
-# #             e.g. ["|some|pSphere1|pSphereShape1"].
-# #         skeleton (`pxr.UsdSkel.Skeleton`):
-# #             The USD Skeleton that the exported meshes will be paired with.
-
-# #     Raises:
-# #         RuntimeError: If `skeleton` has no ancestor UsdSkelRoot Prim.
-
-# #     Returns:
-# #         list[tuple[str, `pxr.UsdSkel.BindingAPI`]]:
-# #             The Maya mesh which represents some USD mesh and the binding
-# #             schema that is used to bind that mesh to the skeleton. We
-# #             return these two values as pairs so that they don't have any
-# #             chance of getting mixed up when other functions use them.
-
-# #     """
-
-
-#     return bindings
