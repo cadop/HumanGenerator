@@ -108,9 +108,6 @@ def setup_weights(mh_meshes, bindings, skel_data):
 
 def calculate_influences(mh_mesh, skel_data):
 
-    # Vertex indices
-    vertices = [i for i in range(len(mh_mesh.getCoords()))]
-
     max_influences = mh_mesh.vertexWeights._nWeights
 
     # Named joints corresponding to vertices and weights
@@ -122,20 +119,20 @@ def calculate_influences(mh_mesh, skel_data):
 
     indices = []
     weights = []
-
-    for vertex in vertices:
+    # TODO: replace with np.where or np.take or myarray[weight_data == myarray]
+    for vert_idx, vertex in enumerate(mh_mesh.getCoords()):
         # Keep track of how many influences act on the vertex
         influences = 0
         # Find out which joints have weights on this vertex
         for joint, weight_data in all_influence_joints.items():
-
+            # weight_data is a list of [vertex index, weight] for the active joint
             # if the vertex is weighted by the joint:
-            if vertex in weight_data[0]:
+            if vert_idx in weight_data[0]:
                 # Add the index of the joint from the USD-ordered list
                 indices.append(binding_joints.index(joint))
                 # Add the weight corresponding to the data index where the
                 # vertex index can be found
-                vert_index_index = list(weight_data[0]).index(vertex)
+                vert_index_index = list(weight_data[0]).index(vert_idx)
                 weights.append(weight_data[1][vert_index_index])
                 influences += 1
         # Pad any extra indices and weights with 0's, see:
