@@ -118,7 +118,8 @@ def setup_weights(mh_meshes, bindings, skel_data):
 
 def calculate_influences(mh_mesh, skel_data):
 
-    vertices = [i for i in range[len(mh_mesh.getCoords())]]
+    # Vertex indices
+    vertices = [i for i in range(len(mh_mesh.getCoords()))]
 
     max_influences = mh_mesh.vertexWeights._nWeights
 
