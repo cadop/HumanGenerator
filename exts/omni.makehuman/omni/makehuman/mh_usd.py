@@ -105,16 +105,6 @@ def setup_weights(mh_meshes, bindings, skel_data):
         weights_attribute = binding.CreateJointWeightsPrimvar(constant=False, elementSize=elementSize)
         weights_attribute.Set(weights)
 
-        # indices_attribute = binding.CreateJointIndicesPrimvar(
-        #     constant=False, elementSize=maximum_influences
-        # )
-        # indices_attribute.Set(indices)
-
-        # weights_attribute = binding.CreateJointWeightsPrimvar(
-        #     constant=False, elementSize=maximum_influences
-        # )
-        # weights_attribute.Set(weights)
-
 
 def calculate_influences(mh_mesh, skel_data):
 
@@ -239,7 +229,7 @@ def setup_skeleton(rootPath, stage, skeleton):
         attribute.Set(joints)
 
     def get_joint_data(path=None, node=None, skel_data=None, skeleton: mhskeleton.Skeleton = None):
-        """Recursively traverses skeleton (breadth-first) and encapsulates joint data in a convenient object for later reference.
+        """Recursively traverses skeleton (depth-first) and encapsulates joint data in a convenient object for later reference.
 
         Parameters
         ----------
