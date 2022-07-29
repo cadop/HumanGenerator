@@ -93,8 +93,8 @@ def setup_weights(mh_meshes, bindings, skel_data):
         indices = Vt.IntArray(indices)
         weights = Vt.FloatArray(weights)
 
-        elementSize = mh_mesh.vertexWeights._nWeights
-        weight_data = mh_mesh.vertexWeights.data
+        elementSize = int(mh_mesh.vertexWeights._nWeights)
+        weight_data = list(mh_mesh.vertexWeights.data)
 
         UsdSkel.NormalizeWeights(weights, len(weight_data))
         UsdSkel.SortInfluences(indices, weights, elementSize)
