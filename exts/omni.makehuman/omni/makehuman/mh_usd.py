@@ -94,9 +94,9 @@ def setup_weights(mh_meshes, bindings, skel_data):
         weights = Vt.FloatArray(weights)
 
         elementSize = int(mh_mesh.vertexWeights._nWeights)
-        weight_data = list(mh_mesh.vertexWeights.data)
+        # weight_data = list(mh_mesh.vertexWeights.data)
 
-        UsdSkel.NormalizeWeights(weights, len(weight_data))
+        UsdSkel.NormalizeWeights(weights, elementSize)
         UsdSkel.SortInfluences(indices, weights, elementSize)
 
         indices_attribute = binding.CreateJointIndicesPrimvar(constant=False, elementSize=elementSize)
