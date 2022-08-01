@@ -169,20 +169,7 @@ def setup_meshes(meshes, stage, rootPath):
 
     usd_mesh_paths = []
 
-    # all_vert_indices = set()
-
     for mesh in meshes:
-        #     nPerFace = mesh.vertsPerFaceForExport
-        #     coords = mesh.getCoords()
-        #     for fn, fv in enumerate(mesh.fvert):
-        #         if not mesh.face_mask[fn]:
-        #             continue
-        #         # only include <nPerFace> verts for each face, and order them consecutively
-        #         all_vert_indices.update([(fv[n]) for n in range(nPerFace)])
-
-        #     sorted_indices = sorted(all_vert_indices)
-
-        print(mesh.getFaceCount())
 
         nPerFace = mesh.vertsPerFaceForExport
         newvertindices = []
@@ -232,6 +219,21 @@ def setup_meshes(meshes, stage, rootPath):
         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
     return [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
+
+
+def inspect_meshes(meshes):
+    # For inspecting mesh topology while debugging broken meshes
+    for mesh in meshes:
+        all_vert_indices = set()
+        nPerFace = mesh.vertsPerFaceForExport
+        coords = mesh.getCoords()
+        for fn, fv in enumerate(mesh.fvert):
+            if not mesh.face_mask[fn]:
+                continue
+            # only include <nPerFace> verts for each face, and order them consecutively
+            all_vert_indices.update([(fv[n]) for n in range(nPerFace)])
+
+        sorted_indices = sorted(all_vert_indices)
 
 
 def setup_skeleton(rootPath, stage, skeleton):
