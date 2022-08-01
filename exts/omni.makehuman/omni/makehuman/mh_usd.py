@@ -152,15 +152,9 @@ def setup_bindings(paths, stage, skeleton):
     bindings = []
 
     for mesh in paths:
-        # `usd_path` is referenced under the UsdSkelRoot so we need to add
-        # its name to the path
-        #
         prim = stage.GetPrimAtPath(mesh)
         binding = UsdSkel.BindingAPI.Apply(prim)
-        # matrix = Gf.Matrix4d()
-        # matrix.SetIdentity()
         binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
-        # binding.CreateGeomBindTransformAttr().Set(matrix)
         bindings.append(binding)
     return bindings
 
@@ -168,7 +162,22 @@ def setup_bindings(paths, stage, skeleton):
 def setup_meshes(meshes, stage, rootPath):
 
     usd_mesh_paths = []
+
+    # all_vert_indices = set()
+
     for mesh in meshes:
+        #     nPerFace = mesh.vertsPerFaceForExport
+        #     coords = mesh.getCoords()
+        #     for fn, fv in enumerate(mesh.fvert):
+        #         if not mesh.face_mask[fn]:
+        #             continue
+        #         # only include <nPerFace> verts for each face, and order them consecutively
+        #         all_vert_indices.update([(fv[n]) for n in range(nPerFace)])
+
+        #     sorted_indices = sorted(all_vert_indices)
+
+        print(mesh.getFaceCount())
+
         nPerFace = mesh.vertsPerFaceForExport
         newvertindices = []
         newuvindices = []
@@ -195,19 +204,18 @@ def setup_meshes(meshes, stage, rootPath):
         meshGeom.CreatePointsAttr(coords)
         # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
 
-        # Set normals.
-        meshGeom.CreateNormalsAttr(mesh.getNormals())
-        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
-        meshGeom.SetNormalsInterpolation("vertex")
-
         # Set face vertex count.
         nface = [mesh.vertsPerFaceForExport] * len(mesh.nfaces)
         meshGeom.CreateFaceVertexCountsAttr(nface)
-        # meshGeom.CreateFaceVertexCountsAttr([4])
 
         # Set face vertex indices.
         meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
         # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+
+        # Set normals.
+        meshGeom.CreateNormalsAttr(mesh.getNormals())
+        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
+        meshGeom.SetNormalsInterpolation("vertex")
 
         # # Set uvs.
         texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
