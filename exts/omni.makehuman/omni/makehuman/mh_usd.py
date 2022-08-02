@@ -150,6 +150,11 @@ def calculate_influences(mh_mesh, skel_data):
             # Add to the influence count for this vertex
             influence_counts[vert_index] += 1
 
+    # Check for any unweighted verts
+    # for i, d in enumerate(indices):
+    #     if np.all((d == 0)):
+    #         print(i)
+
     indices = indices.flatten()
     weights = weights.flatten()
 
