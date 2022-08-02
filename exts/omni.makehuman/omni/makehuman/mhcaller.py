@@ -49,6 +49,10 @@ class MHCaller:
             "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\rigs\\cmu_mb.mhskel",
             self.human.meshData,
         )
+
+        # Build joint weights on our chosen skeleton, derived from the base skeleton
+        cmu_skel.autoBuildWeightReferences(base_skel)
+
         self.human.setBaseSkeleton(base_skel)
         # Actually add the skeleton
         self.human.setSkeleton(cmu_skel)
