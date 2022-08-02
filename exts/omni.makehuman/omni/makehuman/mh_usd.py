@@ -98,6 +98,9 @@ def setup_weights(mh_meshes, bindings, skel_data):
         elementSize = int(mh_mesh.vertexWeights._nWeights)
         # weight_data = list(mh_mesh.vertexWeights.data)
 
+        # We might not need to normalize. Makehuman weights are automatically
+        # normalized when loaded, see:
+        # http://www.makehumancommunity.org/wiki/Technical_notes_on_MakeHuman
         UsdSkel.NormalizeWeights(weights, elementSize)
         UsdSkel.SortInfluences(indices, weights, elementSize)
 
