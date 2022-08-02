@@ -38,9 +38,9 @@ class MHCaller:
         # set the makehuman instance human so that features (eg skeletons) can access it globally
         self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
-        # self.add_proxy(
-        #     "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\low-poly\\low-poly.mhpxy"
-        # )
+        self.add_proxy(
+            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\low-poly\\low-poly.mhpxy"
+        )
         base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
