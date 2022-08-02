@@ -66,6 +66,8 @@ def add_to_scene(objects):
         # Set the rootpath under the stage's default prim
         rootPath = defaultPrim.GetPath().pathString
 
+    # inspect_meshes(mh_meshes)
+
     # Create the USD skeleton in our stage using the mhskel data
     skel_data, usdSkel, skel_root_path = setup_skeleton(rootPath, stage, mhskel)
 
@@ -198,7 +200,7 @@ def setup_meshes(meshes, stage, rootPath):
         # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
 
         # Set face vertex count.
-        nface = [mesh.vertsPerFaceForExport] * len(mesh.nfaces)
+        nface = [nPerFace] * int(len(newvertindices) / nPerFace)
         meshGeom.CreateFaceVertexCountsAttr(nface)
 
         # Set face vertex indices.
@@ -210,8 +212,8 @@ def setup_meshes(meshes, stage, rootPath):
         # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
         meshGeom.SetNormalsInterpolation("vertex")
 
-        # # Set uvs.
-        texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
+        # Set uvs.
+        texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
         texCoords.Set(mesh.getUVs(newuvindices))
         # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
 
@@ -234,6 +236,9 @@ def inspect_meshes(meshes):
             all_vert_indices.update([(fv[n]) for n in range(nPerFace)])
 
         sorted_indices = sorted(all_vert_indices)
+        rng = range(len(coords))
+        dif = all_vert_indices.symmetric_difference(rng)
+        print("Difference: {}".format(dif))
 
 
 def setup_skeleton(rootPath, stage, skeleton):
