@@ -242,7 +242,7 @@ def inspect_meshes(meshes):
 
         sorted_indices = sorted(all_vert_indices)
         rng = range(len(coords))
-        dif = all_vert_indices.symmetric_difference(rng)
+        dif = sorted_indices.symmetric_difference(rng)
         print("Difference: {}".format(dif))
 
 
