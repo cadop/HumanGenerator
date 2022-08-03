@@ -76,17 +76,16 @@ def add_to_scene(objects):
         # Set the rootpath under the stage's default prim
         rootPath = defaultPrim.GetPath().pathString
 
-        # inspect_meshes(mh_meshes)
-
-        # Create the USD skeleton in our stage using the mhskel data
-        (
-            usdSkel,
-            skel_root_path,
-            joint_names,
-        ) = setup_skeleton(rootPath, stage, mhskel)
+    if mhskel:
+    # Create the USD skeleton in our stage using the mhskel data
+    (
+        usdSkel,
+        rootPath,
+        joint_names,
+    ) = setup_skeleton(rootPath, stage, mhskel)
 
     # Add the meshes to the USD stage under skelRoot
-    usd_mesh_paths = setup_meshes(mh_meshes, stage, skel_root_path)
+    usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
 
     # Create bindings between meshes and the skeleton. Returns a list of
     # bindings the length of the number of meshes
@@ -108,7 +107,8 @@ def setup_weights(mh_meshes, bindings, joint_names):
     bindings : list of `UsdSkel.BindingAPI`
         USD bindings between meshes and skeleton
     joint_names : list of str
-        Unique, plaintext names of all joints in the skeleton
+        Unique, plaintext names of all joints in the skeleton in USD
+        (breadth-first) order.
     """
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
@@ -138,6 +138,24 @@ def setup_weights(mh_meshes, bindings, joint_names):
 
 
 def calculate_influences(mh_mesh, joint_names):
+    """Build arrays of joint indices and corresponding weights for each vertex.
+    Joints are in USD (breadth-first) order.
+
+    Parameters
+    ----------
+    mh_mesh : module3d.Object3D
+        Makehuman-format mesh. Contains weight and vertex data.
+    joint_names : list of: str
+        Unique, plaintext names of all joints in the skeleton in USD
+        (breadth-first) order.
+
+    Returns
+    -------
+    indices : list of int
+        Flat list of joint indices for each vertex
+    weights : list of float
+        Flat list of weights corresponding to joint indices
+    """
     max_influences = mh_mesh.vertexWeights._nWeights
 
     # Named joints corresponding to vertices and weights ie.
@@ -200,6 +218,22 @@ def setup_bindings(paths, stage, skeleton):
 
 
 def setup_meshes(meshes, stage, rootPath):
+    """Import mesh data and build mesh prims in the USD stage
+
+    Parameters
+    ----------
+    meshes : list of: `module3d.Object3D`
+        Makehuman meshes
+    stage : _type_
+        _description_
+    rootPath : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
 
     usd_mesh_paths = []
 
