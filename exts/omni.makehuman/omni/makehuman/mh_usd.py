@@ -76,10 +76,14 @@ def add_to_scene(objects):
         # Set the rootpath under the stage's default prim
         rootPath = defaultPrim.GetPath().pathString
 
-    # inspect_meshes(mh_meshes)
+        # inspect_meshes(mh_meshes)
 
-    # Create the USD skeleton in our stage using the mhskel data
-    skel_data, usdSkel, skel_root_path = setup_skeleton(rootPath, stage, mhskel)
+        # Create the USD skeleton in our stage using the mhskel data
+        (
+            usdSkel,
+            skel_root_path,
+            joint_names,
+        ) = setup_skeleton(rootPath, stage, mhskel)
 
     # Add the meshes to the USD stage under skelRoot
     usd_mesh_paths = setup_meshes(mh_meshes, stage, skel_root_path)
@@ -90,14 +94,26 @@ def add_to_scene(objects):
 
     # Setup weights for corresponding mh_meshes (which hold the data) and
     # bindings (which link USD_meshes to the skeleton)
-    setup_weights(mh_meshes, bindings, skel_data)
+    setup_weights(mh_meshes, bindings, joint_names)
 
 
-def setup_weights(mh_meshes, bindings, skel_data):
+def setup_weights(mh_meshes, bindings, joint_names):
+    """Apply weights to USD meshes using data from makehuman. USD meshes,
+    bindings and skeleton must already be in the active scene
+
+    Parameters
+    ----------
+    mh_meshes : list of: `module3d.Object3D`
+        Makehuman meshes which store weight data
+    bindings : list of `UsdSkel.BindingAPI`
+        USD bindings between meshes and skeleton
+    joint_names : list of str
+        Unique, plaintext names of all joints in the skeleton
+    """
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
 
-        indices, weights = calculate_influences(mh_mesh, skel_data)
+        indices, weights = calculate_influences(mh_mesh, joint_names)
 
         indices = list(map(int, indices))
         weights = list(map(float, weights))
@@ -121,7 +137,7 @@ def setup_weights(mh_meshes, bindings, skel_data):
         weights_attribute.Set(weights)
 
 
-def calculate_influences(mh_mesh, skel_data):
+def calculate_influences(mh_mesh, joint_names):
     max_influences = mh_mesh.vertexWeights._nWeights
 
     # Named joints corresponding to vertices and weights ie.
@@ -131,7 +147,7 @@ def calculate_influences(mh_mesh, skel_data):
     num_verts = mh_mesh.getVertexCount(excludeMaskedVerts=True)
 
     # all skeleton joints in USD order
-    binding_joints = skel_data["joint_names"]
+    binding_joints = joint_names
 
     # Corresponding arrays of joint indices and weights of length num_verts.
     # Allots the maximum number of weights for every vertex, and pads any
@@ -263,38 +279,33 @@ def inspect_meshes(meshes):
 
 def setup_skeleton(rootPath, stage, skeleton):
 
-    # Traverses skeleton (breadth-first) and encapsulates joint data in a
-    # convenient object for later reference.
-
-    skel_data = {
-        "joint_paths": [],
-        "joint_names": [],
-        "rel_transforms": [],
-        "global_transforms": [],
-        "bind_transforms": [],
-    }
+    # Traverses skeleton (breadth-first) and stores joint data
+    joint_paths = []
+    joint_names = []
+    rel_transforms = []
+    global_transforms = []
+    bind_transforms = []
 
     # Process each node individually
     def process_node(node, path):
-        s = skel_data
 
         # sanitize the name for USD paths
         name = sanitize(node.name)
         path += name
-        s["joint_paths"].append(path)
+        joint_paths.append(path)
 
         # store original name for later joint weighting
-        s["joint_names"].append(node.name)
+        joint_names.append(node.name)
 
         relxform = node.matRestRelative
         relxform = relxform.transpose()
         relative_transform = Gf.Matrix4d(relxform.tolist())
-        s["rel_transforms"].append(relative_transform)
+        rel_transforms.append(relative_transform)
 
         gxform = node.matRestGlobal
         gxform = gxform.transpose()
         global_transform = Gf.Matrix4d(gxform.tolist())
-        s["global_transforms"].append(global_transform)
+        global_transforms.append(global_transform)
 
         bxform = node.getBindMatrix()
         # getBindMatrix returns bindmat and bindinv - we want the uninverted
@@ -303,7 +314,7 @@ def setup_skeleton(rootPath, stage, skeleton):
         bxform = bxform[1]
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity()
-        s["bind_transforms"].append(bind_transform)
+        bind_transforms.append(bind_transform)
 
     visited = []  # List to keep track of visited nodes.
     queue = []  # Initialize a queue
@@ -342,15 +353,15 @@ def setup_skeleton(rootPath, stage, skeleton):
     # add joints to skeleton by path
     attribute = usdSkel.GetJointsAttr()
     # exclude root
-    attribute.Set(skel_data["joint_paths"])
+    attribute.Set(joint_paths)
 
     # Add bind transforms to skeleton
-    usdSkel.CreateBindTransformsAttr(skel_data["bind_transforms"])
+    usdSkel.CreateBindTransformsAttr(bind_transforms)
 
     # setup rest transforms in joint-local space
-    usdSkel.CreateRestTransformsAttr(skel_data["rel_transforms"])
+    usdSkel.CreateRestTransformsAttr(rel_transforms)
 
-    return skel_data, usdSkel, skel_root_path
+    return usdSkel, skel_root_path, joint_names
 
 
 def sanitize(s: str):
