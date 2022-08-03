@@ -29,13 +29,12 @@ class MHCaller:
             self.G.app = MHApplication()
         except:
             return
-        # except Exception as e:
-        #     warnings.Warning("MH APP EXISTS")
-        #     return
+        # except Exception as e: warnings.Warning("MH APP EXISTS") return
 
     def init_human(self):
         self.human = human.Human(files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
-        # set the makehuman instance human so that features (eg skeletons) can access it globally
+        # set the makehuman instance human so that features (eg skeletons) can
+        # access it globally
         self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         self.add_proxy(
@@ -50,7 +49,8 @@ class MHCaller:
             self.human.meshData,
         )
 
-        # Build joint weights on our chosen skeleton, derived from the base skeleton
+        # Build joint weights on our chosen skeleton, derived from the base
+        # skeleton
         cmu_skel.autoBuildWeightReferences(base_skel)
 
         self.human.setBaseSkeleton(base_skel)
@@ -64,9 +64,7 @@ class MHCaller:
         self.human.setAgeYears(age)
         # exportObj(f"D:/human_{age}.obj",self.human)
 
-        # G.app.loadHuman()
-        # G.app.loadScene()
-        # G.app.loadMainGui()
+        # G.app.loadHuman() G.app.loadScene() G.app.loadMainGui()
         # G.app.loadPlugin("mhapi","C:\\Users\\jhg29\\Documents\\GitHub\\mh\\src\\makehuman\\plugins\\1_mhapi\\__init__.py")
         # G.app.mhapi.exports.exportAsOBJ("D:/human.obj")
 
@@ -105,18 +103,16 @@ class MHCaller:
         self.human.setEyesProxy(pxy)
         vertsMask = np.ones(self.human.meshData.getVertexCount(), dtype=bool)
         proxyVertMask = proxy.transferVertexMaskToProxy(vertsMask, pxy)
-        # Apply accumulated mask from previous clothes layers on this clothing piece
+        # Apply accumulated mask from previous clothes layers on this clothing
+        # piece
         obj.changeVertexMask(proxyVertMask)
-        # if pxy.deleteVerts is not None and len(pxy.deleteVerts > 0):
-        #     # carb.log_info(
-        #     #     (
-        #     #         "Loaded %s deleted verts (%s faces) from %s proxy.",
-        #     #         np.count_nonzero(pxy.deleteVerts),
-        #     #         len(self.human.meshData.getFacesForVertices(np.argwhere(pxy.deleteVerts)[..., 0])),
-        #     #         pxy.name,
-        #     #     )
-        #     # )
-        # Modify accumulated (basemesh) verts mask
+        # if pxy.deleteVerts is not None and len(pxy.deleteVerts > 0): #
+        #     carb.log_info( #     ( #         "Loaded %s deleted verts (%s
+        #     faces) from %s proxy.", #
+        #     np.count_nonzero(pxy.deleteVerts), #
+        #     len(self.human.meshData.getFacesForVertices(np.argwhere(pxy.deleteVerts)[...,
+        #     0])), #         pxy.name, #     ) # ) Modify accumulated
+        #     (basemesh) verts mask
         verts = np.argwhere(pxy.deleteVerts)[..., 0]
         vertsMask[verts] = False
         self.human.changeVertexMask(vertsMask)

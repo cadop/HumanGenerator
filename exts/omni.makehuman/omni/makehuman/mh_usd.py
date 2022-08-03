@@ -9,6 +9,17 @@ import skeleton as mhskeleton
 
 
 def add_to_scene(objects):
+    """Import a list of Makehuman objects to the current USD stage
+
+    Parameters
+    ----------
+    objects : guicommon.Object
+        Any object that encapsulates a module3d.Object3D mesh. This includes
+        makehuman humans as well as proxies (clothes, hair, etc). In the case of
+        a human, the skeleton is included and used to apply mesh weights. As
+        meshweights on proxies reference the human meshweights, the human must
+        either already be in the scene or be the first item in the list
+    """
 
     scale = 10
     human = objects[0]
@@ -27,10 +38,10 @@ def add_to_scene(objects):
     if mhskel:
         mhskel = mhskel.scaled(scale)
 
-    # Apply weights to the meshes (internal makehuman objects)
-    # Do we need to do this if we're applying deformation through imported skeletons?
-    # Can we sync it back to the human model
-    # Generate bone weights for all meshes up front so they can be reused for all
+    # Apply weights to the meshes (internal makehuman objects) Do we need to do
+    # this if we're applying deformation through imported skeletons? Can we sync
+    # it back to the human model Generate bone weights for all meshes up front
+    # so they can be reused for all
     if mhskel:
         rawWeights = human.getVertexWeights(human.getSkeleton())  # Basemesh weights
         for mesh in mh_meshes:
@@ -50,9 +61,8 @@ def add_to_scene(objects):
         for mesh in mh_meshes:
             mesh.vertexWeights = None
 
-    # Bones are returned breadth-first (parents-first). This is convenient, as USD
-    # requires it
-    # bones = skel.getBones()
+    # Bones are returned breadth-first (parents-first). This is convenient, as
+    # USD requires it bones = skel.getBones()
 
     # Get stage from open file
     stage = omni.usd.get_context().get_stage()
@@ -74,12 +84,12 @@ def add_to_scene(objects):
     # Add the meshes to the USD stage under skelRoot
     usd_mesh_paths = setup_meshes(mh_meshes, stage, skel_root_path)
 
-    # Create bindings between meshes and the skeleton. Returns a list of bindings
-    # the length of the number of meshes
+    # Create bindings between meshes and the skeleton. Returns a list of
+    # bindings the length of the number of meshes
     bindings = setup_bindings(usd_mesh_paths, stage, usdSkel)
 
-    # Setup weights for corresponding mh_meshes (which hold the data) and bindings
-    # (which link USD_meshes to the skeleton)
+    # Setup weights for corresponding mh_meshes (which hold the data) and
+    # bindings (which link USD_meshes to the skeleton)
     setup_weights(mh_meshes, bindings, skel_data)
 
 
@@ -114,8 +124,8 @@ def setup_weights(mh_meshes, bindings, skel_data):
 def calculate_influences(mh_mesh, skel_data):
     max_influences = mh_mesh.vertexWeights._nWeights
 
-    # Named joints corresponding to vertices and weights
-    # ie. {"joint",([indices],[weights])}
+    # Named joints corresponding to vertices and weights ie.
+    # {"joint",([indices],[weights])}
     influence_joints = mh_mesh.vertexWeights.data
 
     num_verts = mh_mesh.getVertexCount(excludeMaskedVerts=True)
@@ -123,13 +133,13 @@ def calculate_influences(mh_mesh, skel_data):
     # all skeleton joints in USD order
     binding_joints = skel_data["joint_names"]
 
-    # Corresponding arrays of joint indices and weights of length num_verts. Allots the
-    # maximum number of weights for every vertex, and pads any remaining weights with
-    # 0's, per USD spec, see:
+    # Corresponding arrays of joint indices and weights of length num_verts.
+    # Allots the maximum number of weights for every vertex, and pads any
+    # remaining weights with 0's, per USD spec, see:
     # https://graphics.pixar.com/usd/dev/api/_usd_skel__schemas.html#UsdSkel_BindingAPI
     # "If a point has fewer influences than are needed for other points, the
-    # unused array elements of that point should be filled with 0, both for joint
-    # indices and for weights."
+    # unused array elements of that point should be filled with 0, both for
+    # joint indices and for weights."
 
     indices = np.zeros((num_verts, max_influences))
     weights = np.zeros((num_verts, max_influences))
@@ -153,10 +163,8 @@ def calculate_influences(mh_mesh, skel_data):
             # Add to the influence count for this vertex
             influence_counts[vert_index] += 1
 
-    # Check for any unweighted verts
-    # for i, d in enumerate(indices):
-    #     if np.all((d == 0)):
-    #         print(i)
+    # Check for any unweighted verts for i, d in enumerate(indices): if
+    # np.all((d == 0)): print(i)
 
     indices = indices.flatten()
     weights = weights.flatten()
@@ -189,7 +197,8 @@ def setup_meshes(meshes, stage, rootPath):
         for fn, fv in enumerate(mesh.fvert):
             if not mesh.face_mask[fn]:
                 continue
-            # only include <nPerFace> verts for each face, and order them consecutively
+            # only include <nPerFace> verts for each face, and order them
+            # consecutively
             newvertindices += [(fv[n]) for n in range(nPerFace)]
             fuv = mesh.fuvs[fn]
             # build an array of (u,v)s for each face
@@ -205,7 +214,8 @@ def setup_meshes(meshes, stage, rootPath):
 
         # Set vertices.
         meshGeom.CreatePointsAttr(coords)
-        # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10), (10, 0, -10)])
+        # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10),
+        # (10, 0, -10)])
 
         # Set face vertex count.
         nface = [nPerFace] * int(len(newvertindices) / nPerFace)
@@ -217,7 +227,8 @@ def setup_meshes(meshes, stage, rootPath):
 
         # Set normals.
         meshGeom.CreateNormalsAttr(mesh.getNormals())
-        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)])
+        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1,
+        # 0)])
         meshGeom.SetNormalsInterpolation("vertex")
 
         # Set uvs.
@@ -240,7 +251,8 @@ def inspect_meshes(meshes):
         for fn, fv in enumerate(mesh.fvert):
             if not mesh.face_mask[fn]:
                 continue
-            # only include <nPerFace> verts for each face, and order them consecutively
+            # only include <nPerFace> verts for each face, and order them
+            # consecutively
             all_vert_indices.update([(fv[n]) for n in range(nPerFace)])
 
         sorted_indices = sorted(all_vert_indices)
@@ -285,9 +297,9 @@ def setup_skeleton(rootPath, stage, skeleton):
         s["global_transforms"].append(global_transform)
 
         bxform = node.getBindMatrix()
-        # getBindMatrix returns bindmat and bindinv - we want the uninverted matrix,
-        # however USD uses row first while mh uses column first, so we use the
-        # transpose/inverse
+        # getBindMatrix returns bindmat and bindinv - we want the uninverted
+        # matrix, however USD uses row first while mh uses column first, so we
+        # use the transpose/inverse
         bxform = bxform[1]
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity()
