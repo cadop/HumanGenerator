@@ -77,23 +77,26 @@ def add_to_scene(objects):
         rootPath = defaultPrim.GetPath().pathString
 
     if mhskel:
-    # Create the USD skeleton in our stage using the mhskel data
-    (
-        usdSkel,
-        rootPath,
-        joint_names,
-    ) = setup_skeleton(rootPath, stage, mhskel)
+        # Create the USD skeleton in our stage using the mhskel data
+        (
+            usdSkel,
+            rootPath,
+            joint_names,
+        ) = setup_skeleton(rootPath, stage, mhskel)
 
-    # Add the meshes to the USD stage under skelRoot
-    usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
+        # Add the meshes to the USD stage under skelRoot
+        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
 
-    # Create bindings between meshes and the skeleton. Returns a list of
-    # bindings the length of the number of meshes
-    bindings = setup_bindings(usd_mesh_paths, stage, usdSkel)
+        # Create bindings between meshes and the skeleton. Returns a list of
+        # bindings the length of the number of meshes
+        bindings = setup_bindings(usd_mesh_paths, stage, usdSkel)
 
-    # Setup weights for corresponding mh_meshes (which hold the data) and
-    # bindings (which link USD_meshes to the skeleton)
-    setup_weights(mh_meshes, bindings, joint_names)
+        # Setup weights for corresponding mh_meshes (which hold the data) and
+        # bindings (which link USD_meshes to the skeleton)
+        setup_weights(mh_meshes, bindings, joint_names)
+    else:
+        # Add the meshes to the USD stage under root
+        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
 
 
 def setup_weights(mh_meshes, bindings, joint_names):
