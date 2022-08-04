@@ -210,6 +210,22 @@ def calculate_influences(mh_mesh, joint_names):
 
 
 def setup_bindings(paths, stage, skeleton):
+    """Setup bindings between meshes in the USD scene and the skeleton
+
+    Parameters
+    ----------
+    paths : array of: Sdf.Path
+        USD Sdf paths to each mesh prim
+    stage : Usd.Stage.Open
+        The USD stage where the prims can be found
+    skeleton :UsdSkel.Skeleton
+        The USD skeleton to apply bindings to
+
+    Returns
+    -------
+    array of: UsdSkel.BindingAPI
+        Array of bindings between each mesh and the skeleton, in "path" order
+    """
     bindings = []
 
     for mesh in paths:
@@ -227,15 +243,15 @@ def setup_meshes(meshes, stage, rootPath):
     ----------
     meshes : list of: `module3d.Object3D`
         Makehuman meshes
-    stage : _type_
-        _description_
-    rootPath : _type_
-        _description_
+    stage : Usd.Stage.Open()
+        The stage to which to add the mesh geometry
+    rootPath : str
+        The path under which to place imported mesh prims
 
     Returns
     -------
-    _type_
-        _description_
+    paths : array of: Sdf.Path
+        Usd Sdf paths to geometry prims in the scene
     """
 
     usd_mesh_paths = []
@@ -292,10 +308,18 @@ def setup_meshes(meshes, stage, rootPath):
         # # Subdivision is set to none.
         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
-    return [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
+    paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
+    return paths
 
 
 def inspect_meshes(meshes):
+    """Testing routine to ensure that all vertices are used
+
+    Parameters
+    ----------
+    meshes : list of: `module3d.Object3D`
+        Makehuman meshes
+    """
     # For inspecting mesh topology while debugging broken meshes
     for mesh in meshes:
         all_vert_indices = set()
@@ -315,6 +339,31 @@ def inspect_meshes(meshes):
 
 
 def setup_skeleton(rootPath, stage, skeleton):
+    """_summary_
+
+    Parameters
+    ----------
+    rootPath : str
+        Path to the root prim of the stage
+    stage : Usd.Stage.Open
+        The USD stage in which to set up the skeleton
+    skeleton : makehuman.skeleton.Skeleton
+        The makehuman skeleton object
+
+    Returns
+    -------
+    usdSkel : UsdSkel.Skeleton
+        The USD formatted skeleton with parameters applied
+    skel_root_path : str
+        The path to the UsdSkel.Root. This is important because skinned meshes
+        should be under the same root as the skeleton. This is not the root
+        joint of the skeleton, nor the skeleton itself; rather it is a container
+        prim that holds the skeleton and skinned meshes in the stage hierarchy.
+    joint_names : list of: str
+        List of joint names in USD (breadth-first traversal) order. It is
+        important that joints be ordered this way so that their indices can be
+        used for skinning / weighting.
+    """
 
     # Traverses skeleton (breadth-first) and stores joint data
     joint_paths = []
@@ -325,6 +374,16 @@ def setup_skeleton(rootPath, stage, skeleton):
 
     # Process each node individually
     def process_node(node, path):
+        """Get the name, path, relative transform, global transform, and bind
+        transform of each joint and add them to the list of stored values
+
+        Parameters
+        ----------
+        node : skeleton.Bone
+            Makehuman joint node
+        path : str
+            Path to the relative root of the usd skeleton
+        """
 
         # sanitize the name for USD paths
         name = sanitize(node.name)
@@ -402,6 +461,19 @@ def setup_skeleton(rootPath, stage, skeleton):
 
 
 def sanitize(s: str):
+    """Sanitize strings for use a prim names. Strips and replaces illegal
+    characters.
+
+    Parameters
+    ----------
+    s : str
+        Input string
+
+    Returns
+    -------
+    s : str
+        Prim-safe output string
+    """
     illegal = (".", "-")
     for c in illegal:
         s = s.replace(c, "_")
