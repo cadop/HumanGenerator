@@ -53,7 +53,7 @@ class MHCaller:
         self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         self.add_proxy(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\low-poly\\low-poly.mhpxy"
+            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\high-poly\\high-poly.mhpxy"
         )
         base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
