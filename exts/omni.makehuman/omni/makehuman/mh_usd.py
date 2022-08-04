@@ -1,4 +1,5 @@
 from numpy.random.tests import data
+from omni.kit.commands.command import create
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import omni.usd
 import carb
@@ -97,6 +98,8 @@ def add_to_scene(objects):
     else:
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
+
+    material = create_material()
 
 
 def setup_weights(mh_meshes, bindings, joint_names):
@@ -458,6 +461,47 @@ def setup_skeleton(rootPath, stage, skeleton):
     usdSkel.CreateRestTransformsAttr(rel_transforms)
 
     return usdSkel, skel_root_path, joint_names
+
+
+def create_material(diffuse_image_path, root_path, stage):
+
+    materialScopePath = root_path + "/Materials"
+
+    # Check for a scope in which to keep materials. If it doesn't exist, make
+    # one
+    scopePrim = stage.GetPrimAtPath(materialScopePath)
+    if scopePrim.IsValid() is False:
+        UsdGeom.Scope.Define(stage, materialScopePath)
+
+    # Create material (omniPBR).
+    materialPath = materialScopePath + "/omniPBR_mat1"
+    material = UsdShade.Material.Define(stage, materialPath)
+
+    shaderPath = materialPath + "/Shader"
+    shader = UsdShade.Shader.Define(stage, shaderPath)
+    shader.SetSourceAsset("OmniPBR.mdl", "mdl")
+    shader.GetPrim().CreateAttribute(
+        "info:mdl:sourceAsset:subIdentifier", Sdf.ValueTypeNames.Token, False, Sdf.VariabilityUniform
+    ).Set("OmniPBR")
+
+    # Set Diffuse texture.
+    diffTexIn = shader.CreateInput("diffuse_texture", Sdf.ValueTypeNames.Asset)
+    diffTexIn.Set(diffuse_image_path)
+    diffTexIn.GetAttr().SetColorSpace("sRGB")
+
+    # Set Diffuse value.
+    diffTintIn = shader.CreateInput("diffuse_tint", Sdf.ValueTypeNames.Color3f)
+    diffTintIn.Set((0.9, 0.9, 0.9))
+
+    # Connecting Material to Shader.
+    mdlOutput = material.CreateSurfaceOutput("mdl")
+    mdlOutput.ConnectToSource(shader, "out")
+
+    return material
+
+
+def bind_material(mesh, material):
+    UsdShade.MaterialBindingAPI(mesh).Bind(material)
 
 
 def sanitize(s: str):
