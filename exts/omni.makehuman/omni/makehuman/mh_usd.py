@@ -13,7 +13,7 @@ def add_to_scene(objects):
 
     Parameters
     ----------
-    objects : guicommon.Object
+    objects : list of: guicommon.Object
         Any object that encapsulates a module3d.Object3D mesh. This includes
         makehuman humans as well as proxies (clothes, hair, etc). In the case of
         a human, the skeleton is included and used to apply mesh weights. As
