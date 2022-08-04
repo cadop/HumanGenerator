@@ -301,7 +301,7 @@ def setup_meshes(meshes, stage, rootPath):
         meshGeom.SetNormalsInterpolation("vertex")
 
         # Set uvs.
-        texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.vertex)
+        texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
         texCoords.Set(mesh.getUVs(newuvindices))
         # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
 
