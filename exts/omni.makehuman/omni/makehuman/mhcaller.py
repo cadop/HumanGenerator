@@ -84,11 +84,6 @@ class MHCaller:
         if not (age > 1 and age < 89):
             return
         self.human.setAgeYears(age)
-        # exportObj(f"D:/human_{age}.obj",self.human)
-
-        # G.app.loadHuman() G.app.loadScene() G.app.loadMainGui()
-        # G.app.loadPlugin("mhapi","C:\\Users\\jhg29\\Documents\\GitHub\\mh\\src\\makehuman\\plugins\\1_mhapi\\__init__.py")
-        # G.app.mhapi.exports.exportAsOBJ("D:/human.obj")
 
     @property
     def objects(self):
