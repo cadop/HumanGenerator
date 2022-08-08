@@ -7,7 +7,6 @@ import numpy as np
 import io, os
 import re
 import skeleton as mhskeleton
-
 from pathlib import Path
 
 
@@ -105,14 +104,26 @@ def add_to_scene(objects):
     setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
 
     # Explicitly setup material for human skin
-    skin = create_material(
-        "C:\\users\\jhg29\\documents\\github\\ov_makehuman\\resources\\textures\\skin.png",
-        "Skin",
-        rootPath,
-        stage,
-    )
+    texture_path = absolute_path("/resources/textures/skin.png")
+    skin = create_material(texture_path, "Skin", rootPath, stage)
 
     bind_material(usd_mesh_paths[0], skin, stage)
+
+
+def absolute_path(path):
+    """Returns the absolute path of a path given relative to "exts/<omni.ext>/"
+
+    Parameters
+    ----------
+    path : str
+        Relative path
+
+    Returns
+    -------
+    str
+        Absolute path
+    """
+    return str(Path(__file__).parents[2]) + path
 
 
 def setup_weights(mh_meshes, bindings, joint_names):
