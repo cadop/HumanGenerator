@@ -54,11 +54,13 @@ class MHCaller:
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         # Add eyes
         self.add_proxy(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\high-poly\\high-poly.mhpxy"
+            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\high-poly\\high-poly.mhpxy",
+            "Eyes",
         )
         # Add some clothes
         self.add_proxy(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\clothes\\male_casualsuit03\\male_casualsuit03.mhpxy"
+            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\clothes\\male_casualsuit03\\male_casualsuit03.mhpxy",
+            "Clothes",
         )
 
         base_skel = skeleton.load(
@@ -126,7 +128,7 @@ class MHCaller:
 
         wavefront.writeObjFile(filepath, self.mesh)
 
-    def add_proxy(self, proxypath):
+    def add_proxy(self, proxypath, proxy_type):
         """Load a proxy (hair, nails, clothes, etc.) and apply it to the human
 
         Parameters
@@ -136,7 +138,7 @@ class MHCaller:
         """
         #  Derived from work by @tomtom92 at the MH-Community forums
         print(proxypath)
-        pxy = proxy.loadProxy(self.human, proxypath, type="Eyes")
+        pxy = proxy.loadProxy(self.human, proxypath, type=proxy_type)
         mesh, obj = pxy.loadMeshAndObject(self.human)
         mesh.setPickable(True)
         gui3d.app.addObject(obj)
@@ -145,22 +147,24 @@ class MHCaller:
         pxy.update(mesh2, fit_to_posed)
         mesh2.update()
         obj.setSubdivided(self.human.isSubdivided())
-        self.human.setEyesProxy(pxy)
+        if proxy_type == "Eyes":
+            self.human.setEyesProxy(pxy)
+        elif proxy_type == "Clothes":
+            self.human.addClothesProxy(pxy)
+        elif proxy_type == "Eyebrows":
+            self.human.setEyebrowsProxy(pxy)
+        elif proxy_type == "Eyelashes":
+            self.human.setEyelashesProxy(pxy)
+        elif proxy_type == "Hair":
+            self.human.setHairProxy(pxy)
+        else:
+            # Body proxies (musculature, etc)
+            self.human.setProxy(pxy)
+
         vertsMask = np.ones(self.human.meshData.getVertexCount(), dtype=bool)
         proxyVertMask = proxy.transferVertexMaskToProxy(vertsMask, pxy)
-        # Apply accumulated mask from previous clothes layers on this clothing
-        # piece
+        # Apply accumulated mask from previous layers on this proxy
         obj.changeVertexMask(proxyVertMask)
-        # if pxy.deleteVerts is not None and len(pxy.deleteVerts > 0): #
-        #     carb.log_info( #     ( #         "Loaded %s deleted verts (%s
-        #     faces) from %s proxy.", #
-        #     np.count_nonzero(pxy.deleteVerts), #
-        #     len(self.human.meshData.getFacesForVertices(np.argwhere(pxy.deleteVerts)[...,
-        #     0])), #         pxy.name, #     ) # ) Modify accumulated
-        #     (basemesh) verts mask
         verts = np.argwhere(pxy.deleteVerts)[..., 0]
         vertsMask[verts] = False
         self.human.changeVertexMask(vertsMask)
-        event = events3d.HumanEvent(self.human, "proxy")
-        event.proxy = "eyes"
-        self.human.callEvent("onChanged", event)
