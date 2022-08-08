@@ -8,6 +8,8 @@ import io, os
 import re
 import skeleton as mhskeleton
 
+from pathlib import Path
+
 
 def add_to_scene(objects):
     """Import a list of Makehuman objects to the current USD stage
@@ -99,7 +101,18 @@ def add_to_scene(objects):
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
 
+    # Import materials for proxies
     setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
+
+    # Explicitly setup material for human skin
+    skin = create_material(
+        "C:\\users\\jhg29\\documents\\github\\ov_makehuman\\resources\\textures\\skin.png",
+        "Skin",
+        rootPath,
+        stage,
+    )
+
+    bind_material(usd_mesh_paths[0], skin, stage)
 
 
 def setup_weights(mh_meshes, bindings, joint_names):
@@ -482,6 +495,24 @@ def get_mesh_texture(mh_mesh):
 
 
 def create_material(diffuse_image_path, name, root_path, stage):
+    """Create OmniPBR Material with specified diffuse texture
+
+    Parameters
+    ----------
+    diffuse_image_path : str
+        Path to diffuse texture on disk
+    name : str
+        Material name
+    root_path : str
+        Root path under which to place material scope
+    stage : Usd.Stage.Open()
+        USD stage into which to add the material
+
+    Returns
+    -------
+    UsdShade.Material
+        Material with diffuse texture applied
+    """
 
     materialScopePath = root_path + "/Materials"
 
@@ -508,8 +539,8 @@ def create_material(diffuse_image_path, name, root_path, stage):
     diffTexIn.GetAttr().SetColorSpace("sRGB")
 
     # Set Diffuse value.
-    diffTintIn = shader.CreateInput("diffuse_tint", Sdf.ValueTypeNames.Color3f)
-    diffTintIn.Set((0.9, 0.9, 0.9))
+    # diffTintIn = shader.CreateInput("diffuse_tint", Sdf.ValueTypeNames.Color3f)
+    # diffTintIn.Set((0.9, 0.9, 0.9))
 
     # Connecting Material to Shader.
     mdlOutput = material.CreateSurfaceOutput("mdl")
@@ -519,6 +550,17 @@ def create_material(diffuse_image_path, name, root_path, stage):
 
 
 def bind_material(mesh_path, material, stage):
+    """Bind a material to a mesh
+
+    Parameters
+    ----------
+    mesh_path : Sdf.Path
+        _description_
+    material : UsdShade.Material
+        _description_
+    stage : Usd.Stage.Open
+        _description_
+    """
     meshPrim = stage.GetPrimAtPath(mesh_path)
     UsdShade.MaterialBindingAPI(meshPrim).Bind(material)
 
