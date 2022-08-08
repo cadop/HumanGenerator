@@ -99,7 +99,7 @@ def add_to_scene(objects):
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
 
-    material = create_material()
+    setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
 
 
 def setup_weights(mh_meshes, bindings, joint_names):
@@ -463,6 +463,19 @@ def setup_skeleton(rootPath, stage, skeleton):
     return usdSkel, skel_root_path, joint_names
 
 
+def setup_materials(mh_meshes, meshes, root, stage):
+    for mh_mesh, mesh in zip(mh_meshes, meshes):
+        texture = get_mesh_texture(mh_mesh)
+        if texture:
+            material = create_material(texture, root, stage)
+            bind_material(mesh, material, stage)
+
+
+def get_mesh_texture(mh_mesh):
+    material = mh_mesh.material
+    return material.diffuseTexture
+
+
 def create_material(diffuse_image_path, root_path, stage):
 
     materialScopePath = root_path + "/Materials"
@@ -500,8 +513,9 @@ def create_material(diffuse_image_path, root_path, stage):
     return material
 
 
-def bind_material(mesh, material):
-    UsdShade.MaterialBindingAPI(mesh).Bind(material)
+def bind_material(mesh_path, material, stage):
+    meshPrim = stage.GetPrimAtPath(mesh_path)
+    UsdShade.MaterialBindingAPI(meshPrim).Bind(material)
 
 
 def sanitize(s: str):
