@@ -52,9 +52,15 @@ class MHCaller:
         # access it globally
         self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
+        # Add eyes
         self.add_proxy(
             "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\high-poly\\high-poly.mhpxy"
         )
+        # Add some clothes
+        self.add_proxy(
+            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\clothes\\male_casualsuit03\\male_casualsuit03.mhpxy"
+        )
+
         base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
