@@ -165,6 +165,6 @@ class MHCaller:
         proxyVertMask = proxy.transferVertexMaskToProxy(vertsMask, pxy)
         # Apply accumulated mask from previous layers on this proxy
         obj.changeVertexMask(proxyVertMask)
-        verts = np.argwhere(pxy.deleteVerts)[..., 0]
-        vertsMask[verts] = False
-        self.human.changeVertexMask(vertsMask)
+        # verts = np.argwhere(pxy.deleteVerts)[..., 0]
+        # vertsMask[verts] = False
+        # self.human.changeVertexMask(vertsMask)
