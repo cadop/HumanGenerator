@@ -465,18 +465,23 @@ def setup_skeleton(rootPath, stage, skeleton):
 
 def setup_materials(mh_meshes, meshes, root, stage):
     for mh_mesh, mesh in zip(mh_meshes, meshes):
-        texture = get_mesh_texture(mh_mesh)
+        texture, name = get_mesh_texture(mh_mesh)
         if texture:
-            material = create_material(texture, root, stage)
+            material = create_material(texture, name, root, stage)
             bind_material(mesh, material, stage)
 
 
 def get_mesh_texture(mh_mesh):
     material = mh_mesh.material
-    return material.diffuseTexture
+    texture = material.diffuseTexture
+    name = material.name
+    if texture:
+        return texture, name
+    else:
+        return (None, None)
 
 
-def create_material(diffuse_image_path, root_path, stage):
+def create_material(diffuse_image_path, name, root_path, stage):
 
     materialScopePath = root_path + "/Materials"
 
@@ -487,7 +492,7 @@ def create_material(diffuse_image_path, root_path, stage):
         UsdGeom.Scope.Define(stage, materialScopePath)
 
     # Create material (omniPBR).
-    materialPath = materialScopePath + "/omniPBR_mat1"
+    materialPath = materialScopePath + "/" + name
     material = UsdShade.Material.Define(stage, materialPath)
 
     shaderPath = materialPath + "/Shader"
