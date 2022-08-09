@@ -7,8 +7,7 @@ import numpy as np
 import io, os
 import re
 import skeleton as mhskeleton
-from pathlib import Path
-from shared import absolute_path
+from .shared import absolute_path
 
 
 def add_to_scene(objects):

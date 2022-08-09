@@ -1,3 +1,6 @@
+from pathlib import Path
+
+
 def absolute_path(path):
     """Returns the absolute path of a path given relative to "exts/<omni.ext>/"
 
