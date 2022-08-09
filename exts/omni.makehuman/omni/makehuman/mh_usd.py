@@ -8,6 +8,7 @@ import io, os
 import re
 import skeleton as mhskeleton
 from pathlib import Path
+from shared import absolute_path
 
 
 def add_to_scene(objects):
@@ -105,22 +106,6 @@ def add_to_scene(objects):
     skin = create_material(texture_path, "Skin", rootPath, stage)
 
     bind_material(usd_mesh_paths[0], skin, stage)
-
-
-def absolute_path(path):
-    """Returns the absolute path of a path given relative to "exts/<omni.ext>/"
-
-    Parameters
-    ----------
-    path : str
-        Relative path
-
-    Returns
-    -------
-    str
-        Absolute path
-    """
-    return str(Path(__file__).parents[2]) + path
 
 
 def setup_weights(mh_meshes, bindings, joint_names):
