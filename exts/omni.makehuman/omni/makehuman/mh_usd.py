@@ -428,8 +428,19 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
     queue = []  # Initialize a queue
     path_queue = []  # Keep track of paths in a parallel queue
 
-    # Use the root of the mh skeleton as the root node of our tree
-    node = skeleton.roots[0]
+    # make a "super-root" node, parent to the root, with identity transforms so
+    # we can abide by Lina Halper's animation retargeting guidelines:
+    # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
+
+    originalRoot = skeleton.roots[0]
+    newRoot = skeleton.addBone("RootJoint", None, "newRoot_head", originalRoot.tailJoint)
+    originalRoot.parent = newRoot
+    newRoot.headPos -= offset
+    newRoot.build()
+    newRoot.children.append(originalRoot)
+
+    # Use the new root of the mh skeleton as the root node of our tree
+    node = skeleton.roots[-1]
 
     visited.append(node)
     queue.append(node)
