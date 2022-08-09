@@ -35,7 +35,11 @@ keywords = ["kit", "makehuman","human","character"]
 [[python.module]]
 name = "omni.makehuman"
 
-# [python.pipapi]
-# archiveDirs = ["../../mh/dist/makehuman-1.2.0-py3-none-any.whl"]
+[python.pipapi]
+use_online_index = true
 
-requirements = ["makehuman"]
+# Use this to specify a list of additional repositories if your pip package is hosted somewhere other
+# than the default repo(s) configured in pip. Will pass these to pip with "--extra-index-url" argument
+repositories = ["https://test.pypi.org/simple/"]
+
+requirements = ["makehuman==1.2.2"]
