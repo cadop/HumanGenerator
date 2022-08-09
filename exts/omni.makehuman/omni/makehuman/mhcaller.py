@@ -71,14 +71,16 @@ class MHCaller:
             "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\rigs\\cmu_mb.mhskel",
             self.human.meshData,
         )
-
+        game_skel = skeleton.load(
+            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\rigs\\game_engine.mhskel"
+        )
         # Build joint weights on our chosen skeleton, derived from the base
         # skeleton
         cmu_skel.autoBuildWeightReferences(base_skel)
 
         self.human.setBaseSkeleton(base_skel)
         # Actually add the skeleton
-        self.human.setSkeleton(cmu_skel)
+        self.human.setSkeleton(game_skel)
         self.human.applyAllTargets()
 
     def set_age(self, age):
