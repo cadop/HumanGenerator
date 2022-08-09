@@ -25,6 +25,8 @@ def add_to_scene(objects):
 
     scale = 10
     human = objects[0]
+
+    # Offset human from the ground
     offset = -1 * human.getJointPosition("ground") * scale
 
     mh_meshes = [o.mesh for o in objects]
