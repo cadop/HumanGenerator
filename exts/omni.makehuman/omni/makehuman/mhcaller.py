@@ -16,6 +16,7 @@ import humanmodifier, skeleton
 import proxy, gui3d, events3d
 import numpy as np
 import carb
+from .shared import data_path
 
 
 class MHCaller:
@@ -53,26 +54,19 @@ class MHCaller:
         self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         # Add eyes
-        self.add_proxy(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\eyes\\high-poly\\high-poly.mhpxy",
-            "Eyes",
-        )
+        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "Eyes")
         # Add some clothes
         self.add_proxy(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\clothes\\male_casualsuit03\\male_casualsuit03.mhpxy",
+            data_path("clothes/male_casualsuit03/male_casualsuit03.mhpxy"),
             "Clothes",
         )
         base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
         )
-        cmu_skel = skeleton.load(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\rigs\\cmu_mb.mhskel",
-            self.human.meshData,
-        )
-        game_skel = skeleton.load(
-            "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\rigs\\game_engine.mhskel"
-        )
+        cmu_skel = skeleton.load(data_path("rigs/cmu_mb.mhskel"), self.human.meshData)
+        game_skel = skeleton.load(data_path("rigs\game_engine.mhskel"))
+
         # Build joint weights on our chosen skeleton, derived from the base
         # skeleton
         cmu_skel.autoBuildWeightReferences(base_skel)

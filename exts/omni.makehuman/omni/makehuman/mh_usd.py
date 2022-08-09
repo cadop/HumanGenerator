@@ -7,7 +7,7 @@ import numpy as np
 import io, os
 import re
 import skeleton as mhskeleton
-from .shared import absolute_path
+from .shared import data_path
 
 
 def add_to_scene(objects):
@@ -103,7 +103,7 @@ def add_to_scene(objects):
     setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
 
     # Explicitly setup material for human skin
-    texture_path = absolute_path("/data/textures/skin.png")
+    texture_path = data_path("textures/skin.png")
     skin = create_material(texture_path, "Skin", rootPath, stage)
 
     bind_material(usd_mesh_paths[0], skin, stage)

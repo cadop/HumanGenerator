@@ -1,8 +1,8 @@
 from pathlib import Path
 
 
-def absolute_path(path):
-    """Returns the absolute path of a path given relative to "exts/<omni.ext>/"
+def data_path(path):
+    """Returns the absolute path of a path given relative to "exts/<omni.ext>/data"
 
     Parameters
     ----------
@@ -14,4 +14,4 @@ def absolute_path(path):
     str
         Absolute path
     """
-    return str(Path(__file__).parents[2]) + path
+    return str(Path(__file__).parents[2]) + "/data/" + path
