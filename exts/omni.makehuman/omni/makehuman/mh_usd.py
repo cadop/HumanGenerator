@@ -102,7 +102,7 @@ def add_to_scene(objects):
     setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
 
     # Explicitly setup material for human skin
-    texture_path = absolute_path("/resources/textures/skin.png")
+    texture_path = absolute_path("/data/textures/skin.png")
     skin = create_material(texture_path, "Skin", rootPath, stage)
 
     bind_material(usd_mesh_paths[0], skin, stage)
