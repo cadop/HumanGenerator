@@ -62,7 +62,6 @@ class MHCaller:
             "C:\\Users\\jhg29\\AppData\\Local\\makehuman-community\\makehuman\\data\\clothes\\male_casualsuit03\\male_casualsuit03.mhpxy",
             "Clothes",
         )
-
         base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
@@ -130,13 +129,13 @@ class MHCaller:
 
         wavefront.writeObjFile(filepath, self.mesh)
 
-    def add_proxy(self, proxypath, proxy_type):
+    def add_proxy(self, proxypath, proxy_type=None):
         """Load a proxy (hair, nails, clothes, etc.) and apply it to the human
 
         Parameters
         ----------
-        proxypath : str
-            Path to the proxy file on disk
+        proxypath : str, optional
+            Path to the proxy file on disk, None by default
         """
         #  Derived from work by @tomtom92 at the MH-Community forums
         print(proxypath)
