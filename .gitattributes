@@ -1,0 +1,1 @@
+exts/omni.makehuman/data/** filter=lfs diff=lfs merge=lfs -text
