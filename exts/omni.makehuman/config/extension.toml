@@ -2,6 +2,11 @@
 # Semantic Versionning is used: https://semver.org/
 version = "1.0.0"
 
+preview_image = ""
+
+# Icon is shown in Extensions window, it is recommended to be square, of size 256x256.
+icon = "data/etc/icon.jpg"
+
 # The title and description fields are primarily for displaying extension info in UI
 title = "Makehuman for Omniverse"
 description="MakeHuman Extension for Omniverse. Create and customize humans in your Omniverse scenes."
