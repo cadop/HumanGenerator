@@ -25,8 +25,7 @@ def add_to_scene(objects):
 
     scale = 10
     human = objects[0]
-
-    mhskel = human.getSkeleton()
+    offset = -1 * human.getJointPosition("ground") * scale
 
     mh_meshes = [o.mesh for o in objects]
 
@@ -35,6 +34,8 @@ def add_to_scene(objects):
 
     # Filter out vertices we aren't meant to see and scale up the meshes
     mh_meshes = [m.clone(scale, filterMaskedVerts=True) for m in mh_meshes]
+
+    mhskel = human.getSkeleton()
 
     # Scale our skeleton to match our human
     if mhskel:
@@ -80,14 +81,10 @@ def add_to_scene(objects):
 
     if mhskel:
         # Create the USD skeleton in our stage using the mhskel data
-        (
-            usdSkel,
-            rootPath,
-            joint_names,
-        ) = setup_skeleton(rootPath, stage, mhskel)
+        (usdSkel, rootPath, joint_names) = setup_skeleton(rootPath, stage, mhskel, offset)
 
         # Add the meshes to the USD stage under skelRoot
-        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
+        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
 
         # Create bindings between meshes and the skeleton. Returns a list of
         # bindings the length of the number of meshes
@@ -98,7 +95,7 @@ def add_to_scene(objects):
         setup_weights(mh_meshes, bindings, joint_names)
     else:
         # Add the meshes to the USD stage under root
-        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath)
+        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
 
     # Import materials for proxies
     setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
@@ -263,7 +260,7 @@ def setup_bindings(paths, stage, skeleton):
     return bindings
 
 
-def setup_meshes(meshes, stage, rootPath):
+def setup_meshes(meshes, stage, rootPath, offset=[0, 0, 0]):
     """Import mesh data and build mesh prims in the USD stage
 
     Parameters
@@ -289,7 +286,7 @@ def setup_meshes(meshes, stage, rootPath):
         newvertindices = []
         newuvindices = []
 
-        coords = mesh.getCoords()
+        coords = mesh.getCoords() + offset
         for fn, fv in enumerate(mesh.fvert):
             if not mesh.face_mask[fn]:
                 continue
@@ -365,8 +362,8 @@ def inspect_meshes(meshes):
         print("Difference: {}".format(dif))
 
 
-def setup_skeleton(rootPath, stage, skeleton):
-    """_summary_
+def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
+    """Get the skeleton data from makehuman and place it in the stage
 
     Parameters
     ----------
@@ -376,6 +373,8 @@ def setup_skeleton(rootPath, stage, skeleton):
         The USD stage in which to set up the skeleton
     skeleton : makehuman.skeleton.Skeleton
         The makehuman skeleton object
+    offset : list, optional
+        Offset vector for placement in scene, by default [0,0,0]
 
     Returns
     -------
@@ -420,17 +419,17 @@ def setup_skeleton(rootPath, stage, skeleton):
         # store original name for later joint weighting
         joint_names.append(node.name)
 
-        relxform = node.matRestRelative
+        relxform = node.getRelativeMatrix(offsetVect=offset)
         relxform = relxform.transpose()
         relative_transform = Gf.Matrix4d(relxform.tolist())
         rel_transforms.append(relative_transform)
 
-        gxform = node.matRestGlobal
+        gxform = node.getRestMatrix(offsetVect=offset)
         gxform = gxform.transpose()
         global_transform = Gf.Matrix4d(gxform.tolist())
         global_transforms.append(global_transform)
 
-        bxform = node.getBindMatrix()
+        bxform = node.getBindMatrix(offsetVect=offset)
         # getBindMatrix returns bindmat and bindinv - we want the uninverted
         # matrix, however USD uses row first while mh uses column first, so we
         # use the transpose/inverse
