@@ -349,7 +349,10 @@ def inspect_meshes(meshes):
 
 
 def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
-    """Get the skeleton data from makehuman and place it in the stage
+    """Get the skeleton data from makehuman and place it in the stage. Also adds
+    a new parent to the root node, so the root can have an identity transform at
+    the origin. This helps keep the character above ground, and Omniverse likes
+    it for some reason.
 
     Parameters
     ----------
