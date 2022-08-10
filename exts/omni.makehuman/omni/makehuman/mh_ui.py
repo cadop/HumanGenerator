@@ -1,41 +1,23 @@
 import omni.ui as ui
-from . import ui_widgets
 from . import mhcaller
-from .ui_widgets import Param
-from . import styles
-from . import mh_usd
+from .ui_widgets import HumanPanel
+from .browser import AssetBrowserWindow
 
 
 class MHWindow(ui.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
+
+        self.frame.set_build_fn(self._build_ui)
+
+    def _build_ui(self):
         # Create instance of manager class
         mh_call = mhcaller.MHCaller()
         mh_call.filepath = "D:/human.obj"
 
-        human = mh_call.human
-        macro_params = (
-            Param("Gender", human.setGender),
-            Param("Age", human.setAge),
-            Param("Muscle", human.setMuscle),
-            Param("Weight", human.setWeight),
-            Param("Height", human.setHeight),
-            Param("Proportions", human.setBodyProportions),
-        )
-        race_params = (
-            Param("African", human.setAfrican),
-            Param("Asian", human.setAsian),
-            Param("Caucasian", human.setCaucasian),
-        )
-
         with self.frame:
-            with ui.ScrollingFrame():
-                with ui.VStack():
-                    with ui.CollapsableFrame("Phenotype", style=styles.frame_style, height=0):
-                        with ui.VStack():
-                            ui_widgets.Panel("Macrodetails", macro_params)
-                            ui_widgets.Panel("Race", race_params)
-                    with ui.HStack():
-                        ui.Button("add_to_scene", clicked_fn=lambda: mh_usd.add_to_scene(mh_call.objects))
-                        ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj()),
+            with ui.HStack():
+                HumanPanel(mh_call)
+                AssetBrowserWindow()

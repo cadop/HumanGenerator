@@ -4,7 +4,7 @@ import omni
 from typing import Tuple
 from dataclasses import dataclass
 import carb
-from . import styles
+from . import styles, mh_usd, ui_widgets
 
 
 class SliderEntry:
@@ -44,8 +44,15 @@ class SliderEntry:
 
     def _build_widget(self):
         """Construct the UI elements"""
-        with ui.HStack(width=ui.Percent(100), height=0, style=styles.sliderentry_style):
-            ui.Label(self.label, height=15, alignment=ui.Alignment.RIGHT, name="label_param")
+        with ui.HStack(
+            width=ui.Percent(100), height=0, style=styles.sliderentry_style
+        ):
+            ui.Label(
+                self.label,
+                height=15,
+                alignment=ui.Alignment.RIGHT,
+                name="label_param",
+            )
             self.drag = ui.FloatDrag(step=self.step)
             if self.min is not None:
                 self.drag.min = self.min
@@ -99,4 +106,49 @@ class Panel:
             with ui.VStack(name="contents"):
                 ui.Label(self.label, height=0)
                 for p in self.params:
-                    SliderEntry(p.name, p.fn, min=p.min, max=p.max, default=p.default)
+                    SliderEntry(
+                        p.name, p.fn, min=p.min, max=p.max, default=p.default
+                    )
+
+
+class HumanPanel(ui.Frame):
+    def __init__(self, mhcaller):
+        self.mh_call = mhcaller
+        super().__init__()
+        self.set_build_fn(self._build_widget)
+
+    def _build_widget(self):
+        human = self.mh_call.human
+        macro_params = (
+            Param("Gender", human.setGender),
+            Param("Age", human.setAge),
+            Param("Muscle", human.setMuscle),
+            Param("Weight", human.setWeight),
+            Param("Height", human.setHeight),
+            Param("Proportions", human.setBodyProportions),
+        )
+        race_params = (
+            Param("African", human.setAfrican),
+            Param("Asian", human.setAsian),
+            Param("Caucasian", human.setCaucasian),
+        )
+
+        with ui.ScrollingFrame(width=300):
+            with ui.VStack():
+                with ui.CollapsableFrame(
+                    "Phenotype", style=styles.frame_style, height=0
+                ):
+                    with ui.VStack():
+                        ui_widgets.Panel("Macrodetails", macro_params)
+                        ui_widgets.Panel("Race", race_params)
+                with ui.HStack():
+                    ui.Button(
+                        "add_to_scene",
+                        clicked_fn=lambda: mh_usd.add_to_scene(
+                            self.mh_call.objects
+                        ),
+                    )
+                    ui.Button(
+                        "store_obj",
+                        clicked_fn=lambda: self.mh_call.store_obj(),
+                    ),
