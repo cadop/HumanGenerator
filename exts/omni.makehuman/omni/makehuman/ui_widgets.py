@@ -120,16 +120,15 @@ class HumanPanel(ui.Frame):
     def _build_widget(self):
         human = self.mh_call.human
         with ui.HStack():
-            ParamPanel(human)
-            ButtonPanel(human)
+            ParamPanel(human, width=300)
+            ButtonPanel(human, width=200)
 
 
 class ParamPanel(ui.Frame):
     def __init__(self, human, **kwargs):
         super().__init__(**kwargs)
         self.human = human
-
-        self.set_build_fn(self._build_widget())
+        self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
         human = self.human
@@ -152,8 +151,8 @@ class ParamPanel(ui.Frame):
                 "Phenotype", style=styles.frame_style, height=0
             ):
                 with ui.VStack():
-                    ui_widgets.Panel("Macrodetails", macro_params)
-                    ui_widgets.Panel("Race", race_params)
+                    Panel("Macrodetails", macro_params)
+                    Panel("Race", race_params)
 
 
 class ButtonPanel(ui.Frame):
@@ -164,7 +163,7 @@ class ButtonPanel(ui.Frame):
 
     def _build_widget(self):
         with ui.ScrollingFrame():
-            with ui.HGrid():
+            with ui.VStack():
                 ui.Button(
                     "add_to_scene",
                     clicked_fn=lambda: mh_usd.add_to_scene(
