@@ -112,13 +112,27 @@ class Panel:
 
 
 class HumanPanel(ui.Frame):
-    def __init__(self, mhcaller):
+    def __init__(self, mhcaller, **kwargs):
+        super().__init__(**kwargs)
         self.mh_call = mhcaller
-        super().__init__(width=300)
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
         human = self.mh_call.human
+        with ui.HStack():
+            ParamPanel(human)
+            ButtonPanel(human)
+
+
+class ParamPanel(ui.Frame):
+    def __init__(self, human, **kwargs):
+        super().__init__(**kwargs)
+        self.human = human
+
+        self.set_build_fn(self._build_widget())
+
+    def _build_widget(self):
+        human = self.human
         macro_params = (
             Param("Gender", human.setGender),
             Param("Age", human.setAge),
@@ -134,21 +148,29 @@ class HumanPanel(ui.Frame):
         )
 
         with ui.ScrollingFrame():
-            with ui.VStack():
-                with ui.CollapsableFrame(
-                    "Phenotype", style=styles.frame_style, height=0
-                ):
-                    with ui.VStack():
-                        ui_widgets.Panel("Macrodetails", macro_params)
-                        ui_widgets.Panel("Race", race_params)
-                with ui.HStack():
-                    ui.Button(
-                        "add_to_scene",
-                        clicked_fn=lambda: mh_usd.add_to_scene(
-                            self.mh_call.objects
-                        ),
-                    )
-                    ui.Button(
-                        "store_obj",
-                        clicked_fn=lambda: self.mh_call.store_obj(),
+            with ui.CollapsableFrame(
+                "Phenotype", style=styles.frame_style, height=0
+            ):
+                with ui.VStack():
+                    ui_widgets.Panel("Macrodetails", macro_params)
+                    ui_widgets.Panel("Race", race_params)
+
+
+class ButtonPanel(ui.Frame):
+    def __init__(self, mhcaller, **kwargs):
+        super().__init__(**kwargs)
+        self.mh_call = mhcaller
+        self.set_build_fn(self._build_widget)
+
+    def _build_widget(self):
+        with ui.ScrollingFrame():
+            with ui.HGrid():
+                ui.Button(
+                    "add_to_scene",
+                    clicked_fn=lambda: mh_usd.add_to_scene(
+                        self.mh_call.objects
                     ),
+                )
+                ui.Button(
+                    "store_obj", clicked_fn=lambda: self.mh_call.store_obj()
+                )
