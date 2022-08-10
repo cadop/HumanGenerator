@@ -5,6 +5,8 @@ import makehuman
 # Makehuman loads most modules by manipulating the system path, so we have to
 # run this before we can run the rest of our makehuman imports
 
+makehuman.set_sys_path()
+
 import human
 import files3d
 import mh
