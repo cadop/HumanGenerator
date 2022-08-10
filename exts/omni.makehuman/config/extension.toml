@@ -20,6 +20,8 @@ repository = ""
 # One of categories for UI.
 category = "Services"
 
+feature = true
+
 # Keywords for the extension
 keywords = ["kit", "makehuman","human","character"]
 
@@ -27,9 +29,11 @@ keywords = ["kit", "makehuman","human","character"]
 # Use omni.ui to build simple UI
 [dependencies]
 "omni.kit.uiapp" = {}
-"omni.kit.asset_converter" = {}
-"omni.kit.window.filepicker" = {}
+"omni.usd" = {}
 "omni.anim.skelJoint" = {}
+"omni.kit.browser.core" = {}
+"omni.kit.browser.folder.core" = {}
+
 
 # Main python module this extension provides, it will be publicly available as "import omni.hello.world".
 [[python.module]]
