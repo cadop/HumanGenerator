@@ -18,6 +18,6 @@ class MHWindow(ui.Window):
         mh_call.filepath = "D:/human.obj"
 
         with self.frame:
-            with ui.HStack():
-                HumanPanel(mh_call)
+            with ui.HStack(spacing=2):
                 AssetBrowserWindow()
+                HumanPanel(mh_call)

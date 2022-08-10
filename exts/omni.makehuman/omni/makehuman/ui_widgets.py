@@ -114,7 +114,7 @@ class Panel:
 class HumanPanel(ui.Frame):
     def __init__(self, mhcaller):
         self.mh_call = mhcaller
-        super().__init__()
+        super().__init__(width=300)
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
@@ -133,7 +133,7 @@ class HumanPanel(ui.Frame):
             Param("Caucasian", human.setCaucasian),
         )
 
-        with ui.ScrollingFrame(width=300):
+        with ui.ScrollingFrame():
             with ui.VStack():
                 with ui.CollapsableFrame(
                     "Phenotype", style=styles.frame_style, height=0
