@@ -1,6 +1,6 @@
 import omni.ext
 import omni.makehuman
-from .mh_ui import MHWindow
+from .ext_ui import MHWindow
 import omni
 
 

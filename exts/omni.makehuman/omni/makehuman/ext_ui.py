@@ -1,6 +1,6 @@
 import omni.ui as ui
 from . import mhcaller
-from .ui_widgets import HumanPanel
+from .human_ui import HumanPanel
 from .browser import AssetBrowserWindow
 
 
