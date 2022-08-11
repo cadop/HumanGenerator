@@ -18,6 +18,7 @@ class HumanPanel(ui.Frame):
             )
 
     def destroy(self):
+        super().destroy()
         for panel in self.panels:
             panel.destroy()
 
@@ -57,6 +58,7 @@ class ParamPanel(ui.Frame):
                     )
 
     def destroy(self):
+        super().destroy()
         for panel in self.panels:
             panel.destroy()
 

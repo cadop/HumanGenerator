@@ -22,5 +22,6 @@ class MHWindow(ui.Window):
                 self.panels = (AssetBrowserWindow(mh_call), HumanPanel(mh_call))
 
     def destroy(self):
+        super().destroy()
         for panel in self.panels:
             panel.destroy()
