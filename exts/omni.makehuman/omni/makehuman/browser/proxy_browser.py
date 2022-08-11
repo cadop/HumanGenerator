@@ -26,6 +26,6 @@ class AssetBrowserWindow(ui.Frame):
         self._delegate = AssetDetailDelegate(self._browser_model)
 
         with ui.VStack(spacing=15):
-        self._widget = FolderBrowserWidget(
-            self._browser_model, detail_delegate=self._delegate
-        )
+            self._widget = FolderBrowserWidget(
+                self._browser_model, detail_delegate=self._delegate
+            )
