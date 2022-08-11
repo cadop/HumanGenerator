@@ -19,5 +19,5 @@ class MHWindow(ui.Window):
 
         with self.frame:
             with ui.HStack(spacing=2):
-                AssetBrowserWindow()
+                AssetBrowserWindow(mh_call)
                 HumanPanel(mh_call)
