@@ -21,3 +21,5 @@ class MakeHumanExtension(omni.ext.IExt):
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
+        self._window.destroy()
+        self._window = None
