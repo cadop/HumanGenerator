@@ -11,6 +11,7 @@ class SliderEntry:
     def __init__(
         self,
         label: str,
+        model: ui.SimpleFloatModel,
         fn: object,
         step=0.01,
         min=None,
@@ -23,8 +24,10 @@ class SliderEntry:
         ----------
         label : str
             Widget label
+        model : ui.SimpleFloatModel
+            Model to publish changes to
         fn : object
-            Function to trigger when value is changed
+            Function to run when changes are made
         step : float, optional
             Division between values, by default 0.01
         min : float, optional
@@ -35,6 +38,7 @@ class SliderEntry:
             Default parameter value, by default 0
         """
         self.label = label
+        self.model = model
         self.fn = fn
         self.step = step
         self.min = min
@@ -53,26 +57,11 @@ class SliderEntry:
                 alignment=ui.Alignment.RIGHT,
                 name="label_param",
             )
-            self.drag = ui.FloatDrag(step=self.step)
-            self.model = self.drag.model
+            self.drag = ui.FloatDrag(model=self.model, step=self.step)
             if self.min is not None:
                 self.drag.min = self.min
             if self.max is not None:
                 self.drag.max = self.max
-
-            self.model.set_value(self.default)
-            self.model.add_end_edit_fn(lambda m: self._sanitize_and_run())
-
-    def _sanitize_and_run(self):
-        """Make sure that values are within an acceptable range and then run the
-        assigned function"""
-        m = self.model
-        getval = m.get_value_as_float
-        if getval() < self.min:
-            m.set_value(self.min)
-        if getval() > self.max:
-            m.set_value(self.max)
-        self.fn(m.get_value_as_float())
 
 
 @dataclass
@@ -87,15 +76,41 @@ class Param:
 
 
 class SliderEntryPanelModel:
-    def init(self, params: Param):
+    def __init__(self, params: Param):
+        self.params = []
         self.float_models = []
         self.subscriptions = []
         for p in params:
             self.add_param(p)
 
     def add_param(self, param):
-        float_model = 
-        self.subscriptions.append()
+        self.params.append(param)
+        float_model = ui.SimpleFloatModel()
+        float_model.set_value(param.default)
+        self.subscriptions.append(
+            float_model.subscribe_end_edit_fn(
+                lambda m: self._sanitize_and_run(param, float_model)
+            )
+        )
+        self.float_models.append(float_model)
+
+    def _sanitize_and_run(self, param, float_model):
+        """Make sure that values are within an acceptable range and then run the
+        assigned function"""
+        m = float_model
+        getval = m.get_value_as_float
+        if getval() < param.min:
+            m.set_value(param.min)
+        if getval() > param.max:
+            m.set_value(param.max)
+        param.fn(m.get_value_as_float())
+
+    def get_float_model(self, param):
+        index = self.params.index(param)
+        return self.float_models[index]
+
+    def destroy(self):
+        self.subscriptions = None
 
 
 class SliderEntryPanel:
@@ -119,7 +134,17 @@ class SliderEntryPanel:
             ui.Rectangle(name="group_rect")
             with ui.VStack(name="contents"):
                 ui.Label(self.label, height=0)
-                for p in self.params:
+                for param, float_model in zip(
+                    self.model.params, self.model.float_models
+                ):
                     SliderEntry(
-                        p.name, p.fn, min=p.min, max=p.max, default=p.default
+                        param.name,
+                        float_model,
+                        param.fn,
+                        min=param.min,
+                        max=param.max,
+                        default=param.default,
                     )
+
+    def destroy(self):
+        self.model.destroy()
