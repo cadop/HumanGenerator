@@ -49,11 +49,15 @@ class MHCaller:
         skeleton or else there will be unweighted verts on the meshes.
         """
         # TODO add means of browsing and loading proxies and skeletons
-        self.human = human.Human(files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
+        self.human = human.Human(
+            files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5)
+        )
         # set the makehuman instance human so that features (eg skeletons) can
         # access it globally
         self.G.app.selectedHuman = self.human
-        humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
+        humanmodifier.loadModifiers(
+            mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human
+        )
         # Add eyes
         self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "Eyes")
         # Add some clothes
@@ -65,7 +69,9 @@ class MHCaller:
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
         )
-        cmu_skel = skeleton.load(data_path("rigs/cmu_mb.mhskel"), self.human.meshData)
+        cmu_skel = skeleton.load(
+            data_path("rigs/cmu_mb.mhskel"), self.human.meshData
+        )
         game_skel = skeleton.load(data_path("rigs\game_engine.mhskel"))
 
         # Build joint weights on our chosen skeleton, derived from the base
@@ -103,6 +109,10 @@ class MHCaller:
         self.update()
         return self.human.getObjects()
 
+    @property
+    def meshes(self):
+        return [o.mesh for o in self.objects]
+
     def update(self):
         """Propagate changes to meshes and proxies"""
         for obj in self.human.getObjects()[1:]:
@@ -122,7 +132,7 @@ class MHCaller:
         if filepath is None:
             filepath = self.filepath
 
-        wavefront.writeObjFile(filepath, self.mesh)
+        wavefront.writeObjFile(filepath, self.meshes)
 
     def add_proxy(self, proxypath, proxy_type=None):
         """Load a proxy (hair, nails, clothes, etc.) and apply it to the human
