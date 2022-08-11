@@ -11,8 +11,9 @@ class AssetBrowserWindow(ui.Frame):
     Represent a window to show Assets
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, mhcaller, **kwargs):
+        super().__init__(**kwargs)
+        self.mh_call = mhcaller
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
@@ -25,6 +26,6 @@ class AssetBrowserWindow(ui.Frame):
         self._delegate = AssetDetailDelegate(self._browser_model)
 
         with ui.VStack(spacing=15):
-            self._widget = FolderBrowserWidget(
-                self._browser_model, detail_delegate=self._delegate
-            )
+        self._widget = FolderBrowserWidget(
+            self._browser_model, detail_delegate=self._delegate
+        )
