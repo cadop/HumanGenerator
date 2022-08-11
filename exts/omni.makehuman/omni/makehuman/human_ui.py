@@ -1,6 +1,7 @@
 import omni.ui as ui
 from .ui_widgets import *
 from .styles import *
+from . import mh_usd
 
 
 class HumanPanel(ui.Frame):
@@ -14,7 +15,7 @@ class HumanPanel(ui.Frame):
         with ui.HStack():
             self.panels = (
                 ParamPanel(human, width=300),
-                ButtonPanel(human, width=200),
+                ButtonPanel(self.mh_call, width=200),
             )
 
     def destroy(self):
