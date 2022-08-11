@@ -17,7 +17,7 @@ class MakeHumanExtension(omni.ext.IExt):
 
     def on_startup(self, ext_id):
         print("[omni.makehuman] MakeHumanExtension startup")
-        self._window = MHWindow("MakeHuman", width=300, height=300)
+        self._window = MHWindow("MakeHuman")
 
     def on_shutdown(self):
         print("[omni.makehuman] makehuman shutdown")
