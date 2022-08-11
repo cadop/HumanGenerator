@@ -12,8 +12,14 @@ class HumanPanel(ui.Frame):
     def _build_widget(self):
         human = self.mh_call.human
         with ui.HStack():
-            ParamPanel(human, width=300)
-            ButtonPanel(human, width=200)
+            self.panels = (
+                ParamPanel(human, width=300),
+                ButtonPanel(human, width=200),
+            )
+
+    def destroy(self):
+        for panel in self.panels:
+            panel.destroy()
 
 
 class ParamPanel(ui.Frame):
@@ -32,19 +38,27 @@ class ParamPanel(ui.Frame):
             Param("Height", human.setHeight),
             Param("Proportions", human.setBodyProportions),
         )
+        macro_model = SliderEntryPanelModel(macro_params)
         race_params = (
             Param("African", human.setAfrican),
             Param("Asian", human.setAsian),
             Param("Caucasian", human.setCaucasian),
         )
+        race_model = SliderEntryPanelModel(race_params)
 
         with ui.ScrollingFrame():
             with ui.CollapsableFrame(
                 "Phenotype", style=styles.frame_style, height=0
             ):
                 with ui.VStack():
-                    SliderEntryPanel("Macrodetails", macro_params)
-                    SliderEntryPanel("Race", race_params)
+                    self.panels = (
+                        SliderEntryPanel("Macrodetails", macro_model),
+                        SliderEntryPanel("Race", race_model),
+                    )
+
+    def destroy(self):
+        for panel in self.panels:
+            panel.destroy()
 
 
 class ButtonPanel(ui.Frame):

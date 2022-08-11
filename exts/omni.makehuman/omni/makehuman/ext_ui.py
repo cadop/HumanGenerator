@@ -19,5 +19,8 @@ class MHWindow(ui.Window):
 
         with self.frame:
             with ui.HStack(spacing=2):
-                AssetBrowserWindow(mh_call)
-                HumanPanel(mh_call)
+                self.panels = (AssetBrowserWindow(mh_call), HumanPanel(mh_call))
+
+    def destroy(self):
+        for panel in self.panels:
+            panel.destroy()
