@@ -1,3 +1,7 @@
+import omni.ui as ui
+from .ui_widgets import *
+
+
 class HumanPanel(ui.Frame):
     def __init__(self, mhcaller, **kwargs):
         super().__init__(width=0, **kwargs)
