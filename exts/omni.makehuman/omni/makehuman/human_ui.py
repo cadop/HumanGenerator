@@ -1,5 +1,6 @@
 import omni.ui as ui
 from .ui_widgets import *
+from .styles import *
 
 
 class HumanPanel(ui.Frame):
@@ -11,11 +12,11 @@ class HumanPanel(ui.Frame):
     def _build_widget(self):
         human = self.mh_call.human
         with ui.HStack():
-            SliderEntryPanel(human, width=300)
+            ParamPanel(human, width=300)
             ButtonPanel(human, width=200)
 
 
-class SliderEntryPanel(ui.Frame):
+class ParamPanel(ui.Frame):
     def __init__(self, human, **kwargs):
         super().__init__(**kwargs)
         self.human = human
