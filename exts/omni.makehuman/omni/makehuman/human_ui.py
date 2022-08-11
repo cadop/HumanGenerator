@@ -11,11 +11,11 @@ class HumanPanel(ui.Frame):
     def _build_widget(self):
         human = self.mh_call.human
         with ui.HStack():
-            ParamPanel(human, width=300)
+            SliderEntryPanel(human, width=300)
             ButtonPanel(human, width=200)
 
 
-class ParamPanel(ui.Frame):
+class SliderEntryPanel(ui.Frame):
     def __init__(self, human, **kwargs):
         super().__init__(**kwargs)
         self.human = human
@@ -42,8 +42,8 @@ class ParamPanel(ui.Frame):
                 "Phenotype", style=styles.frame_style, height=0
             ):
                 with ui.VStack():
-                    Panel("Macrodetails", macro_params)
-                    Panel("Race", race_params)
+                    SliderEntryPanel("Macrodetails", macro_params)
+                    SliderEntryPanel("Race", race_params)
 
 
 class ButtonPanel(ui.Frame):

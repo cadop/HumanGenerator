@@ -54,17 +54,19 @@ class SliderEntry:
                 name="label_param",
             )
             self.drag = ui.FloatDrag(step=self.step)
+            self.model = self.drag.model
             if self.min is not None:
                 self.drag.min = self.min
             if self.max is not None:
                 self.drag.max = self.max
-            self.drag.model.set_value(self.default)
-            self.drag.model.add_end_edit_fn(lambda m: self._sanitize_and_run())
+
+            self.model.set_value(self.default)
+            self.model.add_end_edit_fn(lambda m: self._sanitize_and_run())
 
     def _sanitize_and_run(self):
         """Make sure that values are within an acceptable range and then run the
         assigned function"""
-        m = self.drag.model
+        m = self.model
         getval = m.get_value_as_float
         if getval() < self.min:
             m.set_value(self.min)
@@ -84,9 +86,21 @@ class Param:
     default: float = 0.5
 
 
-class Panel:
-    def __init__(self, label: str, params: Param):
-        """A UI widget providing a labeled group of parameters
+class SliderEntryPanelModel:
+    def init(self, params: Param):
+        self.float_models = []
+        self.subscriptions = []
+        for p in params:
+            self.add_param(p)
+
+    def add_param(self, param):
+        float_model = 
+        self.subscriptions.append()
+
+
+class SliderEntryPanel:
+    def __init__(self, label: str, model: SliderEntryPanelModel):
+        """A UI widget providing a labeled group of slider entries
 
         Parameters
         ----------
@@ -96,7 +110,7 @@ class Panel:
             List of Param data objects to populate the panel
         """
         self.label = label
-        self.params = params
+        self.model = model
         self._build_widget()
 
     def _build_widget(self):
