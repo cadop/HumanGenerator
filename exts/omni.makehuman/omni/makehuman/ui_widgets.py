@@ -113,7 +113,7 @@ class Panel:
 
 class HumanPanel(ui.Frame):
     def __init__(self, mhcaller, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(width=0, **kwargs)
         self.mh_call = mhcaller
         self.set_build_fn(self._build_widget)
 
