@@ -143,7 +143,6 @@ class MHCaller:
             Path to the proxy file on disk, None by default
         """
         #  Derived from work by @tomtom92 at the MH-Community forums
-        print(proxypath)
         pxy = proxy.loadProxy(self.human, proxypath, type=proxy_type)
         mesh, obj = pxy.loadMeshAndObject(self.human)
         mesh.setPickable(True)
