@@ -119,34 +119,34 @@ class AssetDetailDelegate(FolderDetailDelegate):
         # Let viewport do asset dropping
         return None
 
-    def on_right_click(self, item: AssetDetailItem) -> None:
-        """Show context menu"""
-        self._action_item = item
-        if self._context_menu is None:
-            try:
-                import omni.kit.tool.collect
+    # def on_right_click(self, item: AssetDetailItem) -> None:
+    #     """Show context menu"""
+    #     self._action_item = item
+    #     if self._context_menu is None:
+    #         try:
+    #             import omni.kit.tool.collect
 
-                self._context_menu = ui.Menu("Asset browser context menu")
-                with self._context_menu:
-                    ui.MenuItem("Collect", triggered_fn=self._collect)
-            except ImportError:
-                carb.log_warn(
-                    "Plese enable omni.kit.tool.collect first to collect."
-                )
+    #             self._context_menu = ui.Menu("Asset browser context menu")
+    #             with self._context_menu:
+    #                 ui.MenuItem("Collect", triggered_fn=self._collect)
+    #         except ImportError:
+    #             carb.log_warn(
+    #                 "Plese enable omni.kit.tool.collect first to collect."
+    #             )
 
-        if self._context_menu:
-            self._context_menu.show()
+    #     if self._context_menu:
+    #         self._context_menu.show()
 
-    def _collect(self):
-        try:
-            import omni.kit.tool.collect
+    # def _collect(self):
+    #     try:
+    #         import omni.kit.tool.collect
 
-            collect_instance = omni.kit.tool.collect.get_instance()
-            collect_instance.collect(self._action_item.url)
-            collect_instance = None
-        except ImportError:
-            carb.log_warn(
-                "Failed to import collect module (omni.kit.tool.collect). Please enable it first."
-            )
-        except AttributeError:
-            carb.log_warn("Require omni.kit.tool.collect v2.0.5 or later!")
+    #         collect_instance = omni.kit.tool.collect.get_instance()
+    #         collect_instance.collect(self._action_item.url)
+    #         collect_instance = None
+    #     except ImportError:
+    #         carb.log_warn(
+    #             "Failed to import collect module (omni.kit.tool.collect). Please enable it first."
+    #         )
+    #     except AttributeError:
+    #         carb.log_warn("Require omni.kit.tool.collect v2.0.5 or later!")
