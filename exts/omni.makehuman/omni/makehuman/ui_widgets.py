@@ -177,7 +177,7 @@ class DropListModel(ui.AbstractItemModel):
 
     def __init__(self, *args):
         super().__init__()
-        self.children = [DropListItem(t) for t in args]
+        self.children = []
 
     def drop_accept(self, url):
         if os.path.splitext()[1] in self.types:
@@ -185,9 +185,8 @@ class DropListModel(ui.AbstractItemModel):
         else:
             return False
 
-    def drop(self, uiList, event):
-        print(event)
-        self.children.append(DropListItem(event))
+    def drop(self, item_tagget, source):
+        self.children.append(DropListItem(source))
         self._item_changed(None)
 
     def get_item_children(self, item):
@@ -211,10 +210,6 @@ class DropListModel(ui.AbstractItemModel):
         """
         return item.model
 
-    def destroy(self):
-        for child in self.children:
-            child.model.destroy()
-
 
 class DropList:
     def __init__(self, types):
@@ -227,4 +222,4 @@ class DropList:
             ui.TreeView(self.model, root_visible=False, header_visible=False)
 
     def destroy(self):
-        self.model.destroy()
+        pass
