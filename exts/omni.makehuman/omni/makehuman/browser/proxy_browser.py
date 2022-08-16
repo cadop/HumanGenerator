@@ -3,10 +3,10 @@ import carb.settings
 import omni.ui as ui
 from omni.kit.browser.folder.core import FolderBrowserWidget
 from .delegate import AssetDetailDelegate
-from .model import AssetBrowserModel
+from .model import MHAssetBrowserModel
 
 
-class AssetBrowserWindow(ui.Frame):
+class AssetBrowserFrame(ui.Frame):
     """
     Represent a window to show Assets
     """
@@ -17,10 +17,10 @@ class AssetBrowserWindow(ui.Frame):
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
-        self._browser_model = AssetBrowserModel(
-            filter_file_suffixes=[".usd", ".usda", ".usdc"],
+        self._browser_model = MHAssetBrowserModel(
+            filter_file_suffixes=["mhpxy"],
             timeout=carb.settings.get_settings().get(
-                "/exts/omni.kit.browser.asset/data/timeout"
+                "/exts/omni.makehuman.browser.asset/data/timeout"
             ),
         )
         self._delegate = AssetDetailDelegate(self._browser_model)
