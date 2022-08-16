@@ -1,6 +1,7 @@
 import carb
 import omni.ui as ui
 import omni
+import os
 from typing import Tuple
 from dataclasses import dataclass
 import carb
@@ -145,6 +146,85 @@ class SliderEntryPanel:
                         max=param.max,
                         default=param.default,
                     )
+
+    def destroy(self):
+        self.model.destroy()
+
+
+class DropListItem(ui.AbstractItem):
+    """Single item of the model"""
+
+    def __init__(self, text):
+        super().__init__()
+        self.model = ui.SimpleStringModel(text)
+
+    def __repr__(self):
+        return f'"{self.model.as_string}"'
+
+    def destroy(self):
+        super().destroy()
+        self.model.destroy()
+
+
+class DropListModel(ui.AbstractItemModel):
+    """
+    Represents the model for lists. It's very easy to initialize it
+    with any string list:
+        string_list = ["Hello", "World"]
+        model = DropListModel(*string_list)
+        ui.TreeView(model)
+    """
+
+    def __init__(self, *args):
+        super().__init__()
+        self.children = [DropListItem(t) for t in args]
+
+    def drop_accept(self, url):
+        if os.path.splitext()[1] in self.types:
+            return True
+        else:
+            return False
+
+    def drop(self, uiList, event):
+        print(event)
+        self.children.append(DropListItem(event))
+        self._item_changed(None)
+
+    def get_item_children(self, item):
+        """Returns all the children when the widget asks it."""
+        if item is not None:
+            # Since we are doing a flat list, we return the children of root only.
+            # If it's not root we return.
+            return []
+
+        return self.children
+
+    def get_item_value_model_count(self, item):
+        """The number of columns"""
+        return 1
+
+    def get_item_value_model(self, item, column_id):
+        """
+        Return value model.
+        It's the object that tracks the specific value.
+        In our case we use ui.SimpleStringModel.
+        """
+        return item.model
+
+    def destroy(self):
+        for child in self.children:
+            child.model.destroy()
+
+
+class DropList:
+    def __init__(self, types):
+        self.types = types
+        self.model = DropListModel()
+        self._build_widget()
+
+    def _build_widget(self):
+        with ui.ScrollingFrame(width=300):
+            ui.TreeView(self.model, root_visible=False, header_visible=False)
 
     def destroy(self):
         self.model.destroy()
