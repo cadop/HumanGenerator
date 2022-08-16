@@ -1,7 +1,7 @@
 import omni.ui as ui
 from . import mhcaller
 from .human_ui import HumanPanel
-from .browser import AssetBrowserWindow
+from .browser import AssetBrowserFrame
 
 
 class MHWindow(ui.Window):
@@ -19,7 +19,7 @@ class MHWindow(ui.Window):
 
         with self.frame:
             with ui.HStack(spacing=2):
-                self.panels = (AssetBrowserWindow(mh_call), HumanPanel(mh_call))
+                self.panels = (AssetBrowserFrame(mh_call), HumanPanel(mh_call))
 
     def destroy(self):
         super().destroy()
