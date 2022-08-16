@@ -29,7 +29,7 @@ class AssetDetailDelegate(FolderDetailDelegate):
         self._action_item: Optional[AssetDetailItem] = None
 
         self._instanceable_categories = self._settings.get(
-            "/exts/omni.kit.browser.asset/instanceable"
+            "/exts/omni.makehuman.browser.asset/instanceable"
         )
         if self._instanceable_categories:
             self._viewport = get_legacy_viewport_interface()

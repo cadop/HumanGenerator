@@ -39,6 +39,13 @@ keywords = ["kit", "makehuman","human","character"]
 [[python.module]]
 name = "omni.makehuman"
 
+[settings]
+# exts."omni.makehuman.browser.asset".folders = [
+#     "exts/omni/makehuman/data"
+#     ]
+exts."omni.makehuman.browser.asset".instanceable = []
+exts."omni.makehuman.browser.asset".timeout = 10
+
 [python.pipapi]
 use_online_index = true
 
