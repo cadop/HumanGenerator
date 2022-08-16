@@ -3,7 +3,7 @@ import omni.ui as ui
 import omni.kit.app
 from omni.kit.browser.core import get_legacy_viewport_interface
 from omni.kit.browser.folder.core import FolderDetailDelegate
-from .model import AssetBrowserModel, AssetDetailItem
+from .model import MHAssetBrowserModel, AssetDetailItem
 
 import asyncio
 from pathlib import Path
@@ -20,7 +20,7 @@ class AssetDetailDelegate(FolderDetailDelegate):
         model (AssetBrowserModel): Asset browser model
     """
 
-    def __init__(self, model: AssetBrowserModel):
+    def __init__(self, model: MHAssetBrowserModel):
         super().__init__(model=model)
 
         self._dragging_url = None
@@ -28,7 +28,9 @@ class AssetDetailDelegate(FolderDetailDelegate):
         self._context_menu: Optional[ui.Menu] = None
         self._action_item: Optional[AssetDetailItem] = None
 
-        self._instanceable_categories = self._settings.get("/exts/omni.kit.browser.asset/instanceable")
+        self._instanceable_categories = self._settings.get(
+            "/exts/omni.kit.browser.asset/instanceable"
+        )
         if self._instanceable_categories:
             self._viewport = get_legacy_viewport_interface()
             if self._viewport and hasattr(self._viewport, "create_drop_helper"):
@@ -63,7 +65,9 @@ class AssetDetailDelegate(FolderDetailDelegate):
                 ui.Spacer(height=2)
                 with ui.HStack():
                     ui.Spacer()
-                    ui.ImageWithProvider(thumbnail, width=icon_size, height=icon_size)
+                    ui.ImageWithProvider(
+                        thumbnail, width=icon_size, height=icon_size
+                    )
                     ui.Spacer()
             ui.Label(
                 item.name,
@@ -92,15 +96,22 @@ class AssetDetailDelegate(FolderDetailDelegate):
         return url == self._dragging_url
 
     def _on_drop(self, url, target, viewport_name, context_name):
-        saved_instanceable = self._settings.get("/persistent/app/stage/instanceableOnCreatingReference")
+        saved_instanceable = self._settings.get(
+            "/persistent/app/stage/instanceableOnCreatingReference"
+        )
         if not saved_instanceable and url == self._dragging_url:
             # Enable instanceable for viewport asset drop handler
-            self._settings.set_bool("/persistent/app/stage/instanceableOnCreatingReference", True)
+            self._settings.set_bool(
+                "/persistent/app/stage/instanceableOnCreatingReference", True
+            )
 
             async def __restore_instanceable_flag():
                 # Waiting for viewport asset dropper handler completed
                 await omni.kit.app.get_app().next_update_async()
-                self._settings.set("/persistent/app/stage/instanceableOnCreatingReference", saved_instanceable)
+                self._settings.set(
+                    "/persistent/app/stage/instanceableOnCreatingReference",
+                    saved_instanceable,
+                )
 
             asyncio.ensure_future(__restore_instanceable_flag())
 
@@ -119,7 +130,9 @@ class AssetDetailDelegate(FolderDetailDelegate):
                 with self._context_menu:
                     ui.MenuItem("Collect", triggered_fn=self._collect)
             except ImportError:
-                carb.log_warn("Plese enable omni.kit.tool.collect first to collect.")
+                carb.log_warn(
+                    "Plese enable omni.kit.tool.collect first to collect."
+                )
 
         if self._context_menu:
             self._context_menu.show()
@@ -132,6 +145,8 @@ class AssetDetailDelegate(FolderDetailDelegate):
             collect_instance.collect(self._action_item.url)
             collect_instance = None
         except ImportError:
-            carb.log_warn("Failed to import collect module (omni.kit.tool.collect). Please enable it first.")
+            carb.log_warn(
+                "Failed to import collect module (omni.kit.tool.collect). Please enable it first."
+            )
         except AttributeError:
             carb.log_warn("Require omni.kit.tool.collect v2.0.5 or later!")
