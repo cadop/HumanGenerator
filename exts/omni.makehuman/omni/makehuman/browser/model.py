@@ -1,10 +1,14 @@
 import os
-from typing import List
+from typing import List, Union
 import carb.settings
 import omni.kit.commands
 import omni.usd
 from omni.kit.browser.core import DetailItem
-from omni.kit.browser.folder.core import FolderBrowserModel, FileDetailItem, BrowserFile
+from omni.kit.browser.folder.core import (
+    FolderBrowserModel,
+    FileDetailItem,
+    BrowserFile,
+)
 
 
 class AssetDetailItem(FileDetailItem):
@@ -20,7 +24,7 @@ class AssetDetailItem(FileDetailItem):
         super().__init__(name, file.url, file, file.thumbnail)
 
 
-class AssetBrowserModel(FolderBrowserModel):
+class MHAssetBrowserModel(FolderBrowserModel):
     """
     Represent asset browser model
     """
@@ -28,9 +32,9 @@ class AssetBrowserModel(FolderBrowserModel):
     def __init__(self, *args, **kwargs):
         super().__init__(
             *args,
-            setting_folders="/exts/omni.kit.browser.asset/folders",
+            setting_folders="/exts/omni.makehuman.browser.asset/folders",
             show_category_subfolders=True,
-            hide_file_without_thumbnails=True,
+            hide_file_without_thumbnails=False,
             **kwargs,
         )
 
@@ -45,5 +49,35 @@ class AssetBrowserModel(FolderBrowserModel):
         prim_path = omni.usd.get_stage_next_free_path(stage, "/" + name, True)
 
         omni.kit.commands.execute(
-            "CreateReferenceCommand", path_to=prim_path, asset_path=item.url, usd_context=omni.usd.get_context()
+            "CreateReferenceCommand",
+            path_to=prim_path,
+            asset_path=item.url,
+            usd_context=omni.usd.get_context(),
         )
+
+    # Overwrite parent function to add thumbnails
+    def create_detail_item(
+        self, file: BrowserFile
+    ) -> Union[FileDetailItem, List[FileDetailItem]]:
+        """
+        Create detail item(s) from a file.
+        A file may includs multi detail items.
+        Args:
+            file (BrowserFile): File object to create detail item(s)
+        """
+        dirs = file.url.split("/")
+        name = dirs[-1]
+
+        filename_noext = os.path.splitext(file.url)[0]
+        thumb = filename_noext + ".thumb"
+        thumb_png = filename_noext + ".png"
+
+        if os.path.exists(thumb_png):
+            thumb = thumb_png
+        elif os.path.exists(thumb):
+            os.rename(thumb, thumb_png)
+            thumb = thumb_png
+        else:
+            thumb = None
+
+        return FileDetailItem(name, file.url, file, thumb)
