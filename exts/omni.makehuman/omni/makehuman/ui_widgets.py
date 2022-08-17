@@ -179,12 +179,6 @@ class DropListModel(ui.AbstractItemModel):
         super().__init__()
         self.children = []
 
-    def drop_accept(self, url):
-        if os.path.splitext()[1] in self.types:
-            return True
-        else:
-            return False
-
     def drop(self, item_tagget, source):
         self.add_child(source)
 
@@ -213,15 +207,21 @@ class DropListModel(ui.AbstractItemModel):
         """
         return item.model
 
+    # def drop_accepted(self, url, *args):
+    #     if self.types is None:
+    #         return True
+    #     if os.path.splitext(url)[1] in self.types:
+    #         return True
+    #     else:
+    #         return False
+
 
 class DropList:
     def __init__(
         self,
         label,
-        types,
     ):
         self.label = label
-        self.types = types
         self.model = DropListModel()
         self._build_widget()
 
