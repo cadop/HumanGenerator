@@ -210,14 +210,20 @@ class DropListModel(ui.AbstractItemModel):
 
 
 class DropList:
-    def __init__(self, types):
+    def __init__(
+        self,
+        label,
+        types,
+    ):
+        self.label = label
         self.types = types
         self.model = DropListModel()
         self._build_widget()
 
     def _build_widget(self):
-        with ui.ScrollingFrame():
-            ui.TreeView(self.model, root_visible=False, header_visible=False)
-
-    def destroy(self):
-        pass
+        with ui.ZStack(style=styles.panel_style):
+            ui.Rectangle(name="group_rect")
+            with ui.VStack(name="contents"):
+                ui.Label(self.label, height=0)
+                with ui.ScrollingFrame():
+                    ui.TreeView(self.model, root_visible=False, header_visible=False)

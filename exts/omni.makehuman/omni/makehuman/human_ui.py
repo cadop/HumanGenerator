@@ -70,7 +70,7 @@ class ButtonPanel(ui.Frame):
 
     def _build_widget(self):
         with ui.VStack():
-            self.drop = DropList((".mhpxy"))
+            self.drop = DropList("Drop Items Here!", (".mhpxy"))
             ui.Button(
                 "add_to_scene",
                 height=50,
@@ -82,4 +82,3 @@ class ButtonPanel(ui.Frame):
 
     def destroy(self):
         super().destroy()
-        self.drop.destroy()
