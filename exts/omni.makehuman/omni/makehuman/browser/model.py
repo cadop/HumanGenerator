@@ -29,8 +29,9 @@ class MHAssetBrowserModel(FolderBrowserModel):
     Represent asset browser model
     """
 
-    def __init__(self, mhcaller, *args, **kwargs):
+    def __init__(self, mhcaller, list_widget, *args, **kwargs):
         self.mhcaller = mhcaller
+        self.list_widget = list_widget
         super().__init__(
             *args,
             setting_folders="/exts/omni.makehuman.browser.asset/folders",
@@ -38,23 +39,6 @@ class MHAssetBrowserModel(FolderBrowserModel):
             hide_file_without_thumbnails=False,
             **kwargs,
         )
-
-    # def execute(self, item: DetailItem) -> None:
-    #     # Create a Reference of the Props in the stage
-    #     stage = omni.usd.get_context().get_stage()
-    #     if not stage:
-    #         return
-
-    #     name = item.name_model.as_string.split(".")[0]
-
-    #     prim_path = omni.usd.get_stage_next_free_path(stage, "/" + name, True)
-
-    #     omni.kit.commands.execute(
-    #         "CreateReferenceCommand",
-    #         path_to=prim_path,
-    #         asset_path=item.url,
-    #         usd_context=omni.usd.get_context(),
-    #     )
 
     # Overwrite parent function to add thumbnails
     def create_detail_item(
