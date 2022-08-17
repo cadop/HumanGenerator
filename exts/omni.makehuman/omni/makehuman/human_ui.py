@@ -4,24 +4,25 @@ from .styles import *
 from . import mh_usd
 
 
-class HumanPanel(ui.Frame):
+# class HumanPanel(ui.Frame):
+class HumanPanel:
     def __init__(self, mhcaller, **kwargs):
-        super().__init__(width=0, **kwargs)
+        # super().__init__(width=0, **kwargs)
         self.mh_call = mhcaller
-        self.set_build_fn(self._build_widget)
+
+        # self.set_build_fn(self._build_widget)
+        self._build_widget()
 
     def _build_widget(self):
         human = self.mh_call.human
         with ui.HStack():
-            self.panels = (
-                ParamPanel(human, width=300),
-                ButtonPanel(self.mh_call, width=200),
-            )
+            self.params = ParamPanel(human, width=300)
+            self.buttons = ButtonPanel(self.mh_call, width=200)
 
     def destroy(self):
-        super().destroy()
-        for panel in self.panels:
-            panel.destroy()
+        # super().destroy()
+        self.params.destroy()
+        self.buttons.destroy()
 
 
 class ParamPanel(ui.Frame):
@@ -63,16 +64,19 @@ class ParamPanel(ui.Frame):
         for panel in self.panels:
             panel.destroy()
 
+    # class ButtonPanel(ui.Frame):
 
-class ButtonPanel(ui.Frame):
+
+class ButtonPanel:
     def __init__(self, mhcaller, **kwargs):
-        super().__init__(**kwargs)
+        # super().__init__(**kwargs)
         self.mh_call = mhcaller
-        self.set_build_fn(self._build_widget)
+        # self.set_build_fn(self._build_widget)
+        self._build_widget(**kwargs)
 
-    def _build_widget(self):
-        with ui.VStack():
-            self.drop = DropList("Currently Applied Proxies")
+    def _build_widget(self, **kwargs):
+        with ui.VStack(**kwargs):
+            self.drop = DropList("Currently Applied Proxies", self.mh_call)
             ui.Button(
                 "add_to_scene",
                 height=50,
@@ -85,4 +89,5 @@ class ButtonPanel(ui.Frame):
             )
 
     def destroy(self):
-        super().destroy()
+        pass
+        # super().destroy()
