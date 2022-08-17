@@ -10,7 +10,7 @@ import skeleton as mhskeleton
 from .shared import data_path
 
 
-def add_to_scene(objects):
+def add_to_scene(mh_call):
     """Import a list of Makehuman objects to the current USD stage
 
     Parameters
@@ -22,6 +22,8 @@ def add_to_scene(objects):
         meshweights on proxies reference the human meshweights, the human must
         either already be in the scene or be the first item in the list
     """
+    objects = mh_call.objects
+    name = mh_call.name
 
     scale = 10
     human = objects[0]
@@ -85,6 +87,19 @@ def add_to_scene(objects):
         # Set the rootpath under the stage's default prim
         rootPath = defaultPrim.GetPath().pathString
 
+    # Rename our human if the mhcaller has been reset
+    if mh_call.is_reset:
+        mh_call.is_reset = False
+        rootPath = omni.usd.get_stage_next_free_path(
+            stage, rootPath + "/" + name, False
+        )
+        # Save the new name if a human with the old name already exists
+        mh_call.name = rootPath.split("/")[-1]
+    else:
+        rootPath = rootPath + "/" + name
+
+    UsdGeom.Xform.Define(stage, rootPath)
+
     if mhskel:
         # Create the USD skeleton in our stage using the mhskel data
         (usdSkel, rootPath, joint_names) = setup_skeleton(
@@ -113,6 +128,8 @@ def add_to_scene(objects):
     skin = create_material(texture_path, "Skin", rootPath, stage)
 
     bind_material(usd_mesh_paths[0], skin, stage)
+
+    return name
 
 
 def setup_weights(mh_meshes, bindings, joint_names):

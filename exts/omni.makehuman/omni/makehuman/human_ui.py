@@ -78,15 +78,19 @@ class ButtonPanel:
         with ui.VStack(**kwargs):
             self.drop = DropList("Currently Applied Proxies", self.mh_call)
             ui.Button(
-                "add_to_scene",
+                "Update in Scene",
                 height=50,
-                clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call.objects),
+                clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call),
             )
             ui.Button(
-                "store_obj",
+                "New Human",
                 height=50,
-                clicked_fn=lambda: self.mh_call.store_obj(),
+                clicked_fn=lambda: self.new_human(),
             )
+
+    def new_human(self):
+        self.mh_call.reset_human()
+        mh_usd.add_to_scene(self.mh_call)
 
     def destroy(self):
         pass

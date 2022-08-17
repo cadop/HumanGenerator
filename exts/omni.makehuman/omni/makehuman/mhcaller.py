@@ -27,6 +27,9 @@ class MHCaller:
         self.G = G
         self.human = None
         self.filepath = None
+        # default name
+        self.name = "human"
+        self.is_reset = False
         self._config_mhapp()
         self.init_human()
 
@@ -41,6 +44,9 @@ class MHCaller:
         except:
             return
         # except Exception as e: warnings.Warning("MH APP EXISTS") return
+
+    def reset_human(self):
+        self.is_reset = True
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
