@@ -70,7 +70,7 @@ class MHCaller:
         )
         # Add eyes
         self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
-        base_skel = skeleton.load(
+        self.base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
         )
@@ -79,9 +79,9 @@ class MHCaller:
         )
         # Build joint weights on our chosen skeleton, derived from the base
         # skeleton
-        cmu_skel.autoBuildWeightReferences(base_skel)
+        cmu_skel.autoBuildWeightReferences(self.base_skel)
 
-        self.human.setBaseSkeleton(base_skel)
+        self.human.setBaseSkeleton(self.base_skel)
         # Actually add the skeleton
         self.human.setSkeleton(cmu_skel)
         self.human.applyAllTargets()
@@ -185,6 +185,18 @@ class MHCaller:
         # verts = np.argwhere(pxy.deleteVerts)[..., 0]
         # vertsMask[verts] = False
         # self.human.changeVertexMask(vertsMask)
+
+    def add_item(self, path):
+        if "mhpxy" in path:
+            self.add_proxy(path)
+        elif "mhskel" in path:
+            self.set_skel(path)
+
+    def set_skel(self, path):
+        skel = skeleton.load(path, self.human.meshData)
+        skel.autoBuildWeightReferences(self.base_skel)
+        self.human.setSkeleton(skel)
+        self.human.applyAllTargets()
 
     def guess_proxy_type(self, path):
         proxy_types = ("eyes", "clothes", "eyebrows", "eyelashes", "hair")

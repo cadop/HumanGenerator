@@ -181,7 +181,7 @@ class DropListModel(ui.AbstractItemModel):
         self.add_child(source)
 
     def add_child(self, item):
-        self.mh_call.add_proxy(item)
+        self.mh_call.add_item(item)
         self.update()
 
     def get_item_children(self, item):
