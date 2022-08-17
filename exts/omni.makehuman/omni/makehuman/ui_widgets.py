@@ -168,16 +168,14 @@ class DropListItem(ui.AbstractItem):
 
 class DropListModel(ui.AbstractItemModel):
     """
-    Represents the model for lists. It's very easy to initialize it
-    with any string list:
-        string_list = ["Hello", "World"]
-        model = DropListModel(*string_list)
-        ui.TreeView(model)
+    model = DropListModel(mhcaller)
+    ui.TreeView(model)
     """
 
-    def __init__(self, *args):
+    def __init__(self, mhcaller, *args):
+        self.mh_call = mhcaller
         super().__init__()
-        self.children = []
+        self.update()
 
     def drop(self, item_tagget, source):
         self.add_child(source)
@@ -207,6 +205,19 @@ class DropListModel(ui.AbstractItemModel):
         """
         return item.model
 
+    def update(self):
+        items = [
+            self.mh_call.human.eyebrowsProxy,
+            self.mh_call.human.eyelashesProxy,
+            self.mh_call.human.eyesProxy,
+            self.mh_call.human.hairProxy,
+            self.mh_call.human.proxy,
+            self.mh_call.human.skeleton,
+        ]
+        items += self.mh_call.human.clothesProxies
+        # Populate the list with non-Nonetype items
+        self.children = [DropListItem(i.name) for i in items if i is not None]
+
     # def drop_accepted(self, url, *args):
     #     if self.types is None:
     #         return True
@@ -217,12 +228,9 @@ class DropListModel(ui.AbstractItemModel):
 
 
 class DropList:
-    def __init__(
-        self,
-        label,
-    ):
+    def __init__(self, label, mhcaller):
         self.label = label
-        self.model = DropListModel()
+        self.model = DropListModel(mhcaller)
         self._build_widget()
 
     def _build_widget(self):
