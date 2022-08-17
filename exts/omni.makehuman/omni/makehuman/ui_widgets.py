@@ -181,8 +181,8 @@ class DropListModel(ui.AbstractItemModel):
         self.add_child(source)
 
     def add_child(self, item):
-        self.children.append(DropListItem(item))
-        self._item_changed(None)
+        self.mh_call.add_proxy(item)
+        self.update()
 
     def get_item_children(self, item):
         """Returns all the children when the widget asks it."""
@@ -214,9 +214,11 @@ class DropListModel(ui.AbstractItemModel):
             self.mh_call.human.proxy,
             self.mh_call.human.skeleton,
         ]
-        items += self.mh_call.human.clothesProxies
+        # Add clothing from dict
+        items += self.mh_call.human.clothesProxies.values()
         # Populate the list with non-Nonetype items
         self.children = [DropListItem(i.name) for i in items if i is not None]
+        self._item_changed(None)
 
     # def drop_accepted(self, url, *args):
     #     if self.types is None:
@@ -240,5 +242,8 @@ class DropList:
                 ui.Label(self.label, height=0)
                 with ui.ScrollingFrame():
                     ui.TreeView(
-                        self.model, root_visible=False, header_visible=False
+                        self.model,
+                        root_visible=False,
+                        header_visible=False,
+                        drop_between_items=False,
                     )

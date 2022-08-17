@@ -22,6 +22,7 @@ class AssetDetailDelegate(FolderDetailDelegate):
 
     def __init__(self, model: MHAssetBrowserModel):
         super().__init__(model=model)
+        self.model = model
         self.mhcaller = model.mhcaller
         self._dragging_url = None
         self._settings = carb.settings.get_settings()
@@ -66,5 +67,5 @@ class AssetDetailDelegate(FolderDetailDelegate):
             )
         return item.url
 
-    def on_double_click(self, item) -> None:
-        self.mhcaller.add_proxy(item.url)
+    def on_double_click(self, item):
+        self.model.list_widget.add_child(item.url)
