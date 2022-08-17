@@ -28,7 +28,8 @@ class MHCaller:
         self.human = None
         self.filepath = None
         # default name
-        self.name = "human"
+        self.default_name = "human"
+        self.name = self.default_name
         self.is_reset = False
         self._config_mhapp()
         self.init_human()
@@ -46,7 +47,11 @@ class MHCaller:
         # except Exception as e: warnings.Warning("MH APP EXISTS") return
 
     def reset_human(self):
+        # TODO make this faster by individually resetting proxies instead of
+        # reinitializing the human
         self.is_reset = True
+        self.name = self.default_name
+        self.init_human()
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
@@ -54,7 +59,6 @@ class MHCaller:
         The weights from the base skeleton must be transfered to the chosen
         skeleton or else there will be unweighted verts on the meshes.
         """
-        # TODO add means of browsing and loading proxies and skeletons
         self.human = human.Human(
             files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5)
         )
