@@ -60,11 +60,6 @@ class MHCaller:
         )
         # Add eyes
         self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "Eyes")
-        # Add some clothes
-        self.add_proxy(
-            data_path("clothes/male_casualsuit03/male_casualsuit03.mhpxy"),
-            "Clothes",
-        )
         base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
@@ -72,8 +67,6 @@ class MHCaller:
         cmu_skel = skeleton.load(
             data_path("rigs/cmu_mb.mhskel"), self.human.meshData
         )
-        game_skel = skeleton.load(data_path("rigs\game_engine.mhskel"))
-
         # Build joint weights on our chosen skeleton, derived from the base
         # skeleton
         cmu_skel.autoBuildWeightReferences(base_skel)
