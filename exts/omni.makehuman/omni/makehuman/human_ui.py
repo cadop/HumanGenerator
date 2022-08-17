@@ -70,12 +70,15 @@ class ButtonPanel(ui.Frame):
 
     def _build_widget(self):
         with ui.VStack():
+            self.drop = DropList((".mhpxy"))
             ui.Button(
                 "add_to_scene",
+                height=50,
                 clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call.objects),
             )
-            ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj())
-            self.drop = DropList((".mhpxy"))
+            ui.Button(
+                "store_obj", height=50, clicked_fn=lambda: self.mh_call.store_obj()
+            )
 
     def destroy(self):
         super().destroy()

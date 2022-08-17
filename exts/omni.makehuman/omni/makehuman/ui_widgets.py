@@ -49,9 +49,7 @@ class SliderEntry:
 
     def _build_widget(self):
         """Construct the UI elements"""
-        with ui.HStack(
-            width=ui.Percent(100), height=0, style=styles.sliderentry_style
-        ):
+        with ui.HStack(width=ui.Percent(100), height=0, style=styles.sliderentry_style):
             ui.Label(
                 self.label,
                 height=15,
@@ -218,7 +216,7 @@ class DropList:
         self._build_widget()
 
     def _build_widget(self):
-        with ui.ScrollingFrame(width=300):
+        with ui.ScrollingFrame():
             ui.TreeView(self.model, root_visible=False, header_visible=False)
 
     def destroy(self):
