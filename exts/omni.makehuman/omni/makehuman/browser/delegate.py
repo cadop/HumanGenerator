@@ -28,19 +28,6 @@ class AssetDetailDelegate(FolderDetailDelegate):
         self._context_menu: Optional[ui.Menu] = None
         self._action_item: Optional[AssetDetailItem] = None
 
-        # self._instanceable_categories = self._settings.get(
-        #     "/exts/omni.makehuman.browser.asset/instanceable"
-        # )
-        # if self._instanceable_categories:
-        #     self._viewport = get_legacy_viewport_interface()
-        #     if self._viewport and hasattr(self._viewport, "create_drop_helper"):
-        #         self._drop_helper = self._viewport.create_drop_helper(
-        #             pickable=True,
-        #             add_outline=True,
-        #             on_drop_accepted_fn=self._on_drop_accepted,
-        #             on_drop_fn=self._on_drop,
-        #         )
-        #     else:
         self._viewport = None
         self._drop_helper = None
 
