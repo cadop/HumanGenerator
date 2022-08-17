@@ -77,79 +77,7 @@ class AssetDetailDelegate(FolderDetailDelegate):
                 alignment=ui.Alignment.TOP,
                 style_type_name_override="GridView.Item",
             )
-
-        # self._dragging_url = None
-        # if self._instanceable_categories:
-        #     # For required categories, need to set instanceable after dropped
-        #     url = item.url
-        #     pos = url.rfind("/")
-        #     if pos > 0:
-        #         url = url[:pos]
-        #     for category in self._instanceable_categories:
-        #         if category in url:
-        #             self._dragging_url = item.url
-        #             break
         return item.url
-
-    # def _on_drop_accepted(self, url):
-    #     # Only hanlder dragging from asset browser
-    #     return url == self._dragging_url
-
-    # def _on_drop(self, url, target, viewport_name, context_name):
-    #     saved_instanceable = self._settings.get(
-    #         "/persistent/app/stage/instanceableOnCreatingReference"
-    #     )
-    #     if not saved_instanceable and url == self._dragging_url:
-    #         # Enable instanceable for viewport asset drop handler
-    #         self._settings.set_bool(
-    #             "/persistent/app/stage/instanceableOnCreatingReference", True
-    #         )
-
-    #         async def __restore_instanceable_flag():
-    #             # Waiting for viewport asset dropper handler completed
-    #             await omni.kit.app.get_app().next_update_async()
-    #             self._settings.set(
-    #                 "/persistent/app/stage/instanceableOnCreatingReference",
-    #                 saved_instanceable,
-    #             )
-
-    #         asyncio.ensure_future(__restore_instanceable_flag())
-
-    #     self._dragging_url = None
-    #     # Let viewport do asset dropping
-    #     return None
 
     def on_double_click(self, item) -> None:
         self.mhcaller.add_proxy(item.url)
-
-    # def on_right_click(self, item: AssetDetailItem) -> None:
-    #     """Show context menu"""
-    #     self._action_item = item
-    #     if self._context_menu is None:
-    #         try:
-    #             import omni.kit.tool.collect
-
-    #             self._context_menu = ui.Menu("Asset browser context menu")
-    #             with self._context_menu:
-    #                 ui.MenuItem("Collect", triggered_fn=self._collect)
-    #         except ImportError:
-    #             carb.log_warn(
-    #                 "Plese enable omni.kit.tool.collect first to collect."
-    #             )
-
-    #     if self._context_menu:
-    #         self._context_menu.show()
-
-    # def _collect(self):
-    #     try:
-    #         import omni.kit.tool.collect
-
-    #         collect_instance = omni.kit.tool.collect.get_instance()
-    #         collect_instance.collect(self._action_item.url)
-    #         collect_instance = None
-    #     except ImportError:
-    #         carb.log_warn(
-    #             "Failed to import collect module (omni.kit.tool.collect). Please enable it first."
-    #         )
-    #     except AttributeError:
-    #         carb.log_warn("Require omni.kit.tool.collect v2.0.5 or later!")
