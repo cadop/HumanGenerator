@@ -49,9 +49,7 @@ class ParamPanel(ui.Frame):
         race_model = SliderEntryPanelModel(race_params)
 
         with ui.ScrollingFrame():
-            with ui.CollapsableFrame(
-                "Phenotype", style=styles.frame_style, height=0
-            ):
+            with ui.CollapsableFrame("Phenotype", style=styles.frame_style, height=0):
                 with ui.VStack():
                     self.panels = (
                         SliderEntryPanel("Macrodetails", macro_model),
@@ -71,14 +69,14 @@ class ButtonPanel(ui.Frame):
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
-        with ui.ScrollingFrame():
-            with ui.VStack():
-                ui.Button(
-                    "add_to_scene",
-                    clicked_fn=lambda: mh_usd.add_to_scene(
-                        self.mh_call.objects
-                    ),
-                )
-                ui.Button(
-                    "store_obj", clicked_fn=lambda: self.mh_call.store_obj()
-                )
+        with ui.VStack():
+            ui.Button(
+                "add_to_scene",
+                clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call.objects),
+            )
+            ui.Button("store_obj", clicked_fn=lambda: self.mh_call.store_obj())
+            self.drop = DropList((".mhpxy"))
+
+    def destroy(self):
+        super().destroy()
+        self.drop.destroy()
