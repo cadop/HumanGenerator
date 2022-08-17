@@ -48,11 +48,15 @@ def add_to_scene(objects):
     # it back to the human model Generate bone weights for all meshes up front
     # so they can be reused for all
     if mhskel:
-        rawWeights = human.getVertexWeights(human.getSkeleton())  # Basemesh weights
+        rawWeights = human.getVertexWeights(
+            human.getSkeleton()
+        )  # Basemesh weights
         for mesh in mh_meshes:
             if mesh.object.proxy:
                 # Transfer weights to proxy
-                parentWeights = mesh.object.proxy.getVertexWeights(rawWeights, human.getSkeleton())
+                parentWeights = mesh.object.proxy.getVertexWeights(
+                    rawWeights, human.getSkeleton()
+                )
             else:
                 parentWeights = rawWeights
             # Transfer weights to face/vert masked and/or subdivided mesh
@@ -83,7 +87,9 @@ def add_to_scene(objects):
 
     if mhskel:
         # Create the USD skeleton in our stage using the mhskel data
-        (usdSkel, rootPath, joint_names) = setup_skeleton(rootPath, stage, mhskel, offset)
+        (usdSkel, rootPath, joint_names) = setup_skeleton(
+            rootPath, stage, mhskel, offset
+        )
 
         # Add the meshes to the USD stage under skelRoot
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
@@ -143,10 +149,14 @@ def setup_weights(mh_meshes, bindings, joint_names):
         UsdSkel.NormalizeWeights(weights, elementSize)
         UsdSkel.SortInfluences(indices, weights, elementSize)
 
-        indices_attribute = binding.CreateJointIndicesPrimvar(constant=False, elementSize=elementSize)
+        indices_attribute = binding.CreateJointIndicesPrimvar(
+            constant=False, elementSize=elementSize
+        )
         indices_attribute.Set(indices)
 
-        weights_attribute = binding.CreateJointWeightsPrimvar(constant=False, elementSize=elementSize)
+        weights_attribute = binding.CreateJointWeightsPrimvar(
+            constant=False, elementSize=elementSize
+        )
         weights_attribute.Set(weights)
 
 
@@ -311,7 +321,9 @@ def setup_meshes(meshes, stage, rootPath, offset=[0, 0, 0]):
         meshGeom.SetNormalsInterpolation("vertex")
 
         # Set uvs.
-        texCoords = meshGeom.CreatePrimvar("st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying)
+        texCoords = meshGeom.CreatePrimvar(
+            "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying
+        )
         texCoords.Set(mesh.getUVs(newuvindices))
         # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
 
@@ -436,7 +448,9 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
     # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
 
     originalRoot = skeleton.roots[0]
-    newRoot = skeleton.addBone("RootJoint", None, "newRoot_head", originalRoot.tailJoint)
+    newRoot = skeleton.addBone(
+        "RootJoint", None, "newRoot_head", originalRoot.tailJoint
+    )
     originalRoot.parent = newRoot
     newRoot.headPos -= offset
     newRoot.build()
@@ -540,7 +554,10 @@ def create_material(diffuse_image_path, name, root_path, stage):
     shader = UsdShade.Shader.Define(stage, shaderPath)
     shader.SetSourceAsset("OmniPBR.mdl", "mdl")
     shader.GetPrim().CreateAttribute(
-        "info:mdl:sourceAsset:subIdentifier", Sdf.ValueTypeNames.Token, False, Sdf.VariabilityUniform
+        "info:mdl:sourceAsset:subIdentifier",
+        Sdf.ValueTypeNames.Token,
+        False,
+        Sdf.VariabilityUniform,
     ).Set("OmniPBR")
 
     # Set Diffuse texture.
