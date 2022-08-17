@@ -8,7 +8,8 @@ from .ui_widgets import *
 class MHWindow(ui.Window):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.panel = None
+        self.browser = None
         self.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
 
         self.frame.set_build_fn(self._build_ui)
@@ -19,10 +20,13 @@ class MHWindow(ui.Window):
         mh_call.filepath = "D:/human.obj"
 
         with self.frame:
-            with ui.HStack(spacing=2):
-                self.panels = (AssetBrowserFrame(mh_call), HumanPanel(mh_call))
+            with ui.Stack(ui.Direction.RIGHT_TO_LEFT, spacing=2):
+                self.panel = HumanPanel(mh_call)
+                self.browser = AssetBrowserFrame(
+                    mh_call, self.panel.buttons.drop.model
+                )
 
     def destroy(self):
         super().destroy()
-        for panel in self.panels:
-            panel.destroy()
+        self.panel.destroy()
+        self.browser.destroy()
