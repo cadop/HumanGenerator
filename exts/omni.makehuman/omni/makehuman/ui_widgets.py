@@ -49,7 +49,9 @@ class SliderEntry:
 
     def _build_widget(self):
         """Construct the UI elements"""
-        with ui.HStack(width=ui.Percent(100), height=0, style=styles.sliderentry_style):
+        with ui.HStack(
+            width=ui.Percent(100), height=0, style=styles.sliderentry_style
+        ):
             ui.Label(
                 self.label,
                 height=15,
@@ -184,7 +186,10 @@ class DropListModel(ui.AbstractItemModel):
             return False
 
     def drop(self, item_tagget, source):
-        self.children.append(DropListItem(source))
+        self.add_child(source)
+
+    def add_child(self, item):
+        self.children.append(DropListItem(item))
         self._item_changed(None)
 
     def get_item_children(self, item):
@@ -226,4 +231,6 @@ class DropList:
             with ui.VStack(name="contents"):
                 ui.Label(self.label, height=0)
                 with ui.ScrollingFrame():
-                    ui.TreeView(self.model, root_visible=False, header_visible=False)
+                    ui.TreeView(
+                        self.model, root_visible=False, header_visible=False
+                    )
