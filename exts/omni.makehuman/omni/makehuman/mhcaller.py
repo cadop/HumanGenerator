@@ -59,7 +59,7 @@ class MHCaller:
             mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human
         )
         # Add eyes
-        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "Eyes")
+        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
@@ -133,7 +133,12 @@ class MHCaller:
         Parameters
         ----------
         proxypath : str, optional
-            Path to the proxy file on disk, None by default
+            Path to the proxy file on disk
+        proxy_type: str, optional
+            Proxy type, None by default
+            Can be auto-determined using path names, but otherwise
+            must be defined (this is a limitation of how makehuman handles
+            proxies)
         """
         #  Derived from work by @tomtom92 at the MH-Community forums
         pxy = proxy.loadProxy(self.human, proxypath, type=proxy_type)
@@ -145,15 +150,19 @@ class MHCaller:
         pxy.update(mesh2, fit_to_posed)
         mesh2.update()
         obj.setSubdivided(self.human.isSubdivided())
-        if proxy_type == "Eyes":
+
+        if proxy_type is None:
+            proxy_type = self.guess_proxy_type(proxypath)
+
+        if proxy_type == "eyes":
             self.human.setEyesProxy(pxy)
-        elif proxy_type == "Clothes":
+        elif proxy_type == "clothes":
             self.human.addClothesProxy(pxy)
-        elif proxy_type == "Eyebrows":
+        elif proxy_type == "eyebrows":
             self.human.setEyebrowsProxy(pxy)
-        elif proxy_type == "Eyelashes":
+        elif proxy_type == "eyelashes":
             self.human.setEyelashesProxy(pxy)
-        elif proxy_type == "Hair":
+        elif proxy_type == "hair":
             self.human.setHairProxy(pxy)
         else:
             # Body proxies (musculature, etc)
@@ -166,3 +175,10 @@ class MHCaller:
         # verts = np.argwhere(pxy.deleteVerts)[..., 0]
         # vertsMask[verts] = False
         # self.human.changeVertexMask(vertsMask)
+
+    def guess_proxy_type(self, path):
+        proxy_types = ("eyes", "clothes", "eyebrows", "eyelashes", "hair")
+        for type in proxy_types:
+            if type in path:
+                return type
+        return None
