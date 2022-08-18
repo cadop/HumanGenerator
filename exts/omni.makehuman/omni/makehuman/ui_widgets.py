@@ -23,8 +23,7 @@ class SliderEntry:
 
         Parameters
         ----------
-        label : str
-            Widget label
+
         model : ui.SimpleFloatModel
             Model to publish changes to
         fn : object
@@ -49,9 +48,7 @@ class SliderEntry:
 
     def _build_widget(self):
         """Construct the UI elements"""
-        with ui.HStack(
-            width=ui.Percent(100), height=0, style=styles.sliderentry_style
-        ):
+        with ui.HStack(width=ui.Percent(100), height=0, style=styles.sliderentry_style):
             ui.Label(
                 self.label,
                 height=15,
@@ -89,9 +86,7 @@ class SliderEntryPanelModel:
         float_model = ui.SimpleFloatModel()
         float_model.set_value(param.default)
         self.subscriptions.append(
-            float_model.subscribe_end_edit_fn(
-                lambda m: self._sanitize_and_run(param, float_model)
-            )
+            float_model.subscribe_end_edit_fn(lambda m: self._sanitize_and_run(param, float_model))
         )
         self.float_models.append(float_model)
 
@@ -115,15 +110,15 @@ class SliderEntryPanelModel:
 
 
 class SliderEntryPanel:
-    def __init__(self, label: str, model: SliderEntryPanelModel):
+    def __init__(self, model: SliderEntryPanelModel, label: str = None):
         """A UI widget providing a labeled group of slider entries
 
         Parameters
         ----------
-        label : str
-            Display title for the group
-        params : list of Param
-            List of Param data objects to populate the panel
+        model : SliderEntryPanelModel
+            Model to hold parameters
+        label : str, Optional
+            Display title for the group (None by default)
         """
         self.label = label
         self.model = model
@@ -134,10 +129,9 @@ class SliderEntryPanel:
         with ui.ZStack(style=styles.panel_style, height=0):
             ui.Rectangle(name="group_rect")
             with ui.VStack(name="contents"):
-                ui.Label(self.label, height=0)
-                for param, float_model in zip(
-                    self.model.params, self.model.float_models
-                ):
+                if self.label:
+                    ui.Label(self.label, height=0)
+                for param, float_model in zip(self.model.params, self.model.float_models):
                     SliderEntry(
                         param.name,
                         float_model,
