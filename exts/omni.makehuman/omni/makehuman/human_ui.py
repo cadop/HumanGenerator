@@ -88,9 +88,12 @@ class ParamPanel(ui.Frame):
         with ui.ScrollingFrame():
             with ui.VStack():
                 for group in self.human.modifierGroups:
-                    model = SliderEntryPanelModel(group_params(group))
-                    self.models.append(model)
-                    SliderEntryPanel(group, model)
+                    with ui.CollapsableFrame(
+                        group.capitalize(), collapsed=True
+                    ):
+                        model = SliderEntryPanelModel(group_params(group))
+                        self.models.append(model)
+                        SliderEntryPanel(group, model)
 
     def destroy(self):
         super().destroy()
