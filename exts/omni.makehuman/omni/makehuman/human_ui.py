@@ -29,40 +29,73 @@ class ParamPanel(ui.Frame):
     def __init__(self, human, **kwargs):
         super().__init__(**kwargs)
         self.human = human
+        self.models = []
         self.set_build_fn(self._build_widget)
 
-    def _build_widget(self):
-        human = self.human
-        macro_params = (
-            Param("Gender", human.setGender),
-            Param("Age", human.setAge),
-            Param("Muscle", human.setMuscle),
-            Param("Weight", human.setWeight),
-            Param("Height", human.setHeight),
-            Param("Proportions", human.setBodyProportions),
-        )
-        macro_model = SliderEntryPanelModel(macro_params)
-        race_params = (
-            Param("African", human.setAfrican),
-            Param("Asian", human.setAsian),
-            Param("Caucasian", human.setCaucasian),
-        )
-        race_model = SliderEntryPanelModel(race_params)
+    # def _build_widget(self):
+    #     human = self.human
+    #     macro_params = (
+    #         Param("Gender", human.setGender),
+    #         Param("Age", human.setAge),
+    #         Param("Muscle", human.setMuscle),
+    #         Param("Weight", human.setWeight),
+    #         Param("Height", human.setHeight),
+    #         Param("Proportions", human.setBodyProportions),
+    #     )
+    #     macro_model = SliderEntryPanelModel(macro_params)
+    #     race_params = (
+    #         Param("African", human.setAfrican),
+    #         Param("Asian", human.setAsian),
+    #         Param("Caucasian", human.setCaucasian),
+    #     )
+    #     race_model = SliderEntryPanelModel(race_params)
 
+    #     with ui.ScrollingFrame():
+    #         with ui.CollapsableFrame(
+    #             "Main", style=styles.frame_style, height=0
+    #         ):
+    #             with ui.VStack():
+    #                 self.panels = (
+    #                     SliderEntryPanel("Macrodetails", macro_model),
+    #                     SliderEntryPanel("Race", race_model),
+    #                 )
+
+    def _build_widget(self):
+        def modifier_param(m):
+            tlabel = m.name.split("-")
+            if "|" in tlabel[len(tlabel) - 1]:
+                tlabel = tlabel[:-1]
+            if len(tlabel) > 1 and tlabel[0] == m.groupName:
+                label = tlabel[1:]
+            else:
+                label = tlabel
+            label = " ".join([word.capitalize() for word in label])
+            return Param(
+                label,
+                m.updateValue,
+                min=m.getMin(),
+                max=m.getMax(),
+                default=m.getDefaultValue(),
+            )
+
+        def group_params(group):
+            params = [
+                modifier_param(m) for m in self.human.getModifiersByGroup(group)
+            ]
+            return params
+
+        # categories = {}
         with ui.ScrollingFrame():
-            with ui.CollapsableFrame(
-                "Phenotype", style=styles.frame_style, height=0
-            ):
-                with ui.VStack():
-                    self.panels = (
-                        SliderEntryPanel("Macrodetails", macro_model),
-                        SliderEntryPanel("Race", race_model),
-                    )
+            with ui.VStack():
+                for group in self.human.modifierGroups:
+                    model = SliderEntryPanelModel(group_params(group))
+                    self.models.append(model)
+                    SliderEntryPanel(group, model)
 
     def destroy(self):
         super().destroy()
-        for panel in self.panels:
-            panel.destroy()
+        for model in self.models:
+            model.destroy()
 
     # class ButtonPanel(ui.Frame):
 
