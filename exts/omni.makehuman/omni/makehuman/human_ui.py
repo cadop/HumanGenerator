@@ -79,21 +79,29 @@ class ParamPanel(ui.Frame):
             )
 
         def group_params(group):
-            params = [
-                modifier_param(m) for m in self.human.getModifiersByGroup(group)
-            ]
+            params = [modifier_param(m) for m in self.human.getModifiersByGroup(group)]
             return params
 
         # categories = {}
         with ui.ScrollingFrame():
             with ui.VStack():
-                for group in self.human.modifierGroups:
-                    with ui.CollapsableFrame(
-                        group.capitalize(), collapsed=True
-                    ):
+                macrogroups = [g for g in self.human.modifierGroups if "macrodetails" in g]
+                macrogroups = set(macrogroups)
+                allgroups = set(self.human.modifierGroups).difference(macrogroups)
+
+                macroparams = [group_params(g) for g in macrogroups]
+                macroparams = [p for pg in macroparams for p in pg]
+
+                with ui.CollapsableFrame("Macrodetails"):
+                    model = SliderEntryPanelModel(macroparams)
+                    self.models.append(model)
+                    SliderEntryPanel("Parameters", model)
+
+                for group in allgroups:
+                    with ui.CollapsableFrame(group.capitalize(), collapsed=True):
                         model = SliderEntryPanelModel(group_params(group))
                         self.models.append(model)
-                        SliderEntryPanel(group, model)
+                        SliderEntryPanel("Parameters", model)
 
     def destroy(self):
         super().destroy()
