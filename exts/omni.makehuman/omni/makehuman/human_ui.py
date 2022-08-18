@@ -82,26 +82,45 @@ class ParamPanel(ui.Frame):
             params = [modifier_param(m) for m in self.human.getModifiersByGroup(group)]
             return params
 
-        # categories = {}
+        def build_macro_frame():
+            human = self.human
+            macro_params = (
+                Param("Gender", human.setGender),
+                Param("Age", human.setAge),
+                Param("Muscle", human.setMuscle),
+                Param("Weight", human.setWeight),
+                Param("Height", human.setHeight),
+                Param("Proportions", human.setBodyProportions),
+            )
+            macro_model = SliderEntryPanelModel(macro_params)
+            race_params = (
+                Param("African", human.setAfrican),
+                Param("Asian", human.setAsian),
+                Param("Caucasian", human.setCaucasian),
+            )
+            race_model = SliderEntryPanelModel(race_params)
+
+            self.models.append(macro_model)
+            self.models.append(race_model)
+
+            with ui.CollapsableFrame("Macros", style=styles.frame_style, height=0):
+                with ui.VStack():
+                    self.panels = (
+                        SliderEntryPanel(macro_model, label="General"),
+                        SliderEntryPanel(race_model, label="Race"),
+                    )
+
         with ui.ScrollingFrame():
             with ui.VStack():
+                build_macro_frame()
                 macrogroups = [g for g in self.human.modifierGroups if "macrodetails" in g]
                 macrogroups = set(macrogroups)
                 allgroups = set(self.human.modifierGroups).difference(macrogroups)
-
-                macroparams = [group_params(g) for g in macrogroups]
-                macroparams = [p for pg in macroparams for p in pg]
-
-                with ui.CollapsableFrame("Macrodetails"):
-                    model = SliderEntryPanelModel(macroparams)
-                    self.models.append(model)
-                    SliderEntryPanel("Parameters", model)
-
                 for group in allgroups:
-                    with ui.CollapsableFrame(group.capitalize(), collapsed=True):
+                    with ui.CollapsableFrame(group.capitalize(), style=styles.frame_style, collapsed=True):
                         model = SliderEntryPanelModel(group_params(group))
                         self.models.append(model)
-                        SliderEntryPanel("Parameters", model)
+                        SliderEntryPanel(model)
 
     def destroy(self):
         super().destroy()
