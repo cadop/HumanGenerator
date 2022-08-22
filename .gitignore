@@ -18,3 +18,5 @@ _*/
 tools/*
 link_app.bat
 link_app.sh
+
+*.target
