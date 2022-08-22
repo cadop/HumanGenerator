@@ -72,6 +72,7 @@ class Param:
 
     name: str
     fn: object
+    image: str = None
     min: float = 0
     max: float = 1
     default: float = 0.5
@@ -140,6 +141,7 @@ class SliderEntryPanel:
                         param.name,
                         float_model,
                         param.fn,
+                        image=param.image,
                         min=param.min,
                         max=param.max,
                         default=param.default,
