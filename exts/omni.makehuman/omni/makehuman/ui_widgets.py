@@ -162,15 +162,14 @@ class DropListDelegate(ui.AbstractItemDelegate):
         value_model = model.get_item_value_model(item, column_id)
         label = ui.Label(value_model.as_string, style_type_name_override="TreeView.Item")
         # Start editing when double clicked
-        label.set_mouse_double_clicked_fn(
-            lambda x, y, b, m: self.on_double_click(b, value_model.mh_item, model.mh_call)
-        )
+        label.set_mouse_double_clicked_fn(lambda x, y, b, m: self.on_double_click(b, value_model.mh_item, model))
 
-    def on_double_click(self, button, item, mhcaller):
+    def on_double_click(self, button, item, list_model):
         """Called when the user double-clicked the item in TreeView"""
         if button != 0:
             return
-        mhcaller.remove_item(item)
+        list_model.mh_call.remove_item(item)
+        list_model.update()
 
 
 class DropListItem(ui.AbstractItem):
