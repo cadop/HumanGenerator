@@ -196,6 +196,12 @@ class MHCaller:
             # Body proxies (musculature, etc)
             self.human.setProxy(None)
 
+    def remove_item(self, item):
+        if isinstance(item, proxy.Proxy):
+            self.remove_proxy(item)
+        else:
+            return
+
     def add_item(self, path):
         if "mhpxy" in path:
             self.add_proxy(path)
