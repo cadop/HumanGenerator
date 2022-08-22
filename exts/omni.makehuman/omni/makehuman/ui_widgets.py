@@ -145,15 +145,40 @@ class SliderEntryPanel:
         self.model.destroy()
 
 
+class DropListItemModel(ui.SimpleStringModel):
+    def __init__(self, text, mh_item=None) -> None:
+        super().__init__(text)
+        self.mh_item = mh_item
+
+    def destroy(self):
+        super().destroy()
+
+
+class DropListDelegate(ui.AbstractItemDelegate):
+    def __init__(self):
+        super().__init__()
+
+    def build_widget(self, model, item, column_id, level, expanded):
+        value_model = model.get_item_value_model(item, column_id)
+        label = ui.Label(value_model.as_string, style_type_name_override="TreeView.Item")
+        # Start editing when double clicked
+        label.set_mouse_double_clicked_fn(
+            lambda x, y, b, m: self.on_double_click(b, value_model.mh_item, model.mh_call)
+        )
+
+    def on_double_click(self, button, item, mhcaller):
+        """Called when the user double-clicked the item in TreeView"""
+        if button != 0:
+            return
+        mhcaller.remove_item(item)
+
+
 class DropListItem(ui.AbstractItem):
     """Single item of the model"""
 
-    def __init__(self, text):
+    def __init__(self, text, item=None):
         super().__init__()
-        self.model = ui.SimpleStringModel(text)
-
-    def __repr__(self):
-        return f'"{self.model.as_string}"'
+        self.model = DropListItemModel(text, mh_item=item)
 
     def destroy(self):
         super().destroy()
@@ -195,7 +220,7 @@ class DropListModel(ui.AbstractItemModel):
         """
         Return value model.
         It's the object that tracks the specific value.
-        In our case we use ui.SimpleStringModel.
+        In our case we use DropListItemModel.
         """
         return item.model
 
@@ -211,7 +236,7 @@ class DropListModel(ui.AbstractItemModel):
         # Add clothing from dict
         items += self.mh_call.human.clothesProxies.values()
         # Populate the list with non-Nonetype items
-        self.children = [DropListItem(i.name) for i in items if i is not None]
+        self.children = [DropListItem(i.name, item=i) for i in items if i is not None]
         self._item_changed(None)
 
     # def drop_accepted(self, url, *args):
@@ -235,8 +260,10 @@ class DropList:
             with ui.VStack(name="contents"):
                 ui.Label(self.label, height=0)
                 with ui.ScrollingFrame():
+                    self.delegate = DropListDelegate()
                     ui.TreeView(
                         self.model,
+                        delegate=self.delegate,
                         root_visible=False,
                         header_visible=False,
                         drop_between_items=False,
