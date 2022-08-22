@@ -59,24 +59,18 @@ class MHCaller:
         The weights from the base skeleton must be transfered to the chosen
         skeleton or else there will be unweighted verts on the meshes.
         """
-        self.human = human.Human(
-            files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5)
-        )
+        self.human = human.Human(files3d.loadMesh(mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
         # set the makehuman instance human so that features (eg skeletons) can
         # access it globally
         self.G.app.selectedHuman = self.human
-        humanmodifier.loadModifiers(
-            mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human
-        )
+        humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         # Add eyes
         self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         self.base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
         )
-        cmu_skel = skeleton.load(
-            data_path("rigs/cmu_mb.mhskel"), self.human.meshData
-        )
+        cmu_skel = skeleton.load(data_path("rigs/cmu_mb.mhskel"), self.human.meshData)
         # Build joint weights on our chosen skeleton, derived from the base
         # skeleton
         cmu_skel.autoBuildWeightReferences(self.base_skel)
@@ -185,6 +179,28 @@ class MHCaller:
         # verts = np.argwhere(pxy.deleteVerts)[..., 0]
         # vertsMask[verts] = False
         # self.human.changeVertexMask(vertsMask)
+
+    def remove_proxy(self, proxy):
+        proxy_type = proxy.type.lower()
+        if proxy_type == "eyes":
+            self.human.setEyesProxy(None)
+        elif proxy_type == "clothes":
+            self.human.removeClothesProxy(proxy.uuid)
+        elif proxy_type == "eyebrows":
+            self.human.setEyebrowsProxy(None)
+        elif proxy_type == "eyelashes":
+            self.human.setEyelashesProxy(None)
+        elif proxy_type == "hair":
+            self.human.setHairProxy(None)
+        else:
+            # Body proxies (musculature, etc)
+            self.human.setProxy(None)
+
+    def remove_item(self, item):
+        if isinstance(item, proxy.Proxy):
+            self.remove_proxy(item)
+        else:
+            return
 
     def add_item(self, path):
         if "mhpxy" in path:
