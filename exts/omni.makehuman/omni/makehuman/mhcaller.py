@@ -1,6 +1,7 @@
 import warnings
 import io
 import makehuman
+from pathlib import Path
 
 # Makehuman loads most modules by manipulating the system path, so we have to
 # run this before we can run the rest of our makehuman imports
@@ -14,7 +15,8 @@ from core import G
 from mhmain import MHApplication
 from shared import wavefront
 import humanmodifier, skeleton
-import proxy, gui3d, events3d
+import proxy, gui3d, events3d, targets
+from getpath import findFile
 import numpy as np
 import carb
 from .shared import data_path
@@ -204,3 +206,9 @@ class MHCaller:
             if type in path:
                 return type
         return None
+
+def modifier_image(name):
+    if name is None:
+        return None
+    name = name.lower()
+    return str(Path(__file__).parents[2]) + "/" + targets.getTargets().images.get(name, name)
