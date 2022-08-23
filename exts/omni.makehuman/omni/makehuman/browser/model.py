@@ -18,8 +18,10 @@ class AssetDetailItem(FileDetailItem):
     Args:
         file (BrowserFile): BrowserFile object to create detail item
     """
+    # TODO update docstring
 
     def __init__(self, file: BrowserFile):
+        # TODO add docstring
         dirs = file.url.split("/")
         name = dirs[-1]
         super().__init__(name, file.url, file, file.thumbnail)
@@ -31,6 +33,7 @@ class MHAssetBrowserModel(FolderBrowserModel):
     """
 
     def __init__(self, mhcaller, list_widget, *args, **kwargs):
+        # TODO add docstring
         self.mhcaller = mhcaller
         self.list_widget = list_widget
         super().__init__(
@@ -39,7 +42,9 @@ class MHAssetBrowserModel(FolderBrowserModel):
             hide_file_without_thumbnails=False,
             **kwargs,
         )
+        # Add the data path as the root folder from which to build a collection
         super().append_root_folder(data_path(""), name="MakeHuman")
+        # TODO make it so that the default collection cannot be removed
 
     # Overwrite parent function to add thumbnails
     def create_detail_item(
@@ -51,13 +56,20 @@ class MHAssetBrowserModel(FolderBrowserModel):
         Args:
             file (BrowserFile): File object to create detail item(s)
         """
+        # TODO spelling
+
         dirs = file.url.split("/")
         name = dirs[-1]
 
+        # Get the file name without the extension
         filename_noext = os.path.splitext(file.url)[0]
+
         thumb = filename_noext + ".thumb"
         thumb_png = filename_noext + ".png"
 
+        # If there is already a PNG, get it. If not, rename the thumb file to a PNG
+        # (They are the same format just with different extensions). This lets us
+        # use Makehuman's asset thumbnails
         if os.path.exists(thumb_png):
             thumb = thumb_png
         elif os.path.exists(thumb):
