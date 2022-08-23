@@ -14,6 +14,7 @@ class SliderEntry:
         label: str,
         model: ui.SimpleFloatModel,
         fn: object,
+        image: str = None,
         step=0.01,
         min=None,
         max=None,
@@ -44,6 +45,7 @@ class SliderEntry:
         self.min = min
         self.max = max
         self.default = default
+        self.image = image
         self._build_widget()
 
     def _build_widget(self):
@@ -55,6 +57,8 @@ class SliderEntry:
                 alignment=ui.Alignment.RIGHT,
                 name="label_param",
             )
+            if self.image:
+                ui.Image(self.image)
             self.drag = ui.FloatDrag(model=self.model, step=self.step)
             if self.min is not None:
                 self.drag.min = self.min
@@ -68,6 +72,7 @@ class Param:
 
     name: str
     fn: object
+    image: str = None
     min: float = 0
     max: float = 1
     default: float = 0.5
@@ -136,6 +141,7 @@ class SliderEntryPanel:
                         param.name,
                         float_model,
                         param.fn,
+                        image=param.image,
                         min=param.min,
                         max=param.max,
                         default=param.default,

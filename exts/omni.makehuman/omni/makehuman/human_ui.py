@@ -1,8 +1,8 @@
+from omni.makehuman.mhcaller import modifier_image
 import omni.ui as ui
 from .ui_widgets import *
 from .styles import *
 from . import mh_usd
-
 
 # class HumanPanel(ui.Frame):
 class HumanPanel:
@@ -70,9 +70,14 @@ class ParamPanel(ui.Frame):
             else:
                 label = tlabel
             label = " ".join([word.capitalize() for word in label])
+
+            # Guess a suitable image path from target name
+            tlabel = m.name.replace("|", "-").split("-")
+            image = modifier_image(("%s.png" % "-".join(tlabel)).lower())
             return Param(
                 label,
                 m.updateValue,
+                image=image,
                 min=m.getMin(),
                 max=m.getMax(),
                 default=m.getDefaultValue(),
