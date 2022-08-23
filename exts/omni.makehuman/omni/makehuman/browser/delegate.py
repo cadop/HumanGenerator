@@ -1,4 +1,5 @@
 import carb
+from omni.kit.browser.folder.core.models.folder_browser_item import FileDetailItem
 import omni.ui as ui
 import omni.kit.app
 from omni.kit.browser.core import get_legacy_viewport_interface
@@ -16,16 +17,16 @@ ICON_PATH = CURRENT_PATH.parent.parent.parent.parent.joinpath("icons")
 
 
 class AssetDetailDelegate(FolderDetailDelegate):
-    """    Delegate to show asset item in detail view
+    """ Delegate to show asset item in detail view"""
+
+    def __init__(self, model: MHAssetBrowserModel):
+        """Constructor for AssetDetailDelegate
 
         Parameters
         ----------
         model : MHAssetBrowserModel
             Makehuman asset browser model
         """
-
-    def __init__(self, model: MHAssetBrowserModel):
-
         super().__init__(model=model)
         # Reference to the browser asset model
         self.model = model
@@ -92,6 +93,12 @@ class AssetDetailDelegate(FolderDetailDelegate):
         # the widget on which it is dropped
         return item.url
 
-    def on_double_click(self, item):
-        # TODO add docstring
+    def on_double_click(self, item: FileDetailItem):
+        """Method to execute when an item is doubleclicked
+
+        Parameters
+        ----------
+        item : FileDetailItem
+            The item that has been doubleclicked
+        """
         self.model.list_widget.add_child(item.url)
