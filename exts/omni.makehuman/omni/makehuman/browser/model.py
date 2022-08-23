@@ -9,6 +9,7 @@ from omni.kit.browser.folder.core import (
     FileDetailItem,
     BrowserFile,
 )
+from omni.makehuman.shared import data_path
 
 
 class AssetDetailItem(FileDetailItem):
@@ -34,11 +35,11 @@ class MHAssetBrowserModel(FolderBrowserModel):
         self.list_widget = list_widget
         super().__init__(
             *args,
-            setting_folders="/exts/omni.makehuman.browser.asset/folders",
             show_category_subfolders=True,
             hide_file_without_thumbnails=False,
             **kwargs,
         )
+        super().append_root_folder(data_path(""), name="MakeHuman")
 
     # Overwrite parent function to add thumbnails
     def create_detail_item(
