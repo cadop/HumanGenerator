@@ -4,8 +4,6 @@ from .ui_widgets import *
 from .styles import *
 from . import mh_usd
 
-# class HumanPanel(ui.Frame): TODO remove
-
 
 class HumanPanel:
     # UI Widget that includes list of modifiers, applied assets, and function buttons
@@ -152,9 +150,6 @@ class ParamPanel(ui.Frame):
         super().destroy()
         for model in self.models:
             model.destroy()
-
-    # class ButtonPanel(ui.Frame): TODO remove
-
 
 class ButtonPanel:
     def __init__(self, mhcaller, **kwargs):
