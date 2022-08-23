@@ -4,7 +4,8 @@ from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import omni.usd
 import carb
 import numpy as np
-import io, os
+import io
+import os
 import re
 import skeleton as mhskeleton
 from .shared import data_path
@@ -126,7 +127,7 @@ def add_to_scene(mh_call):
     # Explicitly setup material for human skin
     texture_path = data_path("textures/skin.png")
     skin = create_material(texture_path, "Skin", rootPath, stage)
-
+    # Bind the skin material to the first prim in the list (the human)
     bind_material(usd_mesh_paths[0], skin, stage)
 
     return name
@@ -149,28 +150,34 @@ def setup_weights(mh_meshes, bindings, joint_names):
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
 
+        # Calculate vertex weights
         indices, weights = calculate_influences(mh_mesh, joint_names)
-
+        # Type conversion to native ints and floats from numpy
         indices = list(map(int, indices))
         weights = list(map(float, weights))
-
+        # Type conversion to USD
         indices = Vt.IntArray(indices)
         weights = Vt.FloatArray(weights)
 
+        # The number of weights to apply to each vertex, taken directly from
+        # MakeHuman data
         elementSize = int(mh_mesh.vertexWeights._nWeights)
-        # weight_data = list(mh_mesh.vertexWeights.data)
+        # weight_data = list(mh_mesh.vertexWeights.data) TODO remove
 
         # We might not need to normalize. Makehuman weights are automatically
         # normalized when loaded, see:
         # http://www.makehumancommunity.org/wiki/Technical_notes_on_MakeHuman
+        # TODO Determine if this can be removed
         UsdSkel.NormalizeWeights(weights, elementSize)
         UsdSkel.SortInfluences(indices, weights, elementSize)
 
+        # Assign indices to binding
         indices_attribute = binding.CreateJointIndicesPrimvar(
             constant=False, elementSize=elementSize
         )
         indices_attribute.Set(indices)
 
+        # Assign weights to binding
         weights_attribute = binding.CreateJointWeightsPrimvar(
             constant=False, elementSize=elementSize
         )
@@ -196,6 +203,7 @@ def calculate_influences(mh_mesh, joint_names):
     weights : list of float
         Flat list of weights corresponding to joint indices
     """
+    # The maximum number of weights a vertex might have
     max_influences = mh_mesh.vertexWeights._nWeights
 
     # Named joints corresponding to vertices and weights ie.
@@ -237,9 +245,10 @@ def calculate_influences(mh_mesh, joint_names):
             # Add to the influence count for this vertex
             influence_counts[vert_index] += 1
 
-    # Check for any unweighted verts for i, d in enumerate(indices): if
-    # np.all((d == 0)): print(i)
+    # Check for any unweighted verts (this is a test routine)
+    # for i, d in enumerate(indices): if np.all((d == 0)): print(i)
 
+    # Flatten arrays to one dimensional lists
     indices = indices.flatten()
     weights = weights.flatten()
 
@@ -265,11 +274,20 @@ def setup_bindings(paths, stage, skeleton):
     """
     bindings = []
 
+    # TODO rename "mesh" to "path"
     for mesh in paths:
+        # Get the prim in the stage
         prim = stage.GetPrimAtPath(mesh)
+
+        # Create a binding applied to the prim
         binding = UsdSkel.BindingAPI.Apply(prim)
+
+        # Create a relationship between the binding and the skeleton
         binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+
+        # Add the binding to the list to return
         bindings.append(binding)
+
     return bindings
 
 
@@ -284,7 +302,7 @@ def setup_meshes(meshes, stage, rootPath, offset=[0, 0, 0]):
         The stage to which to add the mesh geometry
     rootPath : str
         The path under which to place imported mesh prims
-
+    # TODO add offset docstring
     Returns
     -------
     paths : array of: Sdf.Path
@@ -294,11 +312,14 @@ def setup_meshes(meshes, stage, rootPath, offset=[0, 0, 0]):
     usd_mesh_paths = []
 
     for mesh in meshes:
-
+        # Number of vertices per face
         nPerFace = mesh.vertsPerFaceForExport
+        # Lists to hold pruned lists of vertex and UV indices
         newvertindices = []
         newuvindices = []
 
+        # Array of coordinates organized [[x1,y1,z1],[x2,y2,z2]...]
+        # Adding the given offset moves the mesh relative to the prim origin
         coords = mesh.getCoords() + offset
         for fn, fv in enumerate(mesh.fvert):
             if not mesh.face_mask[fn]:
@@ -310,43 +331,57 @@ def setup_meshes(meshes, stage, rootPath, offset=[0, 0, 0]):
             # build an array of (u,v)s for each face
             newuvindices += [(fuv[n]) for n in range(nPerFace)]
 
+        # Type conversion
         newvertindices = np.array(newvertindices)
 
-        # Create mesh.
+        # Create mesh prim at appropriate path. Does not yet hold any data
         name = sanitize(mesh.name)
         usd_mesh_path = rootPath + "/" + name
         usd_mesh_paths.append(usd_mesh_path)
         meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
 
-        # Set vertices.
+        # Set vertices. This is a list of tuples for ALL vertices in an unassociated
+        # cloud. Faces are built based on indices of this list.
+        #   Example: 3 explicitly defined vertices:
+        #   meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10)]
         meshGeom.CreatePointsAttr(coords)
-        # meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10),
-        # (10, 0, -10)])
 
-        # Set face vertex count.
+        # Set face vertex count. This is an array where each element is the number
+        # of consecutive vertex indices to include in each face definition, as
+        # indices are given as a single flat list. The length of this list is the
+        # same as the number of faces
+        #   Example: 4 faces with 4 vertices each
+        #   meshGeom.CreateFaceVertexCountsAttr([4, 4, 4, 4])
         nface = [nPerFace] * int(len(newvertindices) / nPerFace)
         meshGeom.CreateFaceVertexCountsAttr(nface)
 
         # Set face vertex indices.
+        #   Example: one face with 4 vertices defined by 4 indices.
+        #   meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
         meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
-        # # meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
 
-        # Set normals.
-        meshGeom.CreateNormalsAttr(mesh.getNormals())
+        # Set vertex normals. Normals are represented as a list of tuples each of
+        # which is a vector indicating the direction a point is facing. This is later
+        # Used to calculate face normals
+        #   Example: Normals for 3 vertices
         # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1,
         # 0)])
+        meshGeom.CreateNormalsAttr(mesh.getNormals())
         meshGeom.SetNormalsInterpolation("vertex")
 
-        # Set uvs.
+        # Set vertex uvs. UVs are represented as a list of tuples, each of which is a 2D
+        # coordinate. UV's are used to map textures to the surface of 3D geometry
+        #   Example: texture coordinates for 3 vertices
+        #   texCoords.Set([(0, 1), (0, 0), (1, 0)])
         texCoords = meshGeom.CreatePrimvar(
             "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying
         )
         texCoords.Set(mesh.getUVs(newuvindices))
-        # texCoords.Set([(0, 1), (0, 0), (1, 0), (1, 1)])
 
-        # # Subdivision is set to none.
+        # Subdivision is set to none. The mesh is as imported and not further refined
         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
+    # ConvertPath strings to USD Sdf paths. TODO change to map() for performance
     paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
     return paths
 
@@ -361,19 +396,23 @@ def inspect_meshes(meshes):
     """
     # For inspecting mesh topology while debugging broken meshes
     for mesh in meshes:
+        # A set of vertex indices where each item cannot appear more than once
         all_vert_indices = set()
         nPerFace = mesh.vertsPerFaceForExport
         coords = mesh.getCoords()
         for fn, fv in enumerate(mesh.fvert):
             if not mesh.face_mask[fn]:
                 continue
-            # only include <nPerFace> verts for each face, and order them
-            # consecutively
+            # only include <nPerFace> verts for each face, and order them consecutively
             all_vert_indices.update([(fv[n]) for n in range(nPerFace)])
 
+        # Sort the set of indices so they are in order
         sorted_indices = sorted(all_vert_indices)
+        # A sequence of numbers from zero to the length of the coordinates. If all
+        # vertices are used, rng and sorted_indices should be identical
         rng = range(len(coords))
         dif = sorted_indices.symmetric_difference(rng)
+        # Return the set of unused vertices
         print("Difference: {}".format(dif))
 
 
@@ -381,7 +420,7 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
     """Get the skeleton data from makehuman and place it in the stage. Also adds
     a new parent to the root node, so the root can have an identity transform at
     the origin. This helps keep the character above ground, and Omniverse likes
-    it for some reason.
+    it for some reason. #TODO further explain
 
     Parameters
     ----------
@@ -408,8 +447,6 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
         important that joints be ordered this way so that their indices can be
         used for skinning / weighting.
     """
-
-    # Traverses skeleton (breadth-first) and stores joint data
     joint_paths = []
     joint_names = []
     rel_transforms = []
@@ -437,25 +474,37 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
         # store original name for later joint weighting
         joint_names.append(node.name)
 
+        # Get matrix for joint transform relative to its parent. Move to offset
+        # to match mesh transform in scene
         relxform = node.getRelativeMatrix(offsetVect=offset)
+        # Transpose the matrix as USD stores transforms in row-major format
         relxform = relxform.transpose()
+        # Convert type for USD and store
         relative_transform = Gf.Matrix4d(relxform.tolist())
         rel_transforms.append(relative_transform)
 
+        # Get matrix for joint transform at rest in global coordinate space. Move
+        # to offset to match mesh transform in scene
         gxform = node.getRestMatrix(offsetVect=offset)
+        # Transpose the matrix as USD stores transforms in row-major format
         gxform = gxform.transpose()
+        # Convert type for USD and store
         global_transform = Gf.Matrix4d(gxform.tolist())
         global_transforms.append(global_transform)
 
+        # Get matrix which represents a joints transform in its binding position
+        # for binding to a mesh. Move to offset to match mesh transform.
         bxform = node.getBindMatrix(offsetVect=offset)
         # getBindMatrix returns bindmat and bindinv - we want the uninverted
         # matrix, however USD uses row first while mh uses column first, so we
-        # use the transpose/inverse
+        # use the provided inverse
         bxform = bxform[1]
+        # Convert type for USD and store
         bind_transform = Gf.Matrix4d(bxform.tolist())
-        # bind_transform = Gf.Matrix4d().SetIdentity()
+        # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
         bind_transforms.append(bind_transform)
 
+    # TODO Move below super-root code
     visited = []  # List to keep track of visited nodes.
     queue = []  # Initialize a queue
     path_queue = []  # Keep track of paths in a parallel queue
@@ -463,7 +512,7 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
     # make a "super-root" node, parent to the root, with identity transforms so
     # we can abide by Lina Halper's animation retargeting guidelines:
     # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
-
+    # TODO encapsulate in scope for clarity
     originalRoot = skeleton.roots[0]
     newRoot = skeleton.addBone(
         "RootJoint", None, "newRoot_head", originalRoot.tailJoint
@@ -473,6 +522,8 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
     newRoot.build()
     newRoot.children.append(originalRoot)
 
+    # Setup a breadth-first search of our skeleton as a tree
+    # TODO encapsulate in scope for clarity
     # Use the new root of the mh skeleton as the root node of our tree
     node = skeleton.roots[-1]
 
@@ -484,6 +535,7 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
     # joints are relative to the root, so we don't prepend a path for the root
     process_node(node, "")
 
+    # Traverse skeleton (breadth-first) and store joint data
     while queue:
         v = queue.pop(0)
         path = path_queue.pop(0)
@@ -518,14 +570,20 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
 
 
 def setup_materials(mh_meshes, meshes, root, stage):
+    # Create docstring
     for mh_mesh, mesh in zip(mh_meshes, meshes):
+        # Get a texture path and name from the makehuman mesh
         texture, name = get_mesh_texture(mh_mesh)
         if texture:
+            # If we can get a texture from the makehuman mesh, create a material
+            # from it and bind it to the corresponding USD mesh in the stage
             material = create_material(texture, name, root, stage)
             bind_material(mesh, material, stage)
 
 
 def get_mesh_texture(mh_mesh):
+    # TODO create docstring
+    # TODO return additional maps (AO, roughness, normals, etc)
     material = mh_mesh.material
     texture = material.diffuseTexture
     name = material.name
@@ -567,8 +625,11 @@ def create_material(diffuse_image_path, name, root_path, stage):
     materialPath = materialScopePath + "/" + name
     material = UsdShade.Material.Define(stage, materialPath)
 
+    # Store shaders inside their respective material path
     shaderPath = materialPath + "/Shader"
+    # Create shader
     shader = UsdShade.Shader.Define(stage, shaderPath)
+    # Use OmniPBR as a source to define our shader
     shader.SetSourceAsset("OmniPBR.mdl", "mdl")
     shader.GetPrim().CreateAttribute(
         "info:mdl:sourceAsset:subIdentifier",
@@ -582,11 +643,11 @@ def create_material(diffuse_image_path, name, root_path, stage):
     diffTexIn.Set(diffuse_image_path)
     diffTexIn.GetAttr().SetColorSpace("sRGB")
 
-    # Set Diffuse value.
+    # Set Diffuse value. TODO make default color NVIDIA Green
     # diffTintIn = shader.CreateInput("diffuse_tint", Sdf.ValueTypeNames.Color3f)
     # diffTintIn.Set((0.9, 0.9, 0.9))
 
-    # Connecting Material to Shader.
+    # Connect Material to Shader.
     mdlOutput = material.CreateSurfaceOutput("mdl")
     mdlOutput.ConnectToSource(shader, "out")
 
@@ -605,7 +666,9 @@ def bind_material(mesh_path, material, stage):
     stage : Usd.Stage.Open
         _description_
     """
+    # Get the mesh prim
     meshPrim = stage.GetPrimAtPath(mesh_path)
+    # Bind the mesh
     UsdShade.MaterialBindingAPI(meshPrim).Bind(material)
 
 
@@ -623,7 +686,11 @@ def sanitize(s: str):
     s : str
         Prim-safe output string
     """
+    # List of illegal characters
+    # TODO create more comprehensive list
+    # TODO switch from blacklisting illegal characters to whitelisting valid ones
     illegal = (".", "-")
     for c in illegal:
+        # Replace illegal characters with underscores
         s = s.replace(c, "_")
     return s
