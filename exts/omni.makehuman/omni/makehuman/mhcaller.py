@@ -53,7 +53,8 @@ class MHCaller:
         # reinitializing the human
         self.is_reset = True
         self.name = self.default_name
-        self.init_human()
+        self.human.resetMeshValues()
+        self.human.applyAllTargets()
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
