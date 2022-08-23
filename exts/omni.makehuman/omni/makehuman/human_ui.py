@@ -7,10 +7,8 @@ from . import mh_usd
 # class HumanPanel(ui.Frame):
 class HumanPanel:
     def __init__(self, mhcaller, **kwargs):
-        # super().__init__(width=0, **kwargs)
         self.mh_call = mhcaller
 
-        # self.set_build_fn(self._build_widget)
         self._build_widget()
 
     def _build_widget(self):
@@ -31,34 +29,6 @@ class ParamPanel(ui.Frame):
         self.human = human
         self.models = []
         self.set_build_fn(self._build_widget)
-
-    # def _build_widget(self):
-    #     human = self.human
-    #     macro_params = (
-    #         Param("Gender", human.setGender),
-    #         Param("Age", human.setAge),
-    #         Param("Muscle", human.setMuscle),
-    #         Param("Weight", human.setWeight),
-    #         Param("Height", human.setHeight),
-    #         Param("Proportions", human.setBodyProportions),
-    #     )
-    #     macro_model = SliderEntryPanelModel(macro_params)
-    #     race_params = (
-    #         Param("African", human.setAfrican),
-    #         Param("Asian", human.setAsian),
-    #         Param("Caucasian", human.setCaucasian),
-    #     )
-    #     race_model = SliderEntryPanelModel(race_params)
-
-    #     with ui.ScrollingFrame():
-    #         with ui.CollapsableFrame(
-    #             "Main", style=styles.frame_style, height=0
-    #         ):
-    #             with ui.VStack():
-    #                 self.panels = (
-    #                     SliderEntryPanel("Macrodetails", macro_model),
-    #                     SliderEntryPanel("Race", race_model),
-    #                 )
 
     def _build_widget(self):
         def modifier_param(m):
@@ -137,9 +107,7 @@ class ParamPanel(ui.Frame):
 
 class ButtonPanel:
     def __init__(self, mhcaller, **kwargs):
-        # super().__init__(**kwargs)
         self.mh_call = mhcaller
-        # self.set_build_fn(self._build_widget)
         self._build_widget(**kwargs)
 
     def _build_widget(self, **kwargs):
@@ -162,4 +130,3 @@ class ButtonPanel:
 
     def destroy(self):
         pass
-        # super().destroy()
