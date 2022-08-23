@@ -46,15 +46,14 @@ class MHCaller:
             self.G.app = MHApplication()
         except:
             return
-        # except Exception as e: warnings.Warning("MH APP EXISTS") return
 
     def reset_human(self):
-        # TODO make this faster by individually resetting proxies instead of
-        # reinitializing the human
+        # TODO add docstring
         self.is_reset = True
         self.name = self.default_name
         self.human.resetMeshValues()
         self.human.applyAllTargets()
+        # TODO restore eyes
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
@@ -111,16 +110,23 @@ class MHCaller:
 
     @property
     def meshes(self):
+        # Build a list of meshes from objects when accessed as a property
         return [o.mesh for o in self.objects]
 
     def update(self):
         """Propagate changes to meshes and proxies"""
+        # For every mesh object except for the human (first object), update the
+        # mesh and corresponding proxy
+        # See https://github.com/makehumancommunity/makehuman/search?q=adaptproxytohuman
         for obj in self.human.getObjects()[1:]:
             mesh = obj.getSeedMesh()
             pxy = obj.getProxy()
+            # Update the proxy
             pxy.update(mesh, False)
+            # Update the mesh
             mesh.update()
 
+    # TODO remove this function. We can convert from USD if we want to export
     def store_obj(self, filepath=None):
         """Write obj file to disk using makehuman's built-in exporter
 
@@ -148,19 +154,31 @@ class MHCaller:
             proxies)
         """
         #  Derived from work by @tomtom92 at the MH-Community forums
+        #  See: http://www.makehumancommunity.org/forum/viewtopic.php?f=9&t=17182&sid=7c2e6843275d8c6c6e70288bc0a27ae9
+        # Load the proxy
         pxy = proxy.loadProxy(self.human, proxypath, type=proxy_type)
+        # Get the mesh and Object3D object from the proxy applied to the human
         mesh, obj = pxy.loadMeshAndObject(self.human)
+        # TODO is this next line needed?
         mesh.setPickable(True)
+        # TODO Can this next line be deleted? The app isn't running
         gui3d.app.addObject(obj)
+
+        # Fit the proxy mesh to the human
         mesh2 = obj.getSeedMesh()
         fit_to_posed = True
         pxy.update(mesh2, fit_to_posed)
         mesh2.update()
+
+        # Set the object to be subdivided if the human is subdivided
+        # TODO is this needed?
         obj.setSubdivided(self.human.isSubdivided())
 
+        # Get proxy type if none is given
         if proxy_type is None:
             proxy_type = self.guess_proxy_type(proxypath)
 
+        # Set/add proxy based on type
         if proxy_type == "eyes":
             self.human.setEyesProxy(pxy)
         elif proxy_type == "clothes":
@@ -179,12 +197,17 @@ class MHCaller:
         proxyVertMask = proxy.transferVertexMaskToProxy(vertsMask, pxy)
         # Apply accumulated mask from previous layers on this proxy
         obj.changeVertexMask(proxyVertMask)
+
+        # Delete masked vertices
+        # TODO add toggle for this feature in UI
         # verts = np.argwhere(pxy.deleteVerts)[..., 0]
         # vertsMask[verts] = False
         # self.human.changeVertexMask(vertsMask)
 
     def remove_proxy(self, proxy):
+        # TODO add docstring
         proxy_type = proxy.type.lower()
+        # Use MakeHuman internal methods to remove proxy based on type
         if proxy_type == "eyes":
             self.human.setEyesProxy(None)
         elif proxy_type == "clothes":
@@ -200,24 +223,32 @@ class MHCaller:
             self.human.setProxy(None)
 
     def remove_item(self, item):
+        # TODO Add docstring
+        # TODO handle removing skeletons
         if isinstance(item, proxy.Proxy):
             self.remove_proxy(item)
         else:
             return
 
     def add_item(self, path):
+        # TODO add docstring
         if "mhpxy" in path:
             self.add_proxy(path)
         elif "mhskel" in path:
             self.set_skel(path)
 
     def set_skel(self, path):
+        # TODO add docstring
+        # Load skeleton from path
         skel = skeleton.load(path, self.human.meshData)
+        # Build skeleton weights based on base skeleton
         skel.autoBuildWeightReferences(self.base_skel)
+        # Set the skeleton and update the human
         self.human.setSkeleton(skel)
         self.human.applyAllTargets()
 
     def guess_proxy_type(self, path):
+        # TODO add docstring
         proxy_types = ("eyes", "clothes", "eyebrows", "eyelashes", "hair")
         for type in proxy_types:
             if type in path:
@@ -225,7 +256,12 @@ class MHCaller:
         return None
 
 def modifier_image(name):
+    # TODO add docstring
     if name is None:
+        # If no modifier name is provided, we can't guess the file name
         return None
     name = name.lower()
+    # Return the modifier path based on the modifier name
+    # TODO determine if images can be loaded from the Makehuman module stored in
+    # site-packages so we don't have to include the data twice
     return str(Path(__file__).parents[2]) + "/" + targets.getTargets().images.get(name, name)

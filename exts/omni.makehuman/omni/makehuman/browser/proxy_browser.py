@@ -12,12 +12,15 @@ class AssetBrowserFrame(ui.Frame):
     """
 
     def __init__(self, mhcaller, list_widget, **kwargs):
+        # TODO add docstring
         super().__init__(**kwargs)
         self.mh_call = mhcaller
         self.list_widget = list_widget
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
+        # TODO add docstring
+        # A model to hold browser data
         self._browser_model = MHAssetBrowserModel(
             self.mh_call,
             self.list_widget,
@@ -26,9 +29,12 @@ class AssetBrowserFrame(ui.Frame):
                 "/exts/omni.makehuman.browser.asset/data/timeout"
             ),
         )
+        # The delegate to execute browser actions
         self._delegate = AssetDetailDelegate(self._browser_model)
 
+        # TODO does this need to be in a vstack?
         with ui.VStack(spacing=15):
+            # Create the widget
             self._widget = FolderBrowserWidget(
                 self._browser_model, detail_delegate=self._delegate
             )
