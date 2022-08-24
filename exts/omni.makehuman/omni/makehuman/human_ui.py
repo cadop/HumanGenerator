@@ -34,11 +34,13 @@ class HumanPanel:
 
 
 class ParamPanel(ui.Frame):
-    def __init__(self, human, **kwargs):
+    def __init__(self, human, toggle : ui.SimpleBoolModel, **kwargs):
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
 
         self.human = human
+        # model to track whether changes should be instant
+        self.toggle = toggle
 
         # Reference to models for each modifier/parameter. The models store modifier
         # data for reference in the UI
@@ -155,6 +157,8 @@ class ButtonPanel:
     def __init__(self, mhcaller, **kwargs):
         # Include instance of Makehuman wrapper class
         self.mh_call = mhcaller
+        # Model to store whether changes should happen immediately
+        self.toggle = ui.SimpleBoolModel()
 
         # Pass **kwargs to buildwidget so we can apply styling as though ButtonPanel
         # extended a base ui class
@@ -164,7 +168,10 @@ class ButtonPanel:
         with ui.VStack(**kwargs):
             # Widget to list applied proxies TODO change to "Currently Applied Assets"
             self.drop = DropList("Currently Applied Proxies", self.mh_call)
-
+            with ui.HStack(height=0):
+                # Toggle whether changes should propagate instantly
+                ui.Label("Update Instantly")
+                ui.CheckBox(self.toggle)
             # Updates current human in omniverse scene
             ui.Button(
                 "Update in Scene",
