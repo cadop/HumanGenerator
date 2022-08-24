@@ -1,5 +1,7 @@
+from typing import List, TypeVar
 from numpy.random.tests import data
 from omni.kit.commands.command import create
+from omni.makehuman.mhcaller import MHCaller
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import omni.usd
 import carb
@@ -11,17 +13,18 @@ import skeleton as mhskeleton
 from .shared import data_path
 
 
-def add_to_scene(mh_call):
-    """Import a list of Makehuman objects to the current USD stage
+def add_to_scene(mh_call: MHCaller):
+    """Import Makehuman objects into the current USD stage
 
     Parameters
     ----------
-    objects : list of: guicommon.Object
-        Any object that encapsulates a module3d.Object3D mesh. This includes
-        makehuman humans as well as proxies (clothes, hair, etc). In the case of
-        a human, the skeleton is included and used to apply mesh weights. As
-        meshweights on proxies reference the human meshweights, the human must
-        either already be in the scene or be the first item in the list
+    mh_call : MHCaller
+        Wrapper object for calling Makehuman functions and accessing Makehuman data.
+        This includes humans as well as proxies (clothes, hair, etc). In the case
+        that a human has a skeleton applied, the skeleton is included and used to
+        apply mesh weights. As meshweights on proxies reference the human
+        meshweights, the human must either already be in the scene or be the
+        first item in the list
     """
     objects = mh_call.objects
     name = mh_call.name
@@ -133,13 +136,16 @@ def add_to_scene(mh_call):
     return name
 
 
-def setup_weights(mh_meshes, bindings, joint_names):
+Object3D = TypeVar("Object3D")
+
+
+def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI], joint_names: List[str]):
     """Apply weights to USD meshes using data from makehuman. USD meshes,
     bindings and skeleton must already be in the active scene
 
     Parameters
     ----------
-    mh_meshes : list of: `module3d.Object3D`
+    mh_meshes : list of `Object3D`
         Makehuman meshes which store weight data
     bindings : list of `UsdSkel.BindingAPI`
         USD bindings between meshes and skeleton
@@ -147,6 +153,7 @@ def setup_weights(mh_meshes, bindings, joint_names):
         Unique, plaintext names of all joints in the skeleton in USD
         (breadth-first) order.
     """
+
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
 
@@ -184,15 +191,15 @@ def setup_weights(mh_meshes, bindings, joint_names):
         weights_attribute.Set(weights)
 
 
-def calculate_influences(mh_mesh, joint_names):
+def calculate_influences(mh_mesh: Object3D, joint_names: List[str]):
     """Build arrays of joint indices and corresponding weights for each vertex.
     Joints are in USD (breadth-first) order.
 
     Parameters
     ----------
-    mh_mesh : module3d.Object3D
+    mh_mesh : Object3D
         Makehuman-format mesh. Contains weight and vertex data.
-    joint_names : list of: str
+    joint_names : list of str
         Unique, plaintext names of all joints in the skeleton in USD
         (breadth-first) order.
 
@@ -255,16 +262,16 @@ def calculate_influences(mh_mesh, joint_names):
     return indices, weights
 
 
-def setup_bindings(paths, stage, skeleton):
+def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Skeleton):
     """Setup bindings between meshes in the USD scene and the skeleton
 
     Parameters
     ----------
-    paths : array of: Sdf.Path
+    paths : List of Sdf.Path
         USD Sdf paths to each mesh prim
-    stage : Usd.Stage.Open
+    stage : Usd.Stage
         The USD stage where the prims can be found
-    skeleton :UsdSkel.Skeleton
+    skeleton : UsdSkel.Skeleton
         The USD skeleton to apply bindings to
 
     Returns
@@ -291,18 +298,19 @@ def setup_bindings(paths, stage, skeleton):
     return bindings
 
 
-def setup_meshes(meshes, stage, rootPath, offset=[0, 0, 0]):
+def setup_meshes(meshes: List[Object3D], stage: Usd.Stage, rootPath: str, offset: List[float] = [0, 0, 0]):
     """Import mesh data and build mesh prims in the USD stage
 
     Parameters
     ----------
-    meshes : list of: `module3d.Object3D`
+    meshes : list of: `Object3D`
         Makehuman meshes
-    stage : Usd.Stage.Open()
+    stage : Usd.Stage
         The stage to which to add the mesh geometry
     rootPath : str
         The path under which to place imported mesh prims
-    # TODO add offset docstring
+    offset : list of float, optional
+        A vector [x,y,z] to shift the created geometry relative to the prim origin. By default [0,0,0]
     Returns
     -------
     paths : array of: Sdf.Path
@@ -386,12 +394,14 @@ def setup_meshes(meshes, stage, rootPath, offset=[0, 0, 0]):
     return paths
 
 
-def inspect_meshes(meshes):
-    """Testing routine to ensure that all vertices are used
+def inspect_meshes(meshes: List[Object3D]):
+    """Testing routine to ensure that all vertices are used. Prints out the difference
+    between the set of all vertices and the vertices which have been used in the mesh
+    (prints any vertices which have not been used)
 
     Parameters
     ----------
-    meshes : list of: `module3d.Object3D`
+    meshes : list of `Object3D`
         Makehuman meshes
     """
     # For inspecting mesh topology while debugging broken meshes
@@ -416,7 +426,10 @@ def inspect_meshes(meshes):
         print("Difference: {}".format(dif))
 
 
-def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
+Skeleton = TypeVar("Skeleton")
+
+
+def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
     """Get the skeleton data from makehuman and place it in the stage. Also adds
     a new parent to the root node, so the root can have an identity transform at
     the origin. This helps keep the character above ground, and Omniverse likes
@@ -430,7 +443,7 @@ def setup_skeleton(rootPath, stage, skeleton, offset=[0, 0, 0]):
         The USD stage in which to set up the skeleton
     skeleton : makehuman.skeleton.Skeleton
         The makehuman skeleton object
-    offset : list, optional
+    offset : list of float, optional
         Offset vector for placement in scene, by default [0,0,0]
 
     Returns
@@ -654,17 +667,17 @@ def create_material(diffuse_image_path, name, root_path, stage):
     return material
 
 
-def bind_material(mesh_path, material, stage):
+def bind_material(mesh_path: Sdf.Path, material: UsdShade.Material, stage: Usd.Stage):
     """Bind a material to a mesh
 
     Parameters
     ----------
     mesh_path : Sdf.Path
-        _description_
+        The USD formatted path to a mesh prim
     material : UsdShade.Material
-        _description_
-    stage : Usd.Stage.Open
-        _description_
+        USD material object
+    stage : Usd.Stage
+        Stage in which to find mesh prim
     """
     # Get the mesh prim
     meshPrim = stage.GetPrimAtPath(mesh_path)
