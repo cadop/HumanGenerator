@@ -20,7 +20,8 @@ class AssetDetailDelegate(FolderDetailDelegate):
     """ Delegate to show asset item in detail view"""
 
     def __init__(self, model: MHAssetBrowserModel):
-        """Constructor for AssetDetailDelegate
+        """Constructs an instance of AssetDetailDelegate, which handles
+        execution of functions
 
         Parameters
         ----------
@@ -94,7 +95,8 @@ class AssetDetailDelegate(FolderDetailDelegate):
         return item.url
 
     def on_double_click(self, item: FileDetailItem):
-        """Method to execute when an item is doubleclicked
+        """Method to execute when an asset is doubleclicked. Adds an item to
+        to the list widget that shows currently applied assets
 
         Parameters
         ----------
