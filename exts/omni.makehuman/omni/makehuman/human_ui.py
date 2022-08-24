@@ -49,7 +49,7 @@ Human = TypeVar('Human')
 class ParamPanel(ui.Frame):
     """UI Widget for displaying and modifying human parameters"""
 
-    def __init__(self, human: Generic[Human], **kwargs):
+    def __init__(self, human: Human, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
 
         Parameters
@@ -73,7 +73,7 @@ class ParamPanel(ui.Frame):
         """
         Modifier = TypeVar('Modifier')
 
-        def modifier_param(m: Generic[Modifier]):
+        def modifier_param(m: Modifier):
             """Generate a parameter data object from a human modifier,
 
             Parameters
