@@ -67,7 +67,7 @@ class AssetDetailDelegate(FolderDetailDelegate):
         Returns
         -------
         str
-            The path of the item being dragged (passed to whatever widget
+            The path on disk of the item being dragged (passed to whatever widget
             accepts the drop)
         """
         thumbnail = self.get_thumbnail(item)
