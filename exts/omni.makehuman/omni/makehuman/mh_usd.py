@@ -582,8 +582,22 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     return usdSkel, skel_root_path, joint_names
 
 
-def setup_materials(mh_meshes, meshes, root, stage):
-    # Create docstring
+def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
+    """Fetches materials from Makehuman meshes and applies them to their corresponding
+    Usd mesh prims in the stage.
+
+    Parameters
+    ----------
+    mh_meshes : List[Object3D]
+        Makehuman meshes. Contain references to textures on disk.
+    meshes : List[Sdf.Path]
+        Paths to 
+    root : str
+        _description_
+    stage : Usd.Stage
+        Usd stage in which to create materials, and which contains the meshes
+        to which to apply materials
+    """
     for mh_mesh, mesh in zip(mh_meshes, meshes):
         # Get a texture path and name from the makehuman mesh
         texture, name = get_mesh_texture(mh_mesh)
@@ -594,8 +608,20 @@ def setup_materials(mh_meshes, meshes, root, stage):
             bind_material(mesh, material, stage)
 
 
-def get_mesh_texture(mh_mesh):
-    # TODO create docstring
+def get_mesh_texture(mh_mesh: Object3D):
+    """Gets mesh diffuse texture from a Makehuman mesh object
+
+    Parameters
+    ----------
+    mh_mesh : Object3D
+        A Makehuman mesh object. Contains path to bound material/textures
+
+    Returns
+    -------
+    Tuple (str,str)
+        Returns the path to a texture on disk, and a name for the texture
+        Returns (None, None) if no texture exists
+    """
     # TODO return additional maps (AO, roughness, normals, etc)
     material = mh_mesh.material
     texture = material.diffuseTexture
@@ -606,7 +632,7 @@ def get_mesh_texture(mh_mesh):
         return (None, None)
 
 
-def create_material(diffuse_image_path, name, root_path, stage):
+def create_material(diffuse_image_path: str, name: str, root_path: str, stage: Usd.Stage):
     """Create OmniPBR Material with specified diffuse texture
 
     Parameters
@@ -617,7 +643,7 @@ def create_material(diffuse_image_path, name, root_path, stage):
         Material name
     root_path : str
         Root path under which to place material scope
-    stage : Usd.Stage.Open()
+    stage : Usd.Stage
         USD stage into which to add the material
 
     Returns
