@@ -2,7 +2,7 @@ import carb
 import omni.ui as ui
 import omni
 import os
-from typing import Tuple
+from typing import List, Tuple
 from dataclasses import dataclass
 import carb
 from . import styles, mh_usd, ui_widgets
@@ -16,20 +16,23 @@ class SliderEntry:
         model: ui.SimpleFloatModel,
         fn: object,
         image: str = None,
-        step=0.01,
-        min=None,
-        max=None,
-        default=0,
+        step : float=0.01,
+        min : float=None,
+        max : float=None,
+        default : float=0,
     ):
         """Custom UI element that encapsulates a labeled slider and field
 
         Parameters
         ----------
-
+        label : str
+            Label to display for slider/field
         model : ui.SimpleFloatModel
             Model to publish changes to
         fn : object
             Function to run when changes are made
+        image: str, optional
+            Path on disk to an image to display. By default None
         step : float, optional
             Division between values, by default 0.01
         min : float, optional
@@ -38,7 +41,6 @@ class SliderEntry:
             Maximum value, by default None
         default : float, optional
             Default parameter value, by default 0
-        # TODO add image
         """
         self.label = label
         self.model = model
@@ -76,8 +78,23 @@ class SliderEntry:
 
 @dataclass
 class Param:
-    """Dataclass to store SliderEntry parameters"""
-    # TODO add variable descriptions to docstring
+    """Dataclass to store SliderEntry parameter data
+    
+    Attributes
+    ----------
+    name: str
+        The name of the parameter. Used for labeling.
+    fn: object
+        The method to execute when making changes to the parameter
+    image: str, optional
+        The path to the image to use for labeling. By default None
+    min: float, optional
+        The minimum allowed value of the parameter. By default 0
+    max: float
+        The maximum allowed value of the parameter. By default 1
+    default: float
+        The default value of the parameter. By default 0.5
+    """
 
     name: str
     fn: object
@@ -88,16 +105,48 @@ class Param:
 
 
 class SliderEntryPanelModel:
-    def __init__(self, params: Param):
-        # TODO add docstring
+    """Provides a model for referencing SliderEntryPanel data. References models
+    for each individual SliderEntry widget in the SliderEntryPanel widget.
+    
+
+    """
+    def __init__(self, params: List[Param]):
+        """Constructs an instance of SliderEntryPanelModel and instantiates models
+        to hold parameter data for individual SliderEntries
+
+        Parameters
+        ----------
+        params : list of `Param`
+            A list of parameter objects, each of which contains the data to create
+            a SliderEntry widget
+
+        Attributes
+        ----------
+        params : list of `Param`
+            List of parameter objects
+        float_models : list of `ui.SimpleFloatModel`
+            List of models to track SliderEntry values
+        subscriptions : list of `Subscription`
+            List of event subscriptions triggered by editing a SliderEntry
+        """
         self.params = []
+        """Param objects corresponding to each SliderEntry widget"""
         self.float_models = []
+        """Models corresponding to each SliderEntry widget. Each model
+        tracks the corresponding widget's value"""
         self.subscriptions = []
+        """List of event subscriptions triggered by editing a SliderEntry"""
         for p in params:
             self.add_param(p)
 
-    def add_param(self, param):
-        # TODO add docstring
+    def add_param(self, param: Param):
+        """_summary_
+
+        Parameters
+        ----------
+        param : Param
+            _description_
+        """
         # Add the parameter to the list of parameters
         self.params.append(param)
         # Simple float model to store parameter value
@@ -114,9 +163,18 @@ class SliderEntryPanelModel:
         # Add model to list of models
         self.float_models.append(float_model)
 
-    def _sanitize_and_run(self, param, float_model):
+    def _sanitize_and_run(self, param : Param, float_model : ui.SimpleFloatModel):
         """Make sure that values are within an acceptable range and then run the
-        assigned function"""
+        assigned function
+
+        Parameters
+        ----------
+        param : Param
+            Parameter object which contains acceptable value bounds and
+            references the function to run
+        float_model : ui.SimpleFloatModel
+            Model which stores the value from the widget
+        """
         m = float_model
         # Get the value from the slider model
         getval = m.get_value_as_float
@@ -128,10 +186,10 @@ class SliderEntryPanelModel:
         # Run the function given by the parameter using the value from the widget
         param.fn(m.get_value_as_float())
 
-    def get_float_model(self, param):
-        # TODO add docstring
-        index = self.params.index(param)
-        return self.float_models[index]
+    # def get_float_model(self, param : Param):
+    #     # TODO add docstring
+    #     index = self.params.index(param)
+    #     return self.float_models[index]
 
     def destroy(self):
         # TODO add docstring
