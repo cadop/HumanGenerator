@@ -1,5 +1,7 @@
 import os
 import carb.settings
+from omni.makehuman.mhcaller import MHCaller
+from omni.makehuman.ui_widgets import DropList
 import omni.ui as ui
 from omni.kit.browser.folder.core import FolderBrowserWidget
 from .delegate import AssetDetailDelegate
@@ -11,15 +13,26 @@ class AssetBrowserFrame(ui.Frame):
     Represent a window to show Assets
     """
 
-    def __init__(self, mhcaller, list_widget, **kwargs):
-        # TODO add docstring
+    def __init__(self, mhcaller: MHCaller, list_widget: DropList, **kwargs):
+        """Constructs an instance of AssetBrowserFrame. This is a browser that
+        displays available Makehuman assets (skeletons/rigs, proxies) and allows
+        a user to apply them to the human.
+
+
+        Parameters
+        ----------
+        mhcaller : MHCaller
+            Wrapper object for Makehuman functions
+        list_widget : DropList
+            The widget in which to reflect changes when assets are added 
+        """
         super().__init__(**kwargs)
         self.mh_call = mhcaller
         self.list_widget = list_widget
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
-        # TODO add docstring
+        """Build UI widget"""
         # A model to hold browser data
         self._browser_model = MHAssetBrowserModel(
             self.mh_call,
