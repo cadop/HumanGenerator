@@ -31,17 +31,20 @@ class HumanPanel:
         self._build_widget()
 
     def _build_widget(self):
-        """Build widget UI"""
-        # Human object
-        human = self.mh_call.human
+          """Build widget UI"""
 
-        with ui.HStack():
-
-            # UI for modifiers and parameters (affects physical characteristics)
-            self.params = ParamPanel(human, width=300)
+        with ui.Stack(ui.Direction.RIGHT_TO_LEFT):
 
             # UI for tracking applied assets and executing functions (eg. Create New Human)
             self.buttons = ButtonPanel(self.mh_call, width=200)
+
+            # Toggle widget model from putton panel.
+            toggle = self.buttons.toggle
+
+            # UI for modifiers and parameters (affects physical characteristics)
+            self.params = ParamPanel(self.mh_call, toggle, width=300)
+
+
 
     def destroy(self):
         """Destructor for HumanPanel. Destroys subpanels"""
@@ -53,26 +56,34 @@ class HumanPanel:
 Human = TypeVar('Human')
 class ParamPanel(ui.Frame):
     """UI Widget for displaying and modifying human parameters
+    
     Attributes
     ----------
-    human : Human
-        MakeHuman human object. Stores all information about the human
+    mh_call : MHCaller
+        Wrapper around Makehuman data (including human data) and functions
+    toggle : ui.SimpleBoolModel
+        Model to track whether changes should be instant
     models : list of SliderEntryPanelModel
         Models for each group of parameter sliders
     """
 
-    def __init__(self, human: Human, **kwargs):
+  def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
 
         Parameters
         ----------
-        human : Human
-            MakeHuman human object. Stores all information about the human
+        mh_call : MHCaller
+            Wrapper around Makehuman data (including human data) and functions
+        toggle : ui.SimpleBoolModel
+            Model to track whether changes should be instant
         """
+
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
-
-        self.human = human
+        # Wrapper around Makehuman data (including human data) and functions
+        self.mh_call = mh_call
+        # model to track whether changes should be instant
+        self.toggle = toggle
 
         # Reference to models for each modifier/parameter. The models store modifier
         # data for reference in the UI
@@ -136,7 +147,7 @@ class ParamPanel(ui.Frame):
                 A list of all the parameters built from modifiers in the group
             """
             params = [modifier_param(m)
-                      for m in self.human.getModifiersByGroup(group)]
+                      for m in self.mh_call.human.getModifiersByGroup(group)]
             return params
 
         def build_macro_frame():
@@ -155,7 +166,7 @@ class ParamPanel(ui.Frame):
             """
             # TODO rename to indicate private function
             # Shorten human reference for convenience
-            human = self.human
+            human = self.mh_call.human
 
             # Explicitly create parameters for panel of macros (general modifiers that
             # affect a group of targets). Otherwise these look bad. Creates a nice
@@ -169,7 +180,7 @@ class ParamPanel(ui.Frame):
                 Param("Proportions", human.setBodyProportions),
             )
             # Create a model for storing macro parameter data
-            macro_model = SliderEntryPanelModel(macro_params)
+            macro_model = SliderEntryPanelModel(macro_params, self.mh_call, self.toggle)
 
             # Separate set of race parameters to also be included in the Macros group
             # TODO make race parameters automatically normalize in UI
@@ -179,7 +190,7 @@ class ParamPanel(ui.Frame):
                 Param("Caucasian", human.setCaucasian),
             )
             # Create a model for storing race parameter data
-            race_model = SliderEntryPanelModel(race_params)
+            race_model = SliderEntryPanelModel(race_params, self.mh_call, self.toggle)
 
             self.models.append(macro_model)
             self.models.append(race_model)
@@ -201,19 +212,19 @@ class ParamPanel(ui.Frame):
 
                 # Create a set of all modifier groups that include macros
                 macrogroups = [
-                    g for g in self.human.modifierGroups if "macrodetails" in g]
+                    g for g in self.mh_call.human.modifierGroups if "macrodetails" in g]
                 macrogroups = set(macrogroups)
 
                 # Remove macro groups from list of modifier groups as we have already
                 # included them explicitly
                 allgroups = set(
-                    self.human.modifierGroups).difference(macrogroups)
+                    self.mh_call.human.modifierGroups).difference(macrogroups)
 
                 for group in allgroups:
                     # Create a collapseable frame for each modifier group
                     with ui.CollapsableFrame(group.capitalize(), style=styles.frame_style, collapsed=True):
                         # Model to hold panel parameters
-                        model = SliderEntryPanelModel(group_params(group))
+                        model = SliderEntryPanelModel(group_params(group), self.mh_call, self.toggle)
                         self.models.append(model)
                         # Create panel of slider entries for modifier group
                         SliderEntryPanel(model)
@@ -246,6 +257,8 @@ class ButtonPanel:
         """
         # Include instance of Makehuman wrapper class
         self.mh_call = mhcaller
+        # Model to store whether changes should happen immediately
+        self.toggle = ui.SimpleBoolModel()
 
         # Pass **kwargs to buildwidget so we can apply styling as though ButtonPanel
         # extended a base ui class
@@ -257,7 +270,10 @@ class ButtonPanel:
         with ui.VStack(**kwargs):
             # Widget to list applied proxies TODO change to "Currently Applied Assets"
             self.drop = DropList("Currently Applied Proxies", self.mh_call)
-
+            with ui.HStack(height=0):
+                # Toggle whether changes should propagate instantly
+                ui.Label("Update Instantly")
+                ui.CheckBox(self.toggle)
             # Updates current human in omniverse scene
             ui.Button(
                 "Update in Scene",

@@ -8,6 +8,7 @@ from typing import List, Tuple, TypeVar, Union
 from dataclasses import dataclass
 import carb
 from . import styles, mh_usd, ui_widgets
+from .mhcaller import MHCaller
 # TODO remove unused imports
 
 
@@ -134,12 +135,16 @@ class SliderEntryPanelModel:
     ----------
     params : list of `Param`
         List of parameter objects
+    toggle : ui.SimpleBoolModel
+        Tracks whether or not the human should update immediately when changes are made
+    mh_call : MHCaller
+        Wrapper object for Makehuman functions and data
     float_models : list of `ui.SimpleFloatModel`
         List of models to track SliderEntry values
     subscriptions : list of `Subscription`
         List of event subscriptions triggered by editing a SliderEntry
     """
-    def __init__(self, params: List[Param]):
+    def __init__(self, params : List[Param], mh_call : MHCaller, toggle : ui.SimpleBoolModel = None):
         """Constructs an instance of SliderEntryPanelModel and instantiates models
         to hold parameter data for individual SliderEntries
 
@@ -148,9 +153,15 @@ class SliderEntryPanelModel:
         params : list of `Param`
             A list of parameter objects, each of which contains the data to create
             a SliderEntry widget
+        mh_call : MHCaller
+            Wrapper object for Makehuman functions and data
+        toggle : ui.SimpleBoolModel, optional
+            Tracks whether or not the human should update immediately when changes are made, by default None
         """
         self.params = []
         """Param objects corresponding to each SliderEntry widget"""
+        self.toggle = toggle
+        self.mh_call = mh_call
         self.float_models = []
         """Models corresponding to each SliderEntry widget. Each model
         tracks the corresponding widget's value"""
@@ -208,6 +219,9 @@ class SliderEntryPanelModel:
             m.set_value(param.max)
         # Run the function given by the parameter using the value from the widget
         param.fn(m.get_value_as_float())
+        # If instant update is toggled on, add the changes to the stage instantly
+        if self.toggle.get_value_as_bool():
+            mh_usd.add_to_scene(self.mh_call)
 
     # def get_float_model(self, param : Param):
     #     # TODO add docstring
