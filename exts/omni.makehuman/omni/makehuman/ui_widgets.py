@@ -261,34 +261,7 @@ class DropListItemModel(ui.SimpleStringModel):
         super().destroy()
 
 
-class DropListDelegate(ui.AbstractItemDelegate):
-    """Delegate object for executing functions needed by a DropList. Can be used
-    when creating a TreeView to add double-clickable/removeable elements
-    """
-    def __init__(self):
-        """Constructs an instance of DropListDelegate
-        """
-        super().__init__()
 
-    def build_widget(self, model : DropListModel, item : DropListItemModel, column_id : int, level : int, expanded : bool):
-
-        # Get the model that represents a given list item
-        value_model = model.get_item_value_model(item, column_id)
-        # Create a label and style it after the default TreeView item style
-        label = ui.Label(value_model.as_string,
-                         style_type_name_override="TreeView.Item")
-        # Remove item when double clicked by passing the makehuman item from the
-        # list item model and the list model which has a reference to the Makehuman
-        # wrapper
-        label.set_mouse_double_clicked_fn(
-            lambda x, y, b, m: self.on_double_click(b, value_model.mh_item, model))
-
-    def on_double_click(self, button, item, list_model):
-        """Called when the user double-clicks the item in TreeView"""
-        if button != 0:
-            return
-        list_model.mh_call.remove_item(item)
-        list_model.update()
 
 
 class DropListItem(ui.AbstractItem):
@@ -390,7 +363,34 @@ class DropListModel(ui.AbstractItemModel):
     #         return True
     #     else:
     #         return False
+class DropListDelegate(ui.AbstractItemDelegate):
+    """Delegate object for executing functions needed by a DropList. Can be used
+    when creating a TreeView to add double-clickable/removeable elements
+    """
+    def __init__(self):
+        """Constructs an instance of DropListDelegate
+        """
+        super().__init__()
 
+    def build_widget(self, model : DropListModel, item : DropListItemModel, column_id : int, level : int, expanded : bool):
+
+        # Get the model that represents a given list item
+        value_model = model.get_item_value_model(item, column_id)
+        # Create a label and style it after the default TreeView item style
+        label = ui.Label(value_model.as_string,
+                         style_type_name_override="TreeView.Item")
+        # Remove item when double clicked by passing the makehuman item from the
+        # list item model and the list model which has a reference to the Makehuman
+        # wrapper
+        label.set_mouse_double_clicked_fn(
+            lambda x, y, b, m: self.on_double_click(b, value_model.mh_item, model))
+
+    def on_double_click(self, button, item, list_model):
+        """Called when the user double-clicks the item in TreeView"""
+        if button != 0:
+            return
+        list_model.mh_call.remove_item(item)
+        list_model.update()
 
 class DropList:
     def __init__(self, label, mhcaller):
