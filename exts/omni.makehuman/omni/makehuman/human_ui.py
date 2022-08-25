@@ -273,7 +273,7 @@ class ButtonPanel:
             )
 
     def new_human(self):
-        """Method for creating a new human in the stage. Makes calls to the Makehuman function wrapper MHCaller for resetting the human parameters and assets as well as flagging the human for renaming. Then creates a new human in the stage with the reset data. 
+        """Creates a new human in the stage. Makes calls to the Makehuman function wrapper MHCaller for resetting the human parameters and assets as well as flagging the human for renaming. Then creates a new human in the stage with the reset data. 
         """
         # Reset the human object in the makehuman wrapper. Also flags the human for
         # name change to avoid overwriting existing humans
