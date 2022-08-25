@@ -6,6 +6,7 @@ from typing import Tuple
 from dataclasses import dataclass
 import carb
 from . import styles, mh_usd, ui_widgets
+from .mhcaller import MHCaller
 # TODO remove unused imports
 
 
@@ -88,9 +89,11 @@ class Param:
 
 
 class SliderEntryPanelModel:
-    def __init__(self, params: Param):
+    def __init__(self, params: Param, mh_call : MHCaller, toggle : ui.SimpleBoolModel = None):
         # TODO add docstring
         self.params = []
+        self.toggle = toggle
+        self.mh_call = mh_call
         self.float_models = []
         self.subscriptions = []
         for p in params:
@@ -127,6 +130,9 @@ class SliderEntryPanelModel:
             m.set_value(param.max)
         # Run the function given by the parameter using the value from the widget
         param.fn(m.get_value_as_float())
+        # If instant update is toggled on, add the changes to the stage instantly
+        if self.toggle.get_value_as_bool():
+            mh_usd.add_to_scene(self.mh_call)
 
     def get_float_model(self, param):
         # TODO add docstring
