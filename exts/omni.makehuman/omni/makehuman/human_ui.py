@@ -294,7 +294,8 @@ class ButtonPanel:
         # Reset the human object in the makehuman wrapper. Also flags the human for
         # name change to avoid overwriting existing humans
         self.mh_call.reset_human()
-
+        # Reset list of applied assets
+        self.drop.model.update()
         # Add the new, now reset human to the scene
         mh_usd.add_to_scene(self.mh_call)
 
