@@ -592,9 +592,9 @@ def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str
     mh_meshes : List[Object3D]
         Makehuman meshes. Contain references to textures on disk.
     meshes : List[Sdf.Path]
-        Paths to 
+        Paths to Usd meshes in the stage
     root : str
-        _description_
+        The root path under which to create new prims
     stage : Usd.Stage
         Usd stage in which to create materials, and which contains the meshes
         to which to apply materials
@@ -724,7 +724,7 @@ def sanitize(s: str):
     Returns
     -------
     s : str
-        Prim-safe output string
+        Primpath-safe output string
     """
     # List of illegal characters
     # TODO create more comprehensive list
