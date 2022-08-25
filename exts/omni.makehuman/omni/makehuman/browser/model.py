@@ -2,6 +2,8 @@ import os
 from typing import List, Union
 import carb.settings
 import omni.kit.commands
+from omni.makehuman.mhcaller import MHCaller
+from omni.makehuman.ui_widgets import DropList
 import omni.usd
 from omni.kit.browser.core import DetailItem
 from omni.kit.browser.folder.core import (
@@ -13,27 +15,43 @@ from omni.makehuman.shared import data_path
 
 
 class AssetDetailItem(FileDetailItem):
+    """Represents Makehuman asset detail item
     """
-    Represent material detail item
-    Args:
-        file (BrowserFile): BrowserFile object to create detail item
-    """
-    # TODO update docstring
 
     def __init__(self, file: BrowserFile):
-        # TODO add docstring
+        """Constructs an instance of AssetDetailItem
+
+        Parameters
+        ----------
+        file : BrowserFile
+            BrowserFile object from which to create detail item
+        """
         dirs = file.url.split("/")
         name = dirs[-1]
         super().__init__(name, file.url, file, file.thumbnail)
 
 
 class MHAssetBrowserModel(FolderBrowserModel):
-    """
-    Represent asset browser model
+    """Represents Makehuman asset browser model
+    Attributes
+    ----------
+    mhcaller : MHCaller
+        Wrapper class for Makehuman functions
+    list_widget : DropList
+        The widget in which to reflect changes when assets are added to the human
     """
 
-    def __init__(self, mhcaller, list_widget, *args, **kwargs):
-        # TODO add docstring
+    def __init__(self, mhcaller: MHCaller, list_widget: DropList, *args, **kwargs):
+        """Constructs an instance of MHAssetBrowserModel
+
+        Parameters
+        ----------
+        mhcaller : MHCaller
+            Wrapper class for Makehuman functions
+        list_widget : DropList
+            The widget in which to reflect changes when assets are added to the
+            human
+        """
         self.mhcaller = mhcaller
         self.list_widget = list_widget
         super().__init__(
@@ -50,13 +68,19 @@ class MHAssetBrowserModel(FolderBrowserModel):
     def create_detail_item(
         self, file: BrowserFile
     ) -> Union[FileDetailItem, List[FileDetailItem]]:
+        """Create detail item(s) from a file.
+        A file may include multiple detail items.
+
+        Parameters
+        ----------
+        file : BrowserFile
+            File object to create detail item(s)
+
+        Returns
+        -------
+        Union[FileDetailItem, List[FileDetailItem]]
+            FileDetailItem or list of items created from file
         """
-        Create detail item(s) from a file.
-        A file may includs multi detail items.
-        Args:
-            file (BrowserFile): File object to create detail item(s)
-        """
-        # TODO spelling
 
         dirs = file.url.split("/")
         name = dirs[-1]
