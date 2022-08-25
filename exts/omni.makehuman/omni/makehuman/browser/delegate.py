@@ -17,8 +17,16 @@ ICON_PATH = CURRENT_PATH.parent.parent.parent.parent.joinpath("icons")
 
 
 class AssetDetailDelegate(FolderDetailDelegate):
-    """ Delegate to show asset item in detail view"""
+    """Delegate to show Makehuman asset item in detail view and execute drag-and-
+    drop and doubleclick behavior.
 
+    Attributes
+    ----------
+    model : MHAssetBrowserModel
+        Model that stores AssetBrowser data. Contains reference to MHCaller
+    mhcaller : MHCaller
+        Wrapper around Makehuman data and functions. Tracks human data.
+    """
     def __init__(self, model: MHAssetBrowserModel):
         """Constructs an instance of AssetDetailDelegate, which handles
         execution of functions
