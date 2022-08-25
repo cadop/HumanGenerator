@@ -1,4 +1,6 @@
+from xml.sax.xmlreader import AttributesImpl
 import carb
+from omni.makehuman.mhcaller import MHCaller
 import omni.ui as ui
 import omni
 import os
@@ -10,6 +12,26 @@ from . import styles, mh_usd, ui_widgets
 
 
 class SliderEntry:
+    """Custom UI element that encapsulates a labeled slider and field
+    Attributes
+    ----------
+    label : str
+        Label to display for slider/field
+    model : ui.SimpleFloatModel
+        Model to publish changes to
+    fn : object
+        Function to run when changes are made
+    image: str
+        Path on disk to an image to display
+    step : float
+        Division between values for the slider
+    min : float
+        Minimum value
+    max : float
+        Maximum value
+    default : float
+        Default parameter value
+    """
     def __init__(
         self,
         label: str,
@@ -21,7 +43,7 @@ class SliderEntry:
         max : float=None,
         default : float=0,
     ):
-        """Custom UI element that encapsulates a labeled slider and field
+        """Constructs an instance of SliderEntry
 
         Parameters
         ----------
@@ -34,7 +56,7 @@ class SliderEntry:
         image: str, optional
             Path on disk to an image to display. By default None
         step : float, optional
-            Division between values, by default 0.01
+            Division between values for the slider, by default 0.01
         min : float, optional
             Minimum value, by default None
         max : float, optional
@@ -108,7 +130,14 @@ class SliderEntryPanelModel:
     """Provides a model for referencing SliderEntryPanel data. References models
     for each individual SliderEntry widget in the SliderEntryPanel widget.
     
-
+    Attributes
+    ----------
+    params : list of `Param`
+        List of parameter objects
+    float_models : list of `ui.SimpleFloatModel`
+        List of models to track SliderEntry values
+    subscriptions : list of `Subscription`
+        List of event subscriptions triggered by editing a SliderEntry
     """
     def __init__(self, params: List[Param]):
         """Constructs an instance of SliderEntryPanelModel and instantiates models
@@ -119,15 +148,6 @@ class SliderEntryPanelModel:
         params : list of `Param`
             A list of parameter objects, each of which contains the data to create
             a SliderEntry widget
-
-        Attributes
-        ----------
-        params : list of `Param`
-            List of parameter objects
-        float_models : list of `ui.SimpleFloatModel`
-            List of models to track SliderEntry values
-        subscriptions : list of `Subscription`
-            List of event subscriptions triggered by editing a SliderEntry
         """
         self.params = []
         """Param objects corresponding to each SliderEntry widget"""
@@ -140,12 +160,15 @@ class SliderEntryPanelModel:
             self.add_param(p)
 
     def add_param(self, param: Param):
-        """_summary_
+        """Adds a parameter to the SliderEntryPanelModel. Creates a SimpleFloatModel
+        initialized with the default parameter value, and subscribes the model to
+        editing changes, as well as triggering the parameter function when edits
+        are made.
 
         Parameters
         ----------
         param : Param
-            _description_
+            The Parameter object from which to create the model and subscription
         """
         # Add the parameter to the list of parameters
         self.params.append(param)
@@ -200,8 +223,17 @@ class SliderEntryPanelModel:
 
 
 class SliderEntryPanel:
+    """A UI widget providing a labeled group of slider entries
+
+    Attributes
+    ----------
+    model : SliderEntryPanelModel
+        Model to hold parameters for each slider
+    label : str
+        Display title for the group. Can be none if no title is desired.
+    """
     def __init__(self, model: SliderEntryPanelModel, label: str = None):
-        """A UI widget providing a labeled group of slider entries
+        """
 
         Parameters
         ----------
@@ -249,7 +281,28 @@ Skeleton = TypeVar("Skeleton")
 Proxy = TypeVar("Proxy")
 
 class DropListItemModel(ui.SimpleStringModel):
+    """
+    A model for referencing DropListItem data. Is a simple extension of the
+    SimpleStringModel class that also references a Makehuman asset item.
+
+    Attributes
+    ----------
+    mh_item : Union[Skeleton, Proxy]
+        A Makehuman asset (skeleton or proxy) object to be displayed and referenced
+        by the list item
+    """
     def __init__(self, text : str, mh_item : Union[Skeleton, Proxy]=None) -> None:
+        """Construct an instance of DropListItemModel. Stores a string in the parent
+        class (SimpleStringModel) to be accessed by UI widgets, and keeps a reference
+        to the asset that the list item refers to. 
+
+        Parameters
+        ----------
+        text : str
+            Visible text for the DropListItem UI widget
+        mh_item : Union[Skeleton, Proxy], optional
+            Makehuman asset (skeleton or proxy), by default None
+        """
         # Initialize superclass and store text
         super().__init__(text)
         # Store the makehuman item
@@ -265,7 +318,13 @@ class DropListItemModel(ui.SimpleStringModel):
 
 
 class DropListItem(ui.AbstractItem):
-    """Single item of the model"""
+    """Single UI element in a DropList
+    
+    Attributes
+    ----------
+    model : DropListItemModel
+        Model to store DropListItem data (ie: display text, asset item)
+    """
 
     def __init__(self, text : str, item : Union[Skeleton, Proxy]=None):
         """Constructs an instance of DropListItem. Item is a simple wrapper around
@@ -291,30 +350,69 @@ class DropListItem(ui.AbstractItem):
 
 class DropListModel(ui.AbstractItemModel):
     """
-    model = DropListModel(mhcaller)
-    ui.TreeView(model)
-    """
-    # TODO remove unclear example
+    Model to reference DropList data. Handles references to the data of each
+    list item, as well as updating the UI, Makehuman app, and human instance when
+    assets are added or removed.
 
-    def __init__(self, mhcaller, *args):
-        # TODO add docstring
+    Attributes
+    ----------
+    mh_call : MHCaller
+        Wrapper object around Makehuman functions 
+    """
+
+    def __init__(self, mhcaller : MHCaller, *args):
+        """Constructs an instance of 
+
+        Parameters
+        ----------
+        mhcaller : MHCaller
+            Wrapper object around Makehuman functions 
+        """
         self.mh_call = mhcaller
         super().__init__()
         self.update()
 
-    def drop(self, item_tagget, source):
-        # TODO add docstring
+    def drop(self, item_tagget, source : str):
+        """Method to execute when an item is dropped on the DropList widget
+
+        Parameters
+        ----------
+        item_tagget : 
+            Maintains backwards compatibility with old API
+        source : str
+            The string returned by the item being dropped. Expected to be a path
+        """
         # TODO determine if this should be moved to a delegate
         self.add_child(source)
 
-    def add_child(self, item):
-        # TODO add docstring
+    def add_child(self, item : str):
+        """Add a new item to the list. Propagates changes to the Makehuman app 
+        and uses those changes to update the UI with new elements.
+
+        Parameters
+        ----------
+        item : str
+            Path to an asset on disk
+        """
         # Add an item through the MakeHuman instance and update the widget view
         self.mh_call.add_item(item)
         self.update()
 
     def get_item_children(self, item):
-        """Returns all the children when the widget asks it."""
+        """Returns all the children of an item when the widget asks it. Required
+        for compatibility with ui.TreeView, which implements the list view.
+
+        Parameters
+        ----------
+        item : DropListItemModel
+            Should always be None, as none of the list items should have children
+            in a flat list.
+
+        Returns
+        -------
+        List of Union[Skeleton, Proxy]
+            Makehuman Skeletons and Proxies contained in the DropList
+        """
         if item is not None:
             # Since we are doing a flat list, we return the children of root only.
             # If it's not root we return.
@@ -323,19 +421,45 @@ class DropListModel(ui.AbstractItemModel):
         return self.children
 
     def get_item_value_model_count(self, item):
-        """The number of columns"""
+        """The number of columns. We have a flat list (list items have no children),
+        so there is only one column.
+
+        Parameters
+        ----------
+        item : DropListItemModel
+            Unused. Maintains compatibility with API.
+
+        Returns
+        -------
+        int
+            The number of columns, which is always one.
+        """
         return 1
 
-    def get_item_value_model(self, item, column_id):
-        """
-        Return value model.
-        It's the object that tracks the specific value.
-        In our case we use DropListItemModel.
+    def get_item_value_model(self, item : DropListItem, column_id : int):
+        """Return value model of a particular list item. The value model, in this
+        case a DropListItemModel, tracks the item's label and a reference to the
+        corresponding asset.
+
+        Parameters
+        ----------
+        item : DropListItem
+            The model of the particular item in the list
+        column_id : int
+            Unused. The ID of the column of the item being addressed.
+            Needed to maintain API compatibility.
+
+        Returns
+        -------
+        DropListItemModel
+            The model that holds the data of the DropListItem
         """
         return item.model
 
     def update(self):
-        # TODO add docstring
+        """Gathers all assets (Skeleton/Proxies) from the human, and updates the
+        list UI to reflect any changes.
+        """
         # TODO use makehuman internal function to gather proxies
         # Gather all proxies from the human object
         items = [
@@ -373,7 +497,23 @@ class DropListDelegate(ui.AbstractItemDelegate):
         super().__init__()
 
     def build_widget(self, model : DropListModel, item : DropListItemModel, column_id : int, level : int, expanded : bool):
+        """Build widget UI
 
+        Parameters
+        ----------
+        model : DropListModel
+            Model that stores data about the entire list
+        item : DropListItemModel
+            Stores data about one list item in particular
+        column_id : int
+            The ID of the column where our list item is found. Should be 0, as our list is flat
+        level : int
+            Unused. The depth of an item in the list tree. Needed to maintain API compatibility
+        expanded : bool
+            Unused. Whether or not a list item is expanded to show its children. None of our
+            list items have children, so this should always be false. Needed to maintain
+            compatibility with API.
+        """
         # Get the model that represents a given list item
         value_model = model.get_item_value_model(item, column_id)
         # Create a label and style it after the default TreeView item style
@@ -385,23 +525,55 @@ class DropListDelegate(ui.AbstractItemDelegate):
         label.set_mouse_double_clicked_fn(
             lambda x, y, b, m: self.on_double_click(b, value_model.mh_item, model))
 
-    def on_double_click(self, button, item, list_model):
-        """Called when the user double-clicks the item in TreeView"""
+    def on_double_click(self, button : int, item : Union[Skeleton, Proxy], list_model : DropListModel):
+        """Executed on doubleclick. Removes the clicked item from the list.
+
+        Parameters
+        ----------
+        button : int
+            The number of the mouse button being clicked. 0 is left click (primary)
+        item : Union[Skeleton, Proxy]
+            A Makehuman asset item
+        list_model : DropListModel
+            The model that references all of the list data
+        """
         if button != 0:
             return
         list_model.mh_call.remove_item(item)
         list_model.update()
 
 class DropList:
-    def __init__(self, label, mhcaller):
-        # TODO add docstring
+    """A scrollable list onto which assets can be dropped from the Makehuman asset
+    browser. Items can also be removed by doubleclicking on a list item. Displays
+    the assets which are currently applied to the human.
+
+    Attributes
+    ----------
+    label : str
+        The label to display above the list
+    model : DropListModel
+        An object in which to store data for the list and all of its items
+    """
+    def __init__(self, label : str, mhcaller : MHCaller):
+        """Constructs an instance of DropList. Passes the Makehuman application
+        wrapper to the DropListModel so changes to the human can be reflected in
+        the list and vice-versa.
+
+        Parameters
+        ----------
+        label : str
+            Label to display above the list
+        mhcaller : MHCaller
+            Wrapper object around Makehuman data and functions 
+        """
         self.label = label
         # Model for storing widget data - accepts reference to Makehuman wrapper
         self.model = DropListModel(mhcaller)
         self._build_widget()
 
     def _build_widget(self):
-        # TODO add docstring
+        """Builds widget UI
+        """
         # Layer widgets on top of a rectangle to create a group frame
         with ui.ZStack(style=styles.panel_style):
             ui.Rectangle(name="group_rect")
