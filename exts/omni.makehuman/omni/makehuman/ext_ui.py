@@ -6,9 +6,21 @@ from .ui_widgets import *
 
 
 class MHWindow(ui.Window):
+    """
+    Main UI window. Contains all UI widgets. Extends omni.ui.Window.
+
+    Attributes
+    -----------
+    panel : HumanPanel
+        A widget that includes anels for modifiers, listing/removing applied
+        proxies, and executing human creation and updates
+    browser: AssetBrowserFrame
+        A browser for MakeHuman assets, including clothing, hair, and skeleton rigs.
+    """
+    
 
     def __init__(self, *args, **kwargs):
-        """Main UI widget. Extends omni.ui.Window"""
+        """Constructs an instance of MHWindow"""
 
         super().__init__(*args, **kwargs)
 
@@ -49,7 +61,8 @@ class MHWindow(ui.Window):
     # Properly destroying UI elements and references prevents 'Zombie UI'
     # (abandoned objects that interfere with Kit)
     def destroy(self):
-
+        """Destroys the instance of MHWindow
+        """
         super().destroy()
         self.panel.destroy()
         self.browser.destroy()
