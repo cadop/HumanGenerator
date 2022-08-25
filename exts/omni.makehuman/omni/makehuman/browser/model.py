@@ -15,17 +15,16 @@ from omni.makehuman.shared import data_path
 
 
 class AssetDetailItem(FileDetailItem):
-    """
-    Represents Makehuman asset detail item
+    """Represents Makehuman asset detail item
     """
 
     def __init__(self, file: BrowserFile):
-        """Constructor for AssetDetailItem
+        """Constructs an instance of AssetDetailItem
 
         Parameters
         ----------
         file : BrowserFile
-            BrowserFile object to create detail item
+            BrowserFile object from which to create detail item
         """
         dirs = file.url.split("/")
         name = dirs[-1]
@@ -33,12 +32,17 @@ class AssetDetailItem(FileDetailItem):
 
 
 class MHAssetBrowserModel(FolderBrowserModel):
-    """
-    Represents Makehuman asset browser model
+    """Represents Makehuman asset browser model
+    Attributes
+    ----------
+    mhcaller : MHCaller
+        Wrapper class for Makehuman functions
+    list_widget : DropList
+        The widget in which to reflect changes when assets are added to the human
     """
 
     def __init__(self, mhcaller: MHCaller, list_widget: DropList, *args, **kwargs):
-        """Constructor for MHAssetBrowserModel
+        """Constructs an instance of MHAssetBrowserModel
 
         Parameters
         ----------
