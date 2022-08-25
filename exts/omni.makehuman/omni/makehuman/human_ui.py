@@ -36,7 +36,7 @@ class HumanPanel:
         with ui.HStack():
 
             # Model to toggle whether human should update as soon as changes are made
-            toggle = ui.SimpleBoolModel
+            toggle = ui.SimpleBoolModel()
 
             # UI for modifiers and parameters (affects physical characteristics)
             self.params = ParamPanel(self.mh_call, toggle, width=300)
