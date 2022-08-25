@@ -85,8 +85,9 @@ class MHCaller:
         self.is_reset = True
         self.name = self.default_name
         self.human.resetMeshValues()
+        # Restore eyes
+        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         self.human.applyAllTargets()
-        # TODO restore eyes
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
