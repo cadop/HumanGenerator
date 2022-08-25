@@ -33,16 +33,20 @@ class HumanPanel:
     def _build_widget(self):
         """Build widget UI"""
 
-        with ui.Stack(ui.Direction.RIGHT_TO_LEFT):
+        with ui.HStack():
 
-            # UI for tracking applied assets and executing functions (eg. Create New Human)
-            self.buttons = ButtonPanel(self.mh_call, width=200)
-
-            # Toggle widget model from putton panel.
-            toggle = self.buttons.toggle
+            # Model to toggle whether human should update as soon as changes are made
+            toggle = ui.SimpleBoolModel
 
             # UI for modifiers and parameters (affects physical characteristics)
             self.params = ParamPanel(self.mh_call, toggle, width=300)
+
+            # UI for tracking applied assets and executing functions (eg. Create New Human)
+            self.buttons = ButtonPanel(self.mh_call, toggle, width=200)
+
+
+
+
 
 
 
@@ -245,7 +249,7 @@ class ButtonPanel:
         Wrapper object around Makehuman functions
     """
 
-    def __init__(self, mhcaller: MHCaller, **kwargs):
+    def __init__(self, mhcaller: MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
         """Constructs an instance of ButtonPanel, which contains a DropList for displaying currently applied assets, as well as the following buttons:
         + Update in Scene - Updates the current human
         + New Human - Abandons reference to previous human and creates a new one
@@ -254,11 +258,13 @@ class ButtonPanel:
         ----------
         mhcaller : MHCaller
             Wrapper object around Makehuman functions
+        toggle : ui.SimpleBoolModel
+            Model to toggle whether human should update immediately
         """
         # Include instance of Makehuman wrapper class
         self.mh_call = mhcaller
         # Model to store whether changes should happen immediately
-        self.toggle = ui.SimpleBoolModel()
+        self.toggle = toggle
 
         # Pass **kwargs to buildwidget so we can apply styling as though ButtonPanel
         # extended a base ui class
