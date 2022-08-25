@@ -1,3 +1,4 @@
+from typing import TypeVar, Union
 import warnings
 import io
 import makehuman
@@ -23,9 +24,37 @@ from .shared import data_path
 
 
 class MHCaller:
+    """A wrapper around the Makehuman app. Lets us use Makehuman functions without
+    launching the whole application. Also holds all data about the state of our Human
+    and available modifiers/assets.
+
+    Attributes
+    ----------
+    G : Globals
+        Makehuman global object. Stores globals needed by Makehuman internally
+    human : Human
+        Makehuman Human object. Encapsulates all human data (parameters, available)
+        modifiers, skeletons, meshes, assets, etc) and functions.
+    filepath : str
+        Path on disk to which to write an OBJ directly from the Makehuman app. Does
+        not include any changes made inside of Omniverse (outside of those made in
+        the Makehuman extension).
+    default_name : str
+        The default human name to reset back to. All subsequent human names append
+        the first available number to the default name, ie: human, human_01, human_02,
+        etc.
+    name : str
+        The name of the current human. Used to update the prims of a human in the
+        USD stage without making a new human
+    is_reset : bool
+        A flag to indicate the human has been reset. Used for creating a new human
+        in the scene with default values, or resetting the values of the active
+        human. Indicates that the new human needs a new name.
+    """
     def __init__(self):
-        """Setup the needed componenets to use makehuman modules independent of
-        the GUI. This includes app globals (G) and the human object."""
+        """Constructs an instance of MHCaller. This involves setting up the
+        needed components to use makehuman modules independent of the GUI.
+        This includes app globals (G) and the human object."""
         self.G = G
         self.human = None
         self.filepath = None
@@ -48,7 +77,11 @@ class MHCaller:
             return
 
     def reset_human(self):
-        # TODO add docstring
+        """Resets the human object to its initial state. This involves setting the
+        human's name to its default, resetting all modifications, and resetting all
+        proxies. Does not reset the skeleton. Also flags the human as having been
+        reset so that the new name can be created when adding to the Usd stage.
+        """
         self.is_reset = True
         self.name = self.default_name
         self.human.resetMeshValues()
@@ -82,7 +115,7 @@ class MHCaller:
         self.human.setSkeleton(cmu_skel)
         self.human.applyAllTargets()
 
-    def set_age(self, age):
+    def set_age(self, age : float):
         """Set human age, safety checking that it's within an acceptable range
 
         Parameters
@@ -96,7 +129,7 @@ class MHCaller:
 
     @property
     def objects(self):
-        """Human objects property class for up-to-date sub-objects
+        """List of objects attached to the human.
 
         Returns
         -------
@@ -110,7 +143,9 @@ class MHCaller:
 
     @property
     def meshes(self):
-        # Build a list of meshes from objects when accessed as a property
+        """All of the meshes of all of the objects attached to a human. This
+        includes the mesh of the human itself as well as the meshes of all proxies
+        (clothing, hair, musculature, eyes, etc.)"""
         return [o.mesh for o in self.objects]
 
     def update(self):
@@ -140,16 +175,16 @@ class MHCaller:
 
         wavefront.writeObjFile(filepath, self.meshes)
 
-    def add_proxy(self, proxypath, proxy_type=None):
+    def add_proxy(self, proxypath : str, proxy_type  : str = None):
         """Load a proxy (hair, nails, clothes, etc.) and apply it to the human
 
         Parameters
         ----------
-        proxypath : str, optional
+        proxypath : str
             Path to the proxy file on disk
         proxy_type: str, optional
             Proxy type, None by default
-            Can be auto-determined using path names, but otherwise
+            Can be automatically determined using path names, but otherwise
             must be defined (this is a limitation of how makehuman handles
             proxies)
         """
@@ -204,8 +239,17 @@ class MHCaller:
         # vertsMask[verts] = False
         # self.human.changeVertexMask(vertsMask)
 
-    def remove_proxy(self, proxy):
-        # TODO add docstring
+    Proxy = TypeVar("Proxy")
+
+    def remove_proxy(self, proxy: Proxy):
+        """Removes a proxy from the human. Executes a particular method for removal
+        based on proxy type.
+
+        Parameters
+        ----------
+        proxy : proxy.Proxy
+            The Makehuman proxy to remove from the human
+        """
         proxy_type = proxy.type.lower()
         # Use MakeHuman internal methods to remove proxy based on type
         if proxy_type == "eyes":
@@ -222,23 +266,45 @@ class MHCaller:
             # Body proxies (musculature, etc)
             self.human.setProxy(None)
 
-    def remove_item(self, item):
-        # TODO Add docstring
+    Skeleton = TypeVar("Skeleton")
+
+    def remove_item(self, item : Union[Skeleton, Proxy]):
+        """Removes a Makehuman asset from the human. Assets include Skeletons
+        as well as proxies. Determines removal method based on asset object type.
+
+        Parameters
+        ----------
+        item : Union[Skeleton,Proxy]
+            Makehuman skeleton or proxy to remove from the human
+        """
         # TODO handle removing skeletons
         if isinstance(item, proxy.Proxy):
             self.remove_proxy(item)
         else:
             return
 
-    def add_item(self, path):
-        # TODO add docstring
+    def add_item(self, path : str):
+        """Add a Makehuman asset (skeleton or proxy) to the human.
+
+        Parameters
+        ----------
+        path : str
+            Path to the asset on disk
+        """
         if "mhpxy" in path:
             self.add_proxy(path)
         elif "mhskel" in path:
             self.set_skel(path)
 
-    def set_skel(self, path):
-        # TODO add docstring
+    def set_skel(self, path : str):
+        """Change the skeleton applied to the human. Loads a skeleton from disk.
+        The skeleton position can be used to drive the human position in the scene.
+
+        Parameters
+        ----------
+        path : str
+            The path to the skeleton to load from disk
+        """
         # Load skeleton from path
         skel = skeleton.load(path, self.human.meshData)
         # Build skeleton weights based on base skeleton
@@ -247,16 +313,39 @@ class MHCaller:
         self.human.setSkeleton(skel)
         self.human.applyAllTargets()
 
-    def guess_proxy_type(self, path):
-        # TODO add docstring
+    def guess_proxy_type(self, path : str):
+        """Guesses a proxy's type based on the path from which it is loaded.
+
+        Parameters
+        ----------
+        path : str
+            The path to the proxy on disk
+
+        Returns
+        -------
+        Union[str,None]
+            The proxy type, or none if the type could not be determined
+        """
         proxy_types = ("eyes", "clothes", "eyebrows", "eyelashes", "hair")
         for type in proxy_types:
             if type in path:
                 return type
         return None
 
-def modifier_image(name):
-    # TODO add docstring
+def modifier_image(name : str):
+    """Guess the path to a modifier's corresponding image on disk based on the name
+    of the modifier. Useful for building UI for list of modifiers.
+
+    Parameters
+    ----------
+    name : str
+        Name of the modifier
+
+    Returns
+    -------
+    str
+        The path to the image on disk
+    """
     if name is None:
         # If no modifier name is provided, we can't guess the file name
         return None

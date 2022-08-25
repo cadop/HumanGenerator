@@ -1,4 +1,5 @@
 import carb
+from omni.kit.browser.folder.core.models.folder_browser_item import FileDetailItem
 import omni.ui as ui
 import omni.kit.app
 from omni.kit.browser.core import get_legacy_viewport_interface
@@ -16,14 +17,25 @@ ICON_PATH = CURRENT_PATH.parent.parent.parent.parent.joinpath("icons")
 
 
 class AssetDetailDelegate(FolderDetailDelegate):
-    """
-    Delegate to show asset item in detail view
-    Args:
-        model (AssetBrowserModel): Asset browser model
-    """
+    """Delegate to show Makehuman asset item in detail view and execute drag-and-
+    drop and doubleclick behavior.
 
+    Attributes
+    ----------
+    model : MHAssetBrowserModel
+        Model that stores AssetBrowser data. Contains reference to MHCaller
+    mhcaller : MHCaller
+        Wrapper around Makehuman data and functions. Tracks human data.
+    """
     def __init__(self, model: MHAssetBrowserModel):
-        # TODO add docstring
+        """Constructs an instance of AssetDetailDelegate, which handles
+        execution of functions
+
+        Parameters
+        ----------
+        model : MHAssetBrowserModel
+            Makehuman asset browser model
+        """
         super().__init__(model=model)
         # Reference to the browser asset model
         self.model = model
@@ -40,7 +52,7 @@ class AssetDetailDelegate(FolderDetailDelegate):
         self._drop_helper = None
 
     def destroy(self):
-        # TODO add docstring
+        """Destructor for AssetDetailDelegate. Removes references and destroys superclass."""
         self._viewport = None
         self._drop_helper = None
         super().destroy()
@@ -54,9 +66,19 @@ class AssetDetailDelegate(FolderDetailDelegate):
             return item.thumbnail
 
     def on_drag(self, item: AssetDetailItem) -> str:
-        """Could be dragged to viewport window"""
-        # TODO change docstring
-        # Translucent UI widget to display when an asset is dragged
+        """Displays a translucent UI widget when an asset is dragged
+
+        Parameters
+        ----------
+        item : AssetDetailItem
+            The item being dragged
+
+        Returns
+        -------
+        str
+            The path on disk of the item being dragged (passed to whatever widget
+            accepts the drop)
+        """
         thumbnail = self.get_thumbnail(item)
         icon_size = 128
         with ui.VStack(width=icon_size):
@@ -80,6 +102,13 @@ class AssetDetailDelegate(FolderDetailDelegate):
         # the widget on which it is dropped
         return item.url
 
-    def on_double_click(self, item):
-        # TODO add docstring
+    def on_double_click(self, item: FileDetailItem):
+        """Method to execute when an asset is doubleclicked. Adds an item to
+        to the list widget that shows currently applied assets
+
+        Parameters
+        ----------
+        item : FileDetailItem
+            The item that has been doubleclicked
+        """
         self.model.list_widget.add_child(item.url)
