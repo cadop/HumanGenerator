@@ -9,15 +9,19 @@ from .model import MHAssetBrowserModel
 
 
 class AssetBrowserFrame(ui.Frame):
-    """
-    Represent a window to show Assets
+    """A widget to browse and select Makehuman assets
+    Attributes
+    ----------
+    mhcaller : MHCaller
+        Wrapper object for Makehuman functions
+    list_widget : DropList
+        The widget in which to reflect changes when assets are added 
     """
 
     def __init__(self, mhcaller: MHCaller, list_widget: DropList, **kwargs):
         """Constructs an instance of AssetBrowserFrame. This is a browser that
         displays available Makehuman assets (skeletons/rigs, proxies) and allows
         a user to apply them to the human.
-
 
         Parameters
         ----------
