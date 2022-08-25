@@ -39,7 +39,7 @@ class ParamPanel(ui.Frame):
     def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
-
+        # Wrapper around Makehuman data (including human data) and functions
         self.mh_call = mh_call
         # model to track whether changes should be instant
         self.toggle = toggle
