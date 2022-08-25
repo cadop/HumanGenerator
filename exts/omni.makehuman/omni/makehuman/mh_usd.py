@@ -432,8 +432,9 @@ Skeleton = TypeVar("Skeleton")
 def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
     """Get the skeleton data from makehuman and place it in the stage. Also adds
     a new parent to the root node, so the root can have an identity transform at
-    the origin. This helps keep the character above ground, and Omniverse likes
-    it for some reason. #TODO further explain
+    the origin. This helps keep the character above ground, and follows the
+    guidelines outlined by Lina Halper for the Animation Retargeting extension
+    See: docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
 
     Parameters
     ----------
