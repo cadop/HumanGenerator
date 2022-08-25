@@ -7,8 +7,13 @@ from . import mh_usd
 
 
 class HumanPanel:
-    """UI Widget that includes list of modifiers, applied assets, and function buttons. Includes a ParamPanel and a ButtonPanel"""
-
+    """UI Widget that includes list of modifiers, applied assets, and function buttons.
+    Includes a ParamPanel and a ButtonPanel
+    Attributes
+    ----------
+    mh_call : MHCaller
+        Wrapper object for Makehuman data (including human instance data) and functions"""
+    
     def __init__(self, mhcaller: MHCaller, **kwargs):
         """Constructor for HumanPanel instance. Creates a two distinct UI widgets for managing human parameters. These are:
         + A scrollable list of available modifiers labeled and with images, grouped by type in collapseable panels
@@ -47,7 +52,14 @@ class HumanPanel:
 
 Human = TypeVar('Human')
 class ParamPanel(ui.Frame):
-    """UI Widget for displaying and modifying human parameters"""
+    """UI Widget for displaying and modifying human parameters
+    Attributes
+    ----------
+    human : Human
+        MakeHuman human object. Stores all information about the human
+    models : list of SliderEntryPanelModel
+        Models for each group of parameter sliders
+    """
 
     def __init__(self, human: Human, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
@@ -214,7 +226,13 @@ class ParamPanel(ui.Frame):
             model.destroy()
 
 class ButtonPanel:
-    """UI Widget that includes a list of assets currently applied to the human and buttons for applying changes to the human in the stage"""
+    """UI Widget that includes a list of assets currently applied to the human and
+    buttons for applying changes to the human in the stage
+    Attributes
+    ----------
+    mh_call : MHCaller
+        Wrapper object around Makehuman functions
+    """
 
     def __init__(self, mhcaller: MHCaller, **kwargs):
         """Constructs an instance of ButtonPanel, which contains a DropList for displaying currently applied assets, as well as the following buttons:
