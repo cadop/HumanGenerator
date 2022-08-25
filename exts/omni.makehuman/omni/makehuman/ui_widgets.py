@@ -2,7 +2,7 @@ import carb
 import omni.ui as ui
 import omni
 import os
-from typing import List, Tuple
+from typing import List, Tuple, TypeVar, Union
 from dataclasses import dataclass
 import carb
 from . import styles, mh_usd, ui_widgets
@@ -192,7 +192,10 @@ class SliderEntryPanelModel:
     #     return self.float_models[index]
 
     def destroy(self):
-        # TODO add docstring
+        """Destroys the instance of SliderEntryPanelModel. Deletes event
+        subscriptions. Important for preventing zombie-UI and unintended behavior
+        when the extension is reloaded.
+        """
         self.subscriptions = None
 
 
@@ -205,9 +208,7 @@ class SliderEntryPanel:
         model : SliderEntryPanelModel
             Model to hold parameters
         label : str, Optional
-            Display title for the group (None by default)
-            # TODO edit description to be consistent with docstring style
-            # "(None by default)" -> "by default None"
+            Display title for the group, by default None
         """
         self.label = label
         self.model = model
@@ -236,30 +237,41 @@ class SliderEntryPanel:
                     )
 
     def destroy(self):
-        #TODO add docstring
+        """Destroys the instance of SliderEntryPanel. Executes the destructor of
+        the SliderEntryPanel's SliderEntryPanelModel instance.
+        """
         self.model.destroy()
 
+# Makehuman imports (and therefore types) are not available before runtime
+# as the Makehuman app loads them through path manipulation. We have to define
+# them explicitly for type hints
+Skeleton = TypeVar("Skeleton")
+Proxy = TypeVar("Proxy")
 
 class DropListItemModel(ui.SimpleStringModel):
-    def __init__(self, text, mh_item=None) -> None:
-        # TODO add docstring
+    def __init__(self, text : str, mh_item : Union[Skeleton, Proxy]=None) -> None:
         # Initialize superclass and store text
         super().__init__(text)
         # Store the makehuman item
         self.mh_item = mh_item
 
     def destroy(self):
-        # TODO add docstring
+        """Destroys the instance of DropListItemModel
+        """
         super().destroy()
 
 
 class DropListDelegate(ui.AbstractItemDelegate):
+    """Delegate object for executing functions needed by a DropList. Can be used
+    when creating a TreeView to add double-clickable/removeable elements
+    """
     def __init__(self):
-        # TODO add docstring
+        """Constructs an instance of DropListDelegate
+        """
         super().__init__()
 
-    def build_widget(self, model, item, column_id, level, expanded):
-        # TODO add docstring
+    def build_widget(self, model : DropListModel, item : DropListItemModel, column_id : int, level : int, expanded : bool):
+
         # Get the model that represents a given list item
         value_model = model.get_item_value_model(item, column_id)
         # Create a label and style it after the default TreeView item style
@@ -272,8 +284,7 @@ class DropListDelegate(ui.AbstractItemDelegate):
             lambda x, y, b, m: self.on_double_click(b, value_model.mh_item, model))
 
     def on_double_click(self, button, item, list_model):
-        """Called when the user double-clicked the item in TreeView"""
-        # TODO fix docstring grammar
+        """Called when the user double-clicks the item in TreeView"""
         if button != 0:
             return
         list_model.mh_call.remove_item(item)
@@ -283,13 +294,24 @@ class DropListDelegate(ui.AbstractItemDelegate):
 class DropListItem(ui.AbstractItem):
     """Single item of the model"""
 
-    def __init__(self, text, item=None):
-        # TODO add docstring
+    def __init__(self, text : str, item : Union[Skeleton, Proxy]=None):
+        """Constructs an instance of DropListItem. Item is a simple wrapper around
+        a DropListItemModel for adding to a DropList.
+
+        Parameters
+        ----------
+        text : str
+            The name of the asset to display
+        item : Union[Skeleton, Proxy], optional
+            The Makehuman asset object, by default None
+        """
         super().__init__()
         self.model = DropListItemModel(text, mh_item=item)
 
     def destroy(self):
-        # TODO add docstring
+        """Destroys the instance of DropListItem. Executes destructor of superclass
+        and the DropListItem's DropListItemModel.
+        """
         super().destroy()
         self.model.destroy()
 
