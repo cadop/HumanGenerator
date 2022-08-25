@@ -31,7 +31,7 @@ class HumanPanel:
         self._build_widget()
 
     def _build_widget(self):
-          """Build widget UI"""
+        """Build widget UI"""
 
         with ui.Stack(ui.Direction.RIGHT_TO_LEFT):
 
@@ -67,7 +67,7 @@ class ParamPanel(ui.Frame):
         Models for each group of parameter sliders
     """
 
-  def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
+    def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
 
         Parameters
