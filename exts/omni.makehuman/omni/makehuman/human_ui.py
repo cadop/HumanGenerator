@@ -234,6 +234,8 @@ class ParamPanel(ui.Frame):
                         SliderEntryPanel(model)
 
     def reset(self):
+        """Reset every SliderEntryPanel to set UI values to defaults
+        """
         for model in self.models:
             model.reset()
 
