@@ -346,6 +346,15 @@ def setup_meshes(meshes: List[Object3D], stage: Usd.Stage, rootPath: str, offset
         name = sanitize(mesh.name)
         usd_mesh_path = rootPath + "/" + name
         usd_mesh_paths.append(usd_mesh_path)
+        # Check to see if the mesh prim already exists
+        prim = stage.GetPrimAtPath(usd_mesh_path)
+        if prim.IsValid():
+            omni.kit.commands.execute("DeletePrims", paths=[usd_mesh_path])
+            # prim.RemoveProperty("points")
+            # prim.RemoveProperty("faceVertexCounts")
+            # prim.RemoveProperty("faceVertexIndices")            
+            # prim.RemoveProperty("normals")
+            # meshGeom = UsdGeom.Mesh(prim)
         meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
 
         # Set vertices. This is a list of tuples for ALL vertices in an unassociated
