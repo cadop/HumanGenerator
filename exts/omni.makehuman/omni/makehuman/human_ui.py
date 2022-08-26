@@ -42,7 +42,7 @@ class HumanPanel:
             self.params = ParamPanel(self.mh_call, toggle, width=300)
 
             # UI for tracking applied assets and executing functions (eg. Create New Human)
-            self.buttons = ButtonPanel(self.mh_call, toggle, width=200)
+            self.buttons = ButtonPanel(self.mh_call, toggle, self.params, width=200)
 
 
 
@@ -253,9 +253,11 @@ class ButtonPanel:
     ----------
     mh_call : MHCaller
         Wrapper object around Makehuman functions
+    param_panel : ParamPanel
+        Reference to UI list widget for resetting UI when human is reset
     """
 
-    def __init__(self, mhcaller: MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
+    def __init__(self, mhcaller: MHCaller, toggle : ui.SimpleBoolModel, param_panel : ParamPanel, **kwargs):
         """Constructs an instance of ButtonPanel, which contains a DropList for displaying currently applied assets, as well as the following buttons:
         + Update in Scene - Updates the current human
         + New Human - Abandons reference to previous human and creates a new one
@@ -266,11 +268,15 @@ class ButtonPanel:
             Wrapper object around Makehuman functions
         toggle : ui.SimpleBoolModel
             Model to toggle whether human should update immediately
+        param_panel : ParamPanel
+            Reference to UI list widget for resetting UI when human is reset
         """
         # Include instance of Makehuman wrapper class
         self.mh_call = mhcaller
         # Model to store whether changes should happen immediately
         self.toggle = toggle
+        # Reference to UI list widget for resetting UI when human is reset
+        self.param_panel = param_panel
 
         # Pass **kwargs to buildwidget so we can apply styling as though ButtonPanel
         # extended a base ui class
@@ -308,6 +314,8 @@ class ButtonPanel:
         self.mh_call.reset_human()
         # Reset list of applied assets
         self.drop.model.update()
+        # Reset list of modifiers
+        self.param_panel.reset()
         # Add the new, now reset human to the scene
         mh_usd.add_to_scene(self.mh_call)
 
