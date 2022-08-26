@@ -233,6 +233,10 @@ class ParamPanel(ui.Frame):
                         # Create panel of slider entries for modifier group
                         SliderEntryPanel(model)
 
+    def reset(self):
+        for model in self.models:
+            model.reset()
+
     def destroy(self):
         """Destroys the ParamPanel instance as well as the models attached to each group of parameters
         """
