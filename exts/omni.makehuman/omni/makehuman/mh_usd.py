@@ -44,6 +44,7 @@ def add_to_scene(mh_call: MHCaller):
     mh_meshes = [m.clone(scale, filterMaskedVerts=True) for m in mh_meshes]
 
     mhskel = human.getSkeleton()
+    mhskel = None
 
     # Scale our skeleton to match our human
     if mhskel:
@@ -348,58 +349,78 @@ def setup_meshes(meshes: List[Object3D], stage: Usd.Stage, rootPath: str, offset
         usd_mesh_paths.append(usd_mesh_path)
         # Check to see if the mesh prim already exists
         prim = stage.GetPrimAtPath(usd_mesh_path)
+
         if prim.IsValid():
-            omni.kit.commands.execute("DeletePrims", paths=[usd_mesh_path])
-            # prim.RemoveProperty("points")
-            # prim.RemoveProperty("faceVertexCounts")
-            # prim.RemoveProperty("faceVertexIndices")            
-            # prim.RemoveProperty("normals")
-            # meshGeom = UsdGeom.Mesh(prim)
-        meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+            # omni.kit.commands.execute("DeletePrims", paths=[usd_mesh_path])
+            point_attr = prim.GetAttribute('points')
+            point_attr.Set(coords)
 
-        # Set vertices. This is a list of tuples for ALL vertices in an unassociated
-        # cloud. Faces are built based on indices of this list.
-        #   Example: 3 explicitly defined vertices:
-        #   meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10)]
-        meshGeom.CreatePointsAttr(coords)
+            face_count = prim.GetAttribute('faceVertexCounts')
+            nface = [nPerFace] * int(len(newvertindices) / nPerFace)
+            face_count.Set(nface)
 
-        # Set face vertex count. This is an array where each element is the number
-        # of consecutive vertex indices to include in each face definition, as
-        # indices are given as a single flat list. The length of this list is the
-        # same as the number of faces
-        #   Example: 4 faces with 4 vertices each
-        #   meshGeom.CreateFaceVertexCountsAttr([4, 4, 4, 4])
-        nface = [nPerFace] * int(len(newvertindices) / nPerFace)
-        meshGeom.CreateFaceVertexCountsAttr(nface)
+            face_idx = prim.GetAttribute('faceVertexIndices')
+            face_idx.Set(newvertindices)
 
-        # Set face vertex indices.
-        #   Example: one face with 4 vertices defined by 4 indices.
-        #   meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
-        meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
+            normals_attr = prim.GetAttribute('normals')
+            normals_attr.Set(mesh.getNormals())
 
-        # Set vertex normals. Normals are represented as a list of tuples each of
-        # which is a vector indicating the direction a point is facing. This is later
-        # Used to calculate face normals
-        #   Example: Normals for 3 vertices
-        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1,
-        # 0)])
-        meshGeom.CreateNormalsAttr(mesh.getNormals())
-        meshGeom.SetNormalsInterpolation("vertex")
+            meshGeom = UsdGeom.Mesh(prim)
+
+        # If it doesn't exist, make it. This will run the first time a human is created
+        else:
+            meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+ 
+            # Set vertices. This is a list of tuples for ALL vertices in an unassociated
+            # cloud. Faces are built based on indices of this list.
+            #   Example: 3 explicitly defined vertices:
+            #   meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10)]
+            meshGeom.CreatePointsAttr(coords)
+
+            # Set face vertex count. This is an array where each element is the number
+            # of consecutive vertex indices to include in each face definition, as
+            # indices are given as a single flat list. The length of this list is the
+            # same as the number of faces
+            #   Example: 4 faces with 4 vertices each
+            #   meshGeom.CreateFaceVertexCountsAttr([4, 4, 4, 4])
+
+            nface = [nPerFace] * int(len(newvertindices) / nPerFace)
+            meshGeom.CreateFaceVertexCountsAttr(nface)
+
+            # Set face vertex indices.
+            #   Example: one face with 4 vertices defined by 4 indices.
+            #   meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+            meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
+
+            # Set vertex normals. Normals are represented as a list of tuples each of
+            # which is a vector indicating the direction a point is facing. This is later
+            # Used to calculate face normals
+            #   Example: Normals for 3 vertices
+            # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1,
+            # 0)])
+
+            meshGeom.CreateNormalsAttr(mesh.getNormals())
+            meshGeom.SetNormalsInterpolation("vertex")
 
         # Set vertex uvs. UVs are represented as a list of tuples, each of which is a 2D
         # coordinate. UV's are used to map textures to the surface of 3D geometry
         #   Example: texture coordinates for 3 vertices
         #   texCoords.Set([(0, 1), (0, 0), (1, 0)])
+
         texCoords = meshGeom.CreatePrimvar(
             "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying
         )
         texCoords.Set(mesh.getUVs(newuvindices))
 
-        # Subdivision is set to none. The mesh is as imported and not further refined
+        # # Subdivision is set to none. The mesh is as imported and not further refined
         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
     # ConvertPath strings to USD Sdf paths. TODO change to map() for performance
     paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
+
+    # Save the resulting layer
+    stage.GetRootLayer().Export('s://Model.usda')
+
     return paths
 
 
