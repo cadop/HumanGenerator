@@ -4,6 +4,8 @@ import io
 import makehuman
 from pathlib import Path
 
+from . import mhov
+
 # Makehuman loads most modules by manipulating the system path, so we have to
 # run this before we can run the rest of our makehuman imports
 
@@ -64,6 +66,8 @@ class MHCaller:
         self.is_reset = False
         self._config_mhapp()
         self.init_human()
+
+        self.human_mapper = {}
 
     def _config_mhapp(self):
         """Declare and initialize the makehuman app, and move along if we

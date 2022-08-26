@@ -1,3 +1,4 @@
+from logging import root
 from typing import List, TypeVar
 from numpy.random.tests import data
 from omni.kit.commands.command import create
@@ -11,6 +12,8 @@ import os
 import re
 import skeleton as mhskeleton
 from .shared import data_path
+
+from . import mhov
 
 
 def add_to_scene(mh_call: MHCaller):
@@ -44,7 +47,7 @@ def add_to_scene(mh_call: MHCaller):
     mh_meshes = [m.clone(scale, filterMaskedVerts=True) for m in mh_meshes]
 
     mhskel = human.getSkeleton()
-    mhskel = None
+    # mhskel = None
 
     # Scale our skeleton to match our human
     if mhskel:
@@ -71,7 +74,10 @@ def add_to_scene(mh_call: MHCaller):
 
             # Attach these vertexWeights to the mesh to pass them around the
             # exporter easier, the cloned mesh is discarded afterwards, anyway
+            
+            # if this is the same person, just skip updating weights
             mesh.vertexWeights = weights
+    
     else:
         # Attach trivial weights to the meshes
         for mesh in mh_meshes:
@@ -103,34 +109,52 @@ def add_to_scene(mh_call: MHCaller):
     else:
         rootPath = rootPath + "/" + name
 
+    # check if this human exists, otherwise make a new instance 
+    if rootPath in mh_call.human_mapper:
+        cur_human = mh_call.human_mapper[rootPath]
+    #TODO update this when a deletion happens, or check that the path exists
+    # Probably just integrate with code right above this
+    else:
+        cur_human = mhov.MHOV()
+        mh_call.human_mapper[rootPath] = cur_human
+
     UsdGeom.Xform.Define(stage, rootPath)
 
     if mhskel:
-        # Create the USD skeleton in our stage using the mhskel data
-        (usdSkel, rootPath, joint_names) = setup_skeleton(
-            rootPath, stage, mhskel, offset
-        )
+        # Only redefine a skeleton if it doesn't exist 
+        if not cur_human.usdSkel:
+            # Create the USD skeleton in our stage using the mhskel data
+            (usdSkel, rootPath, joint_names, joint_paths) = setup_skeleton(rootPath, 
+                                                                            stage, 
+                                                                            mhskel, 
+                                                                            offset
+                                                                           )
 
+            cur_human.usdSkel = usdSkel
+            cur_human.skel_root_path = rootPath
+            cur_human.joint_names = joint_names
+            cur_human.joint_paths = joint_paths
+        
         # Add the meshes to the USD stage under skelRoot
-        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
+        usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
         # Create bindings between meshes and the skeleton. Returns a list of
         # bindings the length of the number of meshes
-        bindings = setup_bindings(usd_mesh_paths, stage, usdSkel)
+        bindings = setup_bindings(usd_mesh_paths, stage, cur_human.usdSkel)
 
         # Setup weights for corresponding mh_meshes (which hold the data) and
         # bindings (which link USD_meshes to the skeleton)
-        setup_weights(mh_meshes, bindings, joint_names)
+        setup_weights(mh_meshes, bindings, cur_human.joint_names, cur_human.joint_paths)
     else:
         # Add the meshes to the USD stage under root
-        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
+        usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
     # Import materials for proxies
-    setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
+    setup_materials(mh_meshes, usd_mesh_paths, cur_human.skel_root_path, stage)
 
     # Explicitly setup material for human skin
     texture_path = data_path("textures/skin.png")
-    skin = create_material(texture_path, "Skin", rootPath, stage)
+    skin = create_material(texture_path, "Skin", cur_human.skel_root_path, stage)
     # Bind the skin material to the first prim in the list (the human)
     bind_material(usd_mesh_paths[0], skin, stage)
 
@@ -140,7 +164,7 @@ def add_to_scene(mh_call: MHCaller):
 Object3D = TypeVar("Object3D")
 
 
-def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI], joint_names: List[str]):
+def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI], joint_names: List[str], joint_paths: List[str]):
     """Apply weights to USD meshes using data from makehuman. USD meshes,
     bindings and skeleton must already be in the active scene
 
@@ -153,7 +177,10 @@ def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI],
     joint_names : list of str
         Unique, plaintext names of all joints in the skeleton in USD
         (breadth-first) order.
+    joint_paths : list of str
+        List of the full usd path to each joint corresponding to the skeleton to bind to
     """
+
 
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
@@ -183,12 +210,18 @@ def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI],
         indices_attribute = binding.CreateJointIndicesPrimvar(
             constant=False, elementSize=elementSize
         )
+
+        joint_attr = binding.GetPrim().GetAttribute('skel:joints')
+        joint_attr.Set(joint_paths)
+
         indices_attribute.Set(indices)
+
 
         # Assign weights to binding
         weights_attribute = binding.CreateJointWeightsPrimvar(
             constant=False, elementSize=elementSize
         )
+
         weights_attribute.Set(weights)
 
 
@@ -287,11 +320,22 @@ def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Sk
         # Get the prim in the stage
         prim = stage.GetPrimAtPath(mesh)
 
-        # Create a binding applied to the prim
-        binding = UsdSkel.BindingAPI.Apply(prim)
+        attrs = prim.GetAttribute('primvars:skel:jointWeights')
+        # Check if joint weights have already been applied
+        if attrs.IsValid():
+            prim_path = prim.GetPath()
+            sdf_path = Sdf.Path(prim_path)
+            binding = UsdSkel.BindingAPI.Get(stage, sdf_path)
 
-        # Create a relationship between the binding and the skeleton
-        binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+            # relationships = prim.GetRelationships()
+            # 'material:binding' , 'proxyPrim', 'skel:animationSource','skel:blendShapeTargets','skel:skeleton'
+            # get_binding.GetSkeletonRel()
+
+        else:
+            # Create a binding applied to the prim
+            binding = UsdSkel.BindingAPI.Apply(prim)
+            # Create a relationship between the binding and the skeleton
+            binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
 
         # Add the binding to the list to return
         bindings.append(binding)
@@ -490,6 +534,8 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
         List of joint names in USD (breadth-first traversal) order. It is
         important that joints be ordered this way so that their indices can be
         used for skinning / weighting.
+    joint_paths : list of: str
+        List of joint paths that are used as joint indices
     """
     joint_paths = []
     joint_names = []
@@ -610,7 +656,7 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     # setup rest transforms in joint-local space
     usdSkel.CreateRestTransformsAttr(rel_transforms)
 
-    return usdSkel, skel_root_path, joint_names
+    return usdSkel, skel_root_path, joint_names, joint_paths
 
 
 def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
