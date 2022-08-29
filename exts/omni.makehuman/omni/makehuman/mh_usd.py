@@ -325,7 +325,7 @@ def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Sk
         # Get the prim in the stage
         prim = stage.GetPrimAtPath(mesh)
 
-        attrs = prim.GetAttribute('skel:jointWeights')
+        attrs = prim.GetAttribute('primvars:skel:jointWeights')
         # Check if joint weights have already been applied
         if attrs.IsValid():
             prim_path = prim.GetPath()
