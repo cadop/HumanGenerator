@@ -320,7 +320,7 @@ def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Sk
         # Get the prim in the stage
         prim = stage.GetPrimAtPath(mesh)
 
-        attrs = prim.GetAttribute('primvars:skel:jointWeights')
+        attrs = prim.GetAttribute('skel:jointWeights')
         # Check if joint weights have already been applied
         if attrs.IsValid():
             prim_path = prim.GetPath()
@@ -463,7 +463,7 @@ def setup_meshes(meshes: List[Object3D], stage: Usd.Stage, rootPath: str, offset
     paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
 
     # Save the resulting layer
-    stage.GetRootLayer().Export('s://Model.usda')
+    # stage.GetRootLayer().Export('s://Model.usda')
 
     return paths
 
