@@ -118,7 +118,7 @@ def add_to_scene(mh_call: MHCaller):
         cur_human = mhov.MHOV()
         mh_call.human_mapper[rootPath] = cur_human
 
-    UsdGeom.Xform.Define(stage, rootPath)
+        UsdGeom.Xform.Define(stage, rootPath)
 
     if mhskel:
         # Only redefine a skeleton if it doesn't exist 
@@ -134,8 +134,7 @@ def add_to_scene(mh_call: MHCaller):
             cur_human.skel_root_path = rootPath
             cur_human.joint_names = joint_names
             cur_human.joint_paths = joint_paths
-        
-        # Add the meshes to the USD stage under skelRoot
+
         usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
         # Create bindings between meshes and the skeleton. Returns a list of
@@ -145,6 +144,8 @@ def add_to_scene(mh_call: MHCaller):
         # Setup weights for corresponding mh_meshes (which hold the data) and
         # bindings (which link USD_meshes to the skeleton)
         setup_weights(mh_meshes, bindings, cur_human.joint_names, cur_human.joint_paths)
+
+
     else:
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
@@ -157,6 +158,10 @@ def add_to_scene(mh_call: MHCaller):
     skin = create_material(texture_path, "Skin", cur_human.skel_root_path, stage)
     # Bind the skin material to the first prim in the list (the human)
     bind_material(usd_mesh_paths[0], skin, stage)
+
+    # Save the resulting layer
+    # stage.GetRootLayer().Export('C:/Users/jhg29/Documents/Model.usda')
+
 
     return name
 
@@ -462,8 +467,6 @@ def setup_meshes(meshes: List[Object3D], stage: Usd.Stage, rootPath: str, offset
     # ConvertPath strings to USD Sdf paths. TODO change to map() for performance
     paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
 
-    # Save the resulting layer
-    # stage.GetRootLayer().Export('s://Model.usda')
 
     return paths
 
@@ -657,6 +660,10 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     usdSkel.CreateRestTransformsAttr(rel_transforms)
 
     return usdSkel, skel_root_path, joint_names, joint_paths
+
+def update_skeleton(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
+    
+    pass
 
 
 def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
