@@ -196,6 +196,12 @@ class SliderEntryPanelModel:
         )
         # Add model to list of models
         self.float_models.append(float_model)
+    
+    def reset(self):
+        """Resets the values of each floatmodel to parameter default for UI reset
+        """
+        for model, param in zip(self.float_models, self.params):
+            model.set_value(param.default)
 
     def _sanitize_and_run(self, param : Param, float_model : ui.SimpleFloatModel):
         """Make sure that values are within an acceptable range and then run the

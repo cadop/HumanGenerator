@@ -89,8 +89,9 @@ class MHCaller:
         self.is_reset = True
         self.name = self.default_name
         self.human.resetMeshValues()
+        # Restore eyes
+        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         self.human.applyAllTargets()
-        # TODO restore eyes
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
@@ -194,6 +195,9 @@ class MHCaller:
         """
         #  Derived from work by @tomtom92 at the MH-Community forums
         #  See: http://www.makehumancommunity.org/forum/viewtopic.php?f=9&t=17182&sid=7c2e6843275d8c6c6e70288bc0a27ae9
+        # Get proxy type if none is given
+        if proxy_type is None:
+            proxy_type = self.guess_proxy_type(proxypath)
         # Load the proxy
         pxy = proxy.loadProxy(self.human, proxypath, type=proxy_type)
         # Get the mesh and Object3D object from the proxy applied to the human
@@ -213,9 +217,6 @@ class MHCaller:
         # TODO is this needed?
         obj.setSubdivided(self.human.isSubdivided())
 
-        # Get proxy type if none is given
-        if proxy_type is None:
-            proxy_type = self.guess_proxy_type(proxypath)
 
         # Set/add proxy based on type
         if proxy_type == "eyes":

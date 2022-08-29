@@ -11,6 +11,6 @@ The extension may take a few minutes to install as it will download makehuman an
 
 ## License
 
-*Our license restrictions are due to the AGPL of MakeHuman. Inline with the statements from MakeHuman, the targets and resulting characters are CC0, meaning you can use whatever you create for free, without restrictions. It is only the codebase that is AGPL.
+*Our license restrictions are due to the AGPL of MakeHuman. In line with the statements from MakeHuman, the targets and resulting characters are CC0, meaning you can use whatever you create for free, without restrictions. It is only the codebase that is AGPL.
 
 
