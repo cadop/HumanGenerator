@@ -61,7 +61,7 @@ class MHAssetBrowserModel(FolderBrowserModel):
             **kwargs,
         )
         # Add the data path as the root folder from which to build a collection
-        # super().append_root_folder(data_path(""), name="MakeHuman")
+        super().append_root_folder(data_path(""), name="MakeHuman")
 
     def create_detail_item(
         self, file: BrowserFile
