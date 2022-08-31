@@ -86,7 +86,7 @@ class MHCaller:
         self.name = self.default_name
         self.human.resetMeshValues()
         # Restore eyes
-        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
+        # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         self.human.applyAllTargets()
 
     def init_human(self):
@@ -101,7 +101,7 @@ class MHCaller:
         self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         # Add eyes
-        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
+        # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         self.base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
