@@ -2,7 +2,6 @@ from typing import Optional, Callable
 from omni.kit.browser.core import OptionMenuDescription, OptionsMenu
 from omni.kit.browser.folder.core.models.folder_browser_item import FolderCollectionItem
 import omni.client, carb
-from .download import Downloader
 import aiohttp
 import os, zipfile
 class FolderOptionsMenu(OptionsMenu):
@@ -10,14 +9,12 @@ class FolderOptionsMenu(OptionsMenu):
     Represent options menu used in material browser. 
     """
 
-    def __init__(self, dl : Optional[Downloader]):
+    def __init__(self):
         super().__init__()
-        self.dl = dl
 
         self._download_menu_desc = OptionMenuDescription(
             "Download Assets",
-            clicked_fn=self._on_download_assets,
-            visible_fn=lambda: self.dl is not None,
+            clicked_fn=lambda a: self._on_download_assets(),
             get_text_fn=self._get_menu_item_text,
         )
         self.append_menu_item(self._download_menu_desc)
