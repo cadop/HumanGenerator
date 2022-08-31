@@ -4,6 +4,7 @@ from omni.kit.browser.folder.core.models.folder_browser_item import FolderCollec
 import omni.client, carb
 import aiohttp, asyncio
 import os, zipfile
+from ..shared import data_path
 class FolderOptionsMenu(OptionsMenu):
     """
     Represent options menu used in material browser. 
@@ -11,7 +12,7 @@ class FolderOptionsMenu(OptionsMenu):
 
     def __init__(self):
         super().__init__()
-        self.dest_url = "/exts/omni/makehuman/download/"
+        self.dest_url = data_path("")
         self.on_progress_fn = None
         self.url = "https://download.tuxfamily.org/makehuman/asset_packs/masks01/masks01_cc0.zip"
         self._download_menu_desc = OptionMenuDescription(
@@ -29,7 +30,11 @@ class FolderOptionsMenu(OptionsMenu):
         return "Download Assets"
 
     def _on_download_assets(self):
-        asyncio.create_task(self._download())
+        loop = asyncio.get_event_loop()
+        asyncio.run_coroutine_threadsafe(self._download(), loop)
+
+    def on_progress_fn(self, done : float):
+        carb.log_warn(f"Download is {done} done")
 
     async def _download(self) -> None:
         ret_value = {"url": None}
