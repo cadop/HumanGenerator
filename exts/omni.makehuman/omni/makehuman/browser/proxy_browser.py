@@ -50,7 +50,7 @@ class AssetBrowserFrame(ui.Frame):
         # The delegate to execute browser actions
         self._delegate = AssetDetailDelegate(self._browser_model)
         # Drop down menu to hold options
-        self._options_menu = FolderOptionsMenu("/exts/omni/makehuman/download/")
+        self._options_menu = FolderOptionsMenu()
 
         # TODO does this need to be in a vstack?
         with ui.VStack(spacing=15):
