@@ -61,8 +61,7 @@ class MHAssetBrowserModel(FolderBrowserModel):
             **kwargs,
         )
         # Add the data path as the root folder from which to build a collection
-        super().append_root_folder(data_path(""), name="MakeHuman")
-        # TODO make it so that the default collection cannot be removed
+        # super().append_root_folder(data_path(""), name="MakeHuman")
 
     # Overwrite parent function to add thumbnails
     def create_detail_item(
