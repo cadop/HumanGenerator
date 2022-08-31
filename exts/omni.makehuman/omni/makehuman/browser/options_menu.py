@@ -13,8 +13,7 @@ class FolderOptionsMenu(OptionsMenu):
     def __init__(self):
         super().__init__()
         self.dest_url = data_path("")
-        self.on_progress_fn = None
-        self.url = "https://download.tuxfamily.org/makehuman/asset_packs/masks01/masks01_cc0.zip"
+        self.url = "http://download.tuxfamily.org/makehuman/releases/makehuman-community-1.2.0-windows.zip"
         self._download_menu_desc = OptionMenuDescription(
             "Download Assets",
             clicked_fn=self._on_download_assets,
