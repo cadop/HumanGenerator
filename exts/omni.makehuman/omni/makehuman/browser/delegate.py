@@ -55,6 +55,21 @@ class AssetDetailDelegate(FolderDetailDelegate):
         self._drop_helper = None
         super().destroy()
 
+    def get_thumbnail(self, item : AssetDetailItem) -> str:
+        """Get the thumbnail for an asset
+
+        Parameters
+        ----------
+        item : AssetDetailItem
+            The item in the browser for which we are getting a thumbnail
+
+        Returns
+        -------
+        str
+            Path to the thumbnail image
+        """
+        return item.thumbnail
+
     def on_drag(self, item: AssetDetailItem) -> str:
         """Displays a translucent UI widget when an asset is dragged
 
