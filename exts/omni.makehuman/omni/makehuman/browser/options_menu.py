@@ -34,7 +34,7 @@ class FolderOptionsMenu(OptionsMenu):
         asyncio.run_coroutine_threadsafe(self._download(), loop)
 
     def on_progress_fn(self, proportion : float):
-        carb.log_warn(f"Download is {int(proportion * 100)}% done")
+        carb.log_info(f"Download is {int(proportion * 100)}% done")
 
     async def _download(self) -> None:
         ret_value = {"url": None}
