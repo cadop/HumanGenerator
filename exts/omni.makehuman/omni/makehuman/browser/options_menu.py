@@ -5,6 +5,7 @@ import omni.client, carb
 import aiohttp, asyncio
 import os, zipfile
 from ..shared import data_path
+
 class FolderOptionsMenu(OptionsMenu):
     """
     Represent options menu used in material browser. 
@@ -32,8 +33,8 @@ class FolderOptionsMenu(OptionsMenu):
         loop = asyncio.get_event_loop()
         asyncio.run_coroutine_threadsafe(self._download(), loop)
 
-    def on_progress_fn(self, done : float):
-        carb.log_warn(f"Download is {done} done")
+    def on_progress_fn(self, proportion : float):
+        carb.log_warn(f"Download is {int(proportion * 100)}% done")
 
     async def _download(self) -> None:
         ret_value = {"url": None}
@@ -63,8 +64,11 @@ class FolderOptionsMenu(OptionsMenu):
                 (result, list_entry) = await omni.client.stat_async(self.dest_url)
                 ret_value["status"] = await omni.client.write_file_async(self.dest_url, content)
                 ret_value["url"] = self.dest_url
+                if  ret_value["status"] == omni.client.Result.OK:
+                    # TODO handle file already exists
+                    z = zipfile.ZipFile(self.dest_url, 'r')
+                    z.extractall(os.path.dirname(self.dest_url))
             else:
                 carb.log_error(f"[access denied: {self.url}")
                 ret_value["status"] = omni.client.Result.ERROR_ACCESS_DENIED
-        z = zipfile.ZipFile(result)
-        return z.extractall(), ret_value
+        return ret_value
