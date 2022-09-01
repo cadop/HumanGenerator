@@ -35,10 +35,17 @@ class FolderOptionsMenu(OptionsMenu):
         return "Download Assets"
 
     def _on_download_assets(self):
-        url = "https://download.tuxfamily.org/makehuman/asset_packs/makehuman_system_assets/makehuman_system_assets.zip"
-        dest_url = data_path("")
         loop = asyncio.get_event_loop()
-        asyncio.run_coroutine_threadsafe(self.downloader.download(url, dest_url), loop)
+        asyncio.run_coroutine_threadsafe(self._download(), loop)
+
+    async def _download(self):
+        # Makehuman system assets
+        url = "https://download.tuxfamily.org/makehuman/asset_packs/makehuman_system_assets/makehuman_system_assets.zip"
+        # Smaller zip for testing
+        # url = "https://download.tuxfamily.org/makehuman/asset_packs/shirts03/shirts03_ccby.zip"
+        dest_url = data_path("")
+        await self.downloader.download(url, dest_url)
+        self.refresh_collection()
 
     def refresh_collection(self):
         collection_item: FolderCollectionItem = self._browser_widget.collection_selection
