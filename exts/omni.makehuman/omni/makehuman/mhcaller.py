@@ -113,7 +113,7 @@ class MHCaller:
 
         self.human.setBaseSkeleton(self.base_skel)
         # Actually add the skeleton
-        self.human.setSkeleton(self.base_skel)
+        # self.human.setSkeleton(self.base_skel)
         self.human.applyAllTargets()
 
     def set_age(self, age : float):
