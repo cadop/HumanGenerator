@@ -6,12 +6,34 @@ import os, zipfile
 
 
 class Downloader:
+    """Downloads and unzips remote files and tracks download status/progress"""
+    def __init__(self, log_fn : Callable[[float], None]) -> None:
+        """Construct an instance of Downloader. Assigns the logging function and sets initial is_downloading status
 
-    def __init__(self, log_fn : Callable[[float, float], None]) -> None:
+        Parameters
+        ----------
+        log_fn : Callable[[float], None]
+            Function to which to pass progress. Recieves a proportion that represents the amount downloaded
+        """
         self._is_downloading = False
         self._log_fn = log_fn
 
     async def download(self, url : str, dest_url : str) -> None:
+        """Download a given url to disk and unzip it
+
+        Parameters
+        ----------
+        url : str
+            Remote URL to fetch
+        dest_url : str
+            Local path at which to write and then unzip the downloaded files
+
+        Returns
+        -------
+        dict of  str, Union[omni.client.Result, str]
+            Error message and location on disk
+        """
+
         ret_value = {"url": None}
         async with aiohttp.ClientSession() as session:
             self._is_downloading = True
@@ -36,16 +58,15 @@ class Downloader:
             if response.ok:
                 # Write to destination
                 filename = os.path.basename(url.split("?")[0])
-                self.dest_url = f"{self.dest_url}/{filename}"
-                (result, list_entry) = await omni.client.stat_async(self.dest_url)
-                ret_value["status"] = await omni.client.write_file_async(self.dest_url, content)
-                ret_value["url"] = self.dest_url
+                dest_url = f"{dest_url}/{filename}"
+                (result, list_entry) = await omni.client.stat_async(dest_url)
+                ret_value["status"] = await omni.client.write_file_async(dest_url, content)
+                ret_value["url"] = dest_url
                 if  ret_value["status"] == omni.client.Result.OK:
                     # TODO handle file already exists
                     pass
-                z = zipfile.ZipFile(self.dest_url, 'r')
-                z.extractall(os.path.dirname(self.dest_url))
-                self.refresh_collection()
+                z = zipfile.ZipFile(dest_url, 'r')
+                z.extractall(os.path.dirname(dest_url))
             else:
                 carb.log_error(f"[access denied: {url}")
                 ret_value["status"] = omni.client.Result.ERROR_ACCESS_DENIED
