@@ -42,7 +42,7 @@ class AssetBrowserFrame(ui.Frame):
         self._browser_model = MHAssetBrowserModel(
             self.mh_call,
             self.list_widget,
-            filter_file_suffixes=["mhpxy", "mhskel"],
+            filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
             timeout=carb.settings.get_settings().get(
                 "/exts/omni.makehuman.browser.asset/data/timeout"
             ),
