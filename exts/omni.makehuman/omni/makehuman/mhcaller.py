@@ -86,7 +86,7 @@ class MHCaller:
         self.name = self.default_name
         self.human.resetMeshValues()
         # Restore eyes
-        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
+        # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         self.human.applyAllTargets()
 
     def init_human(self):
@@ -101,19 +101,19 @@ class MHCaller:
         self.G.app.selectedHuman = self.human
         humanmodifier.loadModifiers(mh.getSysDataPath("modifiers/modeling_modifiers.json"), self.human)
         # Add eyes
-        self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
+        # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         self.base_skel = skeleton.load(
             mh.getSysDataPath("rigs/default.mhskel"),
             self.human.meshData,
         )
-        cmu_skel = skeleton.load(data_path("rigs/cmu_mb.mhskel"), self.human.meshData)
+        # cmu_skel = skeleton.load(data_path("rigs/cmu_mb.mhskel"), self.human.meshData)
         # Build joint weights on our chosen skeleton, derived from the base
         # skeleton
-        cmu_skel.autoBuildWeightReferences(self.base_skel)
+        # cmu_skel.autoBuildWeightReferences(self.base_skel)
 
         self.human.setBaseSkeleton(self.base_skel)
         # Actually add the skeleton
-        self.human.setSkeleton(cmu_skel)
+        self.human.setSkeleton(self.base_skel)
         self.human.applyAllTargets()
 
     def set_age(self, age : float):

@@ -6,6 +6,7 @@ import omni.ui as ui
 from omni.kit.browser.folder.core import FolderBrowserWidget
 from .delegate import AssetDetailDelegate
 from .model import MHAssetBrowserModel
+from .options_menu import FolderOptionsMenu
 
 
 class AssetBrowserFrame(ui.Frame):
@@ -41,17 +42,19 @@ class AssetBrowserFrame(ui.Frame):
         self._browser_model = MHAssetBrowserModel(
             self.mh_call,
             self.list_widget,
-            filter_file_suffixes=["mhpxy", "mhskel"],
+            filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
             timeout=carb.settings.get_settings().get(
                 "/exts/omni.makehuman.browser.asset/data/timeout"
             ),
         )
         # The delegate to execute browser actions
         self._delegate = AssetDetailDelegate(self._browser_model)
+        # Drop down menu to hold options
+        self._options_menu = FolderOptionsMenu()
 
         # TODO does this need to be in a vstack?
         with ui.VStack(spacing=15):
             # Create the widget
             self._widget = FolderBrowserWidget(
-                self._browser_model, detail_delegate=self._delegate
+                self._browser_model, detail_delegate=self._delegate, options_menu = self._options_menu
             )

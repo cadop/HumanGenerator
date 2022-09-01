@@ -62,15 +62,13 @@ class MHAssetBrowserModel(FolderBrowserModel):
         )
         # Add the data path as the root folder from which to build a collection
         super().append_root_folder(data_path(""), name="MakeHuman")
-        # TODO make it so that the default collection cannot be removed
 
-    # Overwrite parent function to add thumbnails
     def create_detail_item(
         self, file: BrowserFile
     ) -> Union[FileDetailItem, List[FileDetailItem]]:
         """Create detail item(s) from a file.
         A file may include multiple detail items.
-
+        Overwrite parent function to add thumbnails.
         Parameters
         ----------
         file : BrowserFile

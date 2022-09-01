@@ -41,8 +41,6 @@ class AssetDetailDelegate(FolderDetailDelegate):
         self.model = model
         # Reference to the Makehuman wrapper
         self.mhcaller = model.mhcaller
-        # TODO remove this
-        self._dragging_url = None
         self._settings = carb.settings.get_settings()
         # The context menu that opens on right_click
         self._context_menu: Optional[ui.Menu] = None
@@ -57,13 +55,20 @@ class AssetDetailDelegate(FolderDetailDelegate):
         self._drop_helper = None
         super().destroy()
 
-    # TODO remove this method
-    def get_thumbnail(self, item) -> str:
-        """Set default sky thumbnail if thumbnail is None"""
-        if item.thumbnail is None:
-            return f"{ICON_PATH}/usd_stage_256.png"
-        else:
-            return item.thumbnail
+    def get_thumbnail(self, item : AssetDetailItem) -> str:
+        """Get the thumbnail for an asset
+
+        Parameters
+        ----------
+        item : AssetDetailItem
+            The item in the browser for which we are getting a thumbnail
+
+        Returns
+        -------
+        str
+            Path to the thumbnail image
+        """
+        return item.thumbnail
 
     def on_drag(self, item: AssetDetailItem) -> str:
         """Displays a translucent UI widget when an asset is dragged
