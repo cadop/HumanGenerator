@@ -121,7 +121,9 @@ def add_to_scene(mh_call: MHCaller):
         # bindings (which link USD_meshes to the skeleton)
         setup_weights(mh_meshes, bindings, joint_names)
     else:
-        # Add the meshes to the USD stage under root
+        rootPath = rootPath + "/human"
+        skelRoot = UsdSkel.Root.Define(stage, rootPath)
+        # Add the meshes to the USD stage under otherwise empty skelroot
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
 
     # Import materials for proxies
