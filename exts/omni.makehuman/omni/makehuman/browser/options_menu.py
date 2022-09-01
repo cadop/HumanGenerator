@@ -14,7 +14,7 @@ class FolderOptionsMenu(OptionsMenu):
     def __init__(self):
         super().__init__()
         self.dest_url = data_path("")
-        self.url = "http://download.tuxfamily.org/makehuman/releases/makehuman-community-1.2.0-windows.zip"
+        self.url = "https://download.tuxfamily.org/makehuman/asset_packs/makehuman_system_assets/makehuman_system_assets.zip"
         self._download_menu_desc = OptionMenuDescription(
             "Download Assets",
             clicked_fn=self._on_download_assets,
@@ -66,9 +66,17 @@ class FolderOptionsMenu(OptionsMenu):
                 ret_value["url"] = self.dest_url
                 if  ret_value["status"] == omni.client.Result.OK:
                     # TODO handle file already exists
-                    z = zipfile.ZipFile(self.dest_url, 'r')
-                    z.extractall(os.path.dirname(self.dest_url))
+                    pass
+                z = zipfile.ZipFile(self.dest_url, 'r')
+                z.extractall(os.path.dirname(self.dest_url))
+                self.refresh_collection()
             else:
                 carb.log_error(f"[access denied: {self.url}")
                 ret_value["status"] = omni.client.Result.ERROR_ACCESS_DENIED
         return ret_value
+
+    def refresh_collection(self):
+        collection_item: FolderCollectionItem = self._browser_widget.collection_selection
+        if collection_item:
+            collection_item.folder._timeout = 10
+            collection_item.folder.start_traverse()
