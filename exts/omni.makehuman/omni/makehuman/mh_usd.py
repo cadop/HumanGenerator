@@ -16,7 +16,7 @@ from .shared import data_path
 from . import mhov
 
 
-def add_to_scene(mh_call: MHCaller):
+def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
     """Import Makehuman objects into the current USD stage
 
     Parameters
@@ -120,7 +120,7 @@ def add_to_scene(mh_call: MHCaller):
 
         UsdGeom.Xform.Define(stage, rootPath)
 
-    if mhskel:
+    if mhskel and add_skeleton:
         # Only redefine a skeleton if it doesn't exist 
         if not cur_human.usdSkel:
             # Create the USD skeleton in our stage using the mhskel data
