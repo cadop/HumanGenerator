@@ -1,5 +1,5 @@
 import omni.ext
-import omni.makehuman
+import siborg.create.human
 from .ext_ui import MHWindow
 import omni
 
@@ -16,10 +16,10 @@ class MakeHumanExtension(omni.ext.IExt):
     # this extension is located on filesystem.
 
     def on_startup(self, ext_id):
-        print("[omni.makehuman] MakeHumanExtension startup")
+        print("[siborg.create.human] MakeHumanExtension startup")
         self._window = MHWindow("MakeHuman")
 
     def on_shutdown(self):
-        print("[omni.makehuman] makehuman shutdown")
+        print("[siborg.create.human] makehuman shutdown")
         self._window.destroy()
         self._window = None

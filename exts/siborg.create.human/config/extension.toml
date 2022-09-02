@@ -40,11 +40,11 @@ keywords = ["kit", "makehuman","human","character"]
 name = "siborg.create.human"
 
 [settings]
-# exts."omni.makehuman.browser.asset".folders = [
+# exts."siborg.create.human.browser.asset".folders = [
 #     "exts/omni/makehuman/data"
 #     ]
-exts."omni.makehuman.browser.asset".instanceable = []
-exts."omni.makehuman.browser.asset".timeout = 10
+exts."siborg.create.human.browser.asset".instanceable = []
+exts."siborg.create.human.browser.asset".timeout = 10
 
 [python.pipapi]
 use_online_index = true
