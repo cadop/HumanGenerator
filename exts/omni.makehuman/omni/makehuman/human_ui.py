@@ -292,9 +292,15 @@ class ButtonPanel:
                 # Toggle whether changes should propagate instantly
                 ui.Label("Update Instantly")
                 ui.CheckBox(self.toggle)
+            # Apply skeleton
+            ui.Button(
+                "Bake and Rig",
+                height=50,
+                clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True),
+            )
             # Updates current human in omniverse scene
             ui.Button(
-                "Update in Scene",
+                "Update Meshes in Scene",
                 height=50,
                 clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call),
             )
