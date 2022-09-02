@@ -356,4 +356,4 @@ def modifier_image(name : str):
     # Return the modifier path based on the modifier name
     # TODO determine if images can be loaded from the Makehuman module stored in
     # site-packages so we don't have to include the data twice
-    return os.path.dirname(inspect.getfile(makehuman)) + "/" + targets.getTargets().images.get(name, name)
+    return os.path.join(os.path.dirname(inspect.getfile(makehuman)),targets.getTargets().images.get(name, name))
