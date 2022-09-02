@@ -147,12 +147,6 @@ def add_to_scene(mh_call: MHCaller):
 
 
     else:
-
-        rootPath = rootPath + "/human"
-        skelRoot = UsdSkel.Root.Define(stage, rootPath)
-        # Add the meshes to the USD stage under otherwise empty skelroot
-        # usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
-
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
     # Import materials for proxies
