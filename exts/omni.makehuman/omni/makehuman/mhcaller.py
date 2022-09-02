@@ -301,7 +301,7 @@ class MHCaller:
         path : str
             Path to the asset on disk
         """
-        if "mhpxy" in path:
+        if "mhpxy" in path or "mhclo" in path:
             self.add_proxy(path)
         elif "mhskel" in path:
             self.set_skel(path)
