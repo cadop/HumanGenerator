@@ -1,4 +1,4 @@
-from omni.makehuman.mhcaller import MHCaller, modifier_image
+from siborg.create.human.mhcaller import MHCaller, modifier_image
 from typing import Generic, TypeVar
 import omni.ui as ui
 from .ui_widgets import *

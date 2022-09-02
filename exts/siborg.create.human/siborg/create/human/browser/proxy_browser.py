@@ -1,7 +1,7 @@
 import os
 import carb.settings
-from omni.makehuman.mhcaller import MHCaller
-from omni.makehuman.ui_widgets import DropList
+from siborg.create.human.mhcaller import MHCaller
+from siborg.create.human.ui_widgets import DropList
 import omni.ui as ui
 from omni.kit.browser.folder.core import FolderBrowserWidget
 from .delegate import AssetDetailDelegate
@@ -44,7 +44,7 @@ class AssetBrowserFrame(ui.Frame):
             self.list_widget,
             filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
             timeout=carb.settings.get_settings().get(
-                "/exts/omni.makehuman.browser.asset/data/timeout"
+                "/exts/siborg.create.human.browser.asset/data/timeout"
             ),
         )
         # The delegate to execute browser actions

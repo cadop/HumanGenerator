@@ -2,8 +2,8 @@ import os
 from typing import List, Union
 import carb.settings
 import omni.kit.commands
-from omni.makehuman.mhcaller import MHCaller
-from omni.makehuman.ui_widgets import DropList
+from siborg.create.human.mhcaller import MHCaller
+from siborg.create.human.ui_widgets import DropList
 import omni.usd
 from omni.kit.browser.core import DetailItem
 from omni.kit.browser.folder.core import (
@@ -11,7 +11,7 @@ from omni.kit.browser.folder.core import (
     FileDetailItem,
     BrowserFile,
 )
-from omni.makehuman.shared import data_path
+from siborg.create.human.shared import data_path
 
 
 class AssetDetailItem(FileDetailItem):
