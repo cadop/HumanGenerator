@@ -1,6 +1,6 @@
 [package]
 # Semantic Versionning is used: https://semver.org/
-version = "1.0.0"
+version = "0.0.1"
 
 preview_image = ""
 
