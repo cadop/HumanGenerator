@@ -3,6 +3,8 @@ import warnings
 import io
 import makehuman
 from pathlib import Path
+import inspect
+import os
 
 # Makehuman loads most modules by manipulating the system path, so we have to
 # run this before we can run the rest of our makehuman imports
@@ -354,4 +356,4 @@ def modifier_image(name : str):
     # Return the modifier path based on the modifier name
     # TODO determine if images can be loaded from the Makehuman module stored in
     # site-packages so we don't have to include the data twice
-    return str(Path(__file__).parents[2]) + "/" + targets.getTargets().images.get(name, name)
+    return os.path.dirname(inspect.getfile(makehuman)) + "/" + targets.getTargets().images.get(name, name)
