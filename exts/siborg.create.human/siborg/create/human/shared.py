@@ -14,4 +14,7 @@ def data_path(path):
     str
         Absolute path
     """
-    return str(Path(__file__).parents[2]) + "/data/" + path
+    # Uses an absolute path, and then works its way up the folder directory to find the data folder
+    data = str(Path(__file__).parents[3]) + "/data/" + path
+    return data
+ 
