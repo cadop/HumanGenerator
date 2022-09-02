@@ -91,7 +91,10 @@ class MHCaller:
         self.human.resetMeshValues()
         # Restore eyes
         # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
-        self.human.applyAllTargets()
+        # Remove skeleton
+        self.human.skeleton = None
+        # HACK Set the age to itself to force an update of targets
+        self.human.setAge(self.human.getAge())
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
