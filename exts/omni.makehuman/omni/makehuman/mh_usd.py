@@ -1,3 +1,4 @@
+from logging import root
 from typing import List, TypeVar
 from numpy.random.tests import data
 from omni.kit.commands.command import create
@@ -12,8 +13,10 @@ import re
 import skeleton as mhskeleton
 from .shared import data_path
 
+from . import mhov
 
-def add_to_scene(mh_call: MHCaller):
+
+def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
     """Import Makehuman objects into the current USD stage
 
     Parameters
@@ -44,6 +47,7 @@ def add_to_scene(mh_call: MHCaller):
     mh_meshes = [m.clone(scale, filterMaskedVerts=True) for m in mh_meshes]
 
     mhskel = human.getSkeleton()
+    # mhskel = None
 
     # Scale our skeleton to match our human
     if mhskel:
@@ -70,7 +74,10 @@ def add_to_scene(mh_call: MHCaller):
 
             # Attach these vertexWeights to the mesh to pass them around the
             # exporter easier, the cloned mesh is discarded afterwards, anyway
+            
+            # if this is the same person, just skip updating weights
             mesh.vertexWeights = weights
+    
     else:
         # Attach trivial weights to the meshes
         for mesh in mh_meshes:
@@ -102,28 +109,54 @@ def add_to_scene(mh_call: MHCaller):
     else:
         rootPath = rootPath + "/" + name
 
-    UsdGeom.Xform.Define(stage, rootPath)
+    # check if this human exists, otherwise make a new instance 
+    if rootPath in mh_call.human_mapper:
+        cur_human = mh_call.human_mapper[rootPath]
+    #TODO update this when a deletion happens, or check that the path exists
+    # Probably just integrate with code right above this
+    else:
+        cur_human = mhov.MHOV()
+        mh_call.human_mapper[rootPath] = cur_human
 
-    if mhskel:
-        # Create the USD skeleton in our stage using the mhskel data
-        (usdSkel, rootPath, joint_names) = setup_skeleton(
-            rootPath, stage, mhskel, offset
-        )
+        UsdGeom.Xform.Define(stage, rootPath)
 
-        # Add the meshes to the USD stage under skelRoot
-        usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
+    if mhskel and add_skeleton:
+        # Only redefine a skeleton if it doesn't exist 
+        if not cur_human.usdSkel:
+            # Create the USD skeleton in our stage using the mhskel data
+            (usdSkel, rootPath, joint_names, joint_paths) = setup_skeleton(rootPath, 
+                                                                            stage, 
+                                                                            mhskel, 
+                                                                            offset
+                                                                           )
+
+            cur_human.usdSkel = usdSkel
+            cur_human.skel_root_path = rootPath
+            cur_human.joint_names = joint_names
+            cur_human.joint_paths = joint_paths
+
+            # delete mesh geometry not previously in the skelroot
+
+            for path in cur_human.usd_mesh_paths:
+                prim = stage.GetPrimAtPath(path)
+                if prim.IsValid():
+                    stage.RemovePrim(path)
+
+        usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
         # Create bindings between meshes and the skeleton. Returns a list of
         # bindings the length of the number of meshes
-        bindings = setup_bindings(usd_mesh_paths, stage, usdSkel)
+        bindings = setup_bindings(usd_mesh_paths, stage, cur_human.usdSkel)
 
         # Setup weights for corresponding mh_meshes (which hold the data) and
         # bindings (which link USD_meshes to the skeleton)
-        setup_weights(mh_meshes, bindings, joint_names)
+        setup_weights(mh_meshes, bindings, cur_human.joint_names, cur_human.joint_paths)
+
+
     else:
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
-
+        cur_human.usd_mesh_paths = usd_mesh_paths
     # Import materials for proxies
     setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
 
@@ -133,13 +166,17 @@ def add_to_scene(mh_call: MHCaller):
     # Bind the skin material to the first prim in the list (the human)
     bind_material(usd_mesh_paths[0], skin, stage)
 
+    # Save the resulting layer
+    # stage.GetRootLayer().Export('C:/Users/jhg29/Documents/Model.usda')
+
+
     return name
 
 
 Object3D = TypeVar("Object3D")
 
 
-def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI], joint_names: List[str]):
+def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI], joint_names: List[str], joint_paths: List[str]):
     """Apply weights to USD meshes using data from makehuman. USD meshes,
     bindings and skeleton must already be in the active scene
 
@@ -152,7 +189,10 @@ def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI],
     joint_names : list of str
         Unique, plaintext names of all joints in the skeleton in USD
         (breadth-first) order.
+    joint_paths : list of str
+        List of the full usd path to each joint corresponding to the skeleton to bind to
     """
+
 
     # Iterate through corresponding meshes and bindings
     for mh_mesh, binding in zip(mh_meshes, bindings):
@@ -182,12 +222,18 @@ def setup_weights(mh_meshes: List[Object3D], bindings: List[UsdSkel.BindingAPI],
         indices_attribute = binding.CreateJointIndicesPrimvar(
             constant=False, elementSize=elementSize
         )
+
+        joint_attr = binding.GetPrim().GetAttribute('skel:joints')
+        joint_attr.Set(joint_paths)
+
         indices_attribute.Set(indices)
+
 
         # Assign weights to binding
         weights_attribute = binding.CreateJointWeightsPrimvar(
             constant=False, elementSize=elementSize
         )
+
         weights_attribute.Set(weights)
 
 
@@ -286,11 +332,22 @@ def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Sk
         # Get the prim in the stage
         prim = stage.GetPrimAtPath(mesh)
 
-        # Create a binding applied to the prim
-        binding = UsdSkel.BindingAPI.Apply(prim)
+        attrs = prim.GetAttribute('primvars:skel:jointWeights')
+        # Check if joint weights have already been applied
+        if attrs.IsValid():
+            prim_path = prim.GetPath()
+            sdf_path = Sdf.Path(prim_path)
+            binding = UsdSkel.BindingAPI.Get(stage, sdf_path)
 
-        # Create a relationship between the binding and the skeleton
-        binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+            # relationships = prim.GetRelationships()
+            # 'material:binding' , 'proxyPrim', 'skel:animationSource','skel:blendShapeTargets','skel:skeleton'
+            # get_binding.GetSkeletonRel()
+
+        else:
+            # Create a binding applied to the prim
+            binding = UsdSkel.BindingAPI.Apply(prim)
+            # Create a relationship between the binding and the skeleton
+            binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
 
         # Add the binding to the list to return
         bindings.append(binding)
@@ -346,51 +403,78 @@ def setup_meshes(meshes: List[Object3D], stage: Usd.Stage, rootPath: str, offset
         name = sanitize(mesh.name)
         usd_mesh_path = rootPath + "/" + name
         usd_mesh_paths.append(usd_mesh_path)
-        meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+        # Check to see if the mesh prim already exists
+        prim = stage.GetPrimAtPath(usd_mesh_path)
 
-        # Set vertices. This is a list of tuples for ALL vertices in an unassociated
-        # cloud. Faces are built based on indices of this list.
-        #   Example: 3 explicitly defined vertices:
-        #   meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10)]
-        meshGeom.CreatePointsAttr(coords)
+        if prim.IsValid():
+            # omni.kit.commands.execute("DeletePrims", paths=[usd_mesh_path])
+            point_attr = prim.GetAttribute('points')
+            point_attr.Set(coords)
 
-        # Set face vertex count. This is an array where each element is the number
-        # of consecutive vertex indices to include in each face definition, as
-        # indices are given as a single flat list. The length of this list is the
-        # same as the number of faces
-        #   Example: 4 faces with 4 vertices each
-        #   meshGeom.CreateFaceVertexCountsAttr([4, 4, 4, 4])
-        nface = [nPerFace] * int(len(newvertindices) / nPerFace)
-        meshGeom.CreateFaceVertexCountsAttr(nface)
+            face_count = prim.GetAttribute('faceVertexCounts')
+            nface = [nPerFace] * int(len(newvertindices) / nPerFace)
+            face_count.Set(nface)
 
-        # Set face vertex indices.
-        #   Example: one face with 4 vertices defined by 4 indices.
-        #   meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
-        meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
+            face_idx = prim.GetAttribute('faceVertexIndices')
+            face_idx.Set(newvertindices)
 
-        # Set vertex normals. Normals are represented as a list of tuples each of
-        # which is a vector indicating the direction a point is facing. This is later
-        # Used to calculate face normals
-        #   Example: Normals for 3 vertices
-        # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1,
-        # 0)])
-        meshGeom.CreateNormalsAttr(mesh.getNormals())
-        meshGeom.SetNormalsInterpolation("vertex")
+            normals_attr = prim.GetAttribute('normals')
+            normals_attr.Set(mesh.getNormals())
+
+            meshGeom = UsdGeom.Mesh(prim)
+
+        # If it doesn't exist, make it. This will run the first time a human is created
+        else:
+            meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+ 
+            # Set vertices. This is a list of tuples for ALL vertices in an unassociated
+            # cloud. Faces are built based on indices of this list.
+            #   Example: 3 explicitly defined vertices:
+            #   meshGeom.CreatePointsAttr([(-10, 0, -10), (-10, 0, 10), (10, 0, 10)]
+            meshGeom.CreatePointsAttr(coords)
+
+            # Set face vertex count. This is an array where each element is the number
+            # of consecutive vertex indices to include in each face definition, as
+            # indices are given as a single flat list. The length of this list is the
+            # same as the number of faces
+            #   Example: 4 faces with 4 vertices each
+            #   meshGeom.CreateFaceVertexCountsAttr([4, 4, 4, 4])
+
+            nface = [nPerFace] * int(len(newvertindices) / nPerFace)
+            meshGeom.CreateFaceVertexCountsAttr(nface)
+
+            # Set face vertex indices.
+            #   Example: one face with 4 vertices defined by 4 indices.
+            #   meshGeom.CreateFaceVertexIndicesAttr([0, 1, 2, 3])
+            meshGeom.CreateFaceVertexIndicesAttr(newvertindices)
+
+            # Set vertex normals. Normals are represented as a list of tuples each of
+            # which is a vector indicating the direction a point is facing. This is later
+            # Used to calculate face normals
+            #   Example: Normals for 3 vertices
+            # meshGeom.CreateNormalsAttr([(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1,
+            # 0)])
+
+            meshGeom.CreateNormalsAttr(mesh.getNormals())
+            meshGeom.SetNormalsInterpolation("vertex")
 
         # Set vertex uvs. UVs are represented as a list of tuples, each of which is a 2D
         # coordinate. UV's are used to map textures to the surface of 3D geometry
         #   Example: texture coordinates for 3 vertices
         #   texCoords.Set([(0, 1), (0, 0), (1, 0)])
+
         texCoords = meshGeom.CreatePrimvar(
             "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying
         )
         texCoords.Set(mesh.getUVs(newuvindices))
 
-        # Subdivision is set to none. The mesh is as imported and not further refined
+        # # Subdivision is set to none. The mesh is as imported and not further refined
         meshGeom.CreateSubdivisionSchemeAttr().Set("none")
 
     # ConvertPath strings to USD Sdf paths. TODO change to map() for performance
     paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
+
+
     return paths
 
 
@@ -460,6 +544,8 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
         List of joint names in USD (breadth-first traversal) order. It is
         important that joints be ordered this way so that their indices can be
         used for skinning / weighting.
+    joint_paths : list of: str
+        List of joint paths that are used as joint indices
     """
     joint_paths = []
     joint_names = []
@@ -580,7 +666,11 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     # setup rest transforms in joint-local space
     usdSkel.CreateRestTransformsAttr(rel_transforms)
 
-    return usdSkel, skel_root_path, joint_names
+    return usdSkel, skel_root_path, joint_names, joint_paths
+
+def update_skeleton(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
+    
+    pass
 
 
 def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):

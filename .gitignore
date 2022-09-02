@@ -20,3 +20,6 @@ link_app.bat
 link_app.sh
 
 *.target
+
+exts/omni.makehuman/data/*
+!exts/omni.makehuman/data/rigs/

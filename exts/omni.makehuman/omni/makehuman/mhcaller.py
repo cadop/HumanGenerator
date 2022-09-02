@@ -6,6 +6,8 @@ from pathlib import Path
 import inspect
 import os
 
+from . import mhov
+
 # Makehuman loads most modules by manipulating the system path, so we have to
 # run this before we can run the rest of our makehuman imports
 
@@ -67,6 +69,8 @@ class MHCaller:
         self._config_mhapp()
         self.init_human()
 
+        self.human_mapper = {}
+
     def _config_mhapp(self):
         """Declare and initialize the makehuman app, and move along if we
         encounter any errors (omniverse sometimes fails to purge the app
@@ -89,7 +93,10 @@ class MHCaller:
         self.human.resetMeshValues()
         # Restore eyes
         # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
-        self.human.applyAllTargets()
+        # Remove skeleton
+        self.human.skeleton = None
+        # HACK Set the age to itself to force an update of targets
+        self.human.setAge(self.human.getAge())
 
     def init_human(self):
         """Initialize the human and set some required files from disk. This
@@ -115,7 +122,7 @@ class MHCaller:
 
         self.human.setBaseSkeleton(self.base_skel)
         # Actually add the skeleton
-        self.human.setSkeleton(self.base_skel)
+        # self.human.setSkeleton(self.base_skel)
         self.human.applyAllTargets()
 
     def set_age(self, age : float):
@@ -294,7 +301,7 @@ class MHCaller:
         path : str
             Path to the asset on disk
         """
-        if "mhpxy" in path:
+        if "mhpxy" in path or "mhclo" in path:
             self.add_proxy(path)
         elif "mhskel" in path:
             self.set_skel(path)
