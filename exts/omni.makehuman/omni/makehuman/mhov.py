@@ -14,3 +14,4 @@ class MHOV:
         self.joint_names = None
         self.joint_paths = None 
         self.skel_root_path = None
+        self.usd_mesh_paths = None
