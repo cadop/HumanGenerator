@@ -147,8 +147,6 @@ def add_to_scene(mh_call: MHCaller):
 
 
     else:
-
-
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
