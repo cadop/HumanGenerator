@@ -148,15 +148,17 @@ def add_to_scene(mh_call: MHCaller):
 
     else:
 
+
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
+
     # Import materials for proxies
-    setup_materials(mh_meshes, usd_mesh_paths, cur_human.skel_root_path, stage)
+    setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
 
     # Explicitly setup material for human skin
     texture_path = data_path("textures/skin.png")
-    skin = create_material(texture_path, "Skin", cur_human.skel_root_path, stage)
+    skin = create_material(texture_path, "Skin", rootPath, stage)
     # Bind the skin material to the first prim in the list (the human)
     bind_material(usd_mesh_paths[0], skin, stage)
 
