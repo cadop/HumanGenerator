@@ -157,7 +157,6 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
         # Add the meshes to the USD stage under root
         usd_mesh_paths = setup_meshes(mh_meshes, stage, rootPath, offset)
         cur_human.usd_mesh_paths = usd_mesh_paths
-
     # Import materials for proxies
     setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
 
