@@ -1,0 +1,871 @@
+{
+    "bones": {
+        "Head": {
+            "head": "Head_head",
+            "parent": "Neck1",
+            "reference": ["head"],
+            "roll": -3.3251599390604625e-11,
+            "tail": "Head_tail"
+        },
+        "Hips": {
+            "head": "Hips_head",
+            "parent": null,
+            "reference": ["root","spine05"],
+            "roll": -4.466459702090475e-10,
+            "tail": "Hips_tail"
+        },
+        "LHipJoint": {
+            "head": "LHipJoint_head",
+            "parent": "Hips",
+            "reference": ["pelvis.L"],
+            "roll": -2.563573122024536,
+            "tail": "LHipJoint_tail"
+        },
+        "LThumb": {
+            "head": "LThumb_head",
+            "parent": "LeftHand",
+            "reference": ["finger1-1.L","finger1-2.L","finger1-2.L"],
+            "roll": -0.9263502955436707,
+            "tail": "LThumb_tail"
+        },
+        "LeftArm": {
+            "head": "LeftArm_head",
+            "parent": "LeftShoulder",
+            "reference": ["upperarm01.L","upperarm02.L"],
+            "roll": 3.138939619064331,
+            "tail": "LeftArm_tail"
+        },
+        "LeftFingerBase": {
+            "head": "LeftFingerBase_head",
+            "parent": "LeftHand",
+            "reference": ["finger2-1.L"],
+            "weights_reference": ["metacarpal1.L","metacarpal2.L","metacarpal3.L","metacarpal4.L"],
+            "roll": -0.7299057841300964,
+            "tail": "LeftFingerBase_tail"
+        },
+        "LeftFoot": {
+            "head": "LeftFoot_head",
+            "parent": "LeftLeg",
+            "reference": ["foot.L"],
+            "roll": 0.20731236040592194,
+            "tail": "LeftFoot_tail"
+        },
+        "LeftForeArm": {
+            "head": "LeftForeArm_head",
+            "parent": "LeftArm",
+            "reference": ["lowerarm01.L","lowerarm02.L"],
+            "roll": 0.0,
+            "tail": "LeftForeArm_tail"
+        },
+        "LeftHand": {
+            "head": "LeftHand_head",
+            "parent": "LeftForeArm",
+            "reference": ["wrist.L"],            
+            "roll": -0.5689927339553833,
+            "tail": "LeftHand_tail"
+        },
+        "LeftHandFinger1": {
+            "head": "LeftHandFinger1_head",
+            "parent": "LeftFingerBase",
+            "reference": ["finger2-2.L"],
+            "weights_reference": ["finger2-1.L","finger3-1.L","finger4-1.L","finger5-1.L","finger2-2.L","finger3-2.L","finger4-2.L","finger5-2.L","finger2-3.L","finger3-3.L","finger4-3.L","finger5-3.L"],
+            "roll": -0.7064877152442932,
+            "tail": "LeftHandFinger1_tail"
+        },
+        "LeftLeg": {
+            "head": "LeftLeg_head",
+            "parent": "LeftUpLeg",
+            "reference": ["lowerleg01.L","lowerleg02.L"],
+            "roll": 0.0,
+            "tail": "LeftLeg_tail"
+        },
+        "LeftShoulder": {
+            "head": "LeftShoulder_head",
+            "parent": "Spine1",
+            "reference": ["clavicle.L","shoulder01.L"],
+            "roll": 3.1415927410125732,
+            "tail": "LeftShoulder_tail"
+        },
+        "LeftToeBase": {
+            "head": "LeftToeBase_head",
+            "parent": "LeftFoot",
+            "reference": ["toe1-1.L"],
+            "weights_reference": ["toe1-1.L","toe1-2.L","toe1-3.L","toe2-1.L","toe2-2.L","toe2-3.L","toe3-1.L","toe3-2.L","toe3-3.L","toe4-1.L","toe4-2.L","toe4-3.L","toe5-1.L","toe5-2.L","toe5-3.L"],
+            "roll": 0.07304878532886505,
+            "tail": "LeftToeBase_tail"
+        },
+        "LeftUpLeg": {
+            "head": "LeftUpLeg_head",
+            "parent": "LHipJoint",
+            "reference": ["upperleg01.L","upperleg02.L"],
+            "roll": 0.0,
+            "tail": "LeftUpLeg_tail"
+        },
+        "LowerBack": {
+            "head": "LowerBack_head",
+            "parent": "Hips",
+            "reference": ["spine04","spine03"],
+            "roll": -2.192008373884128e-16,
+            "tail": "LowerBack_tail"
+        },
+        "Neck": {
+            "head": "Neck_head",
+            "parent": "Spine1",
+            "reference": ["neck02","neck03"],
+            "roll": -7.457600759153138e-09,
+            "tail": "Neck_tail"
+        },
+        "Neck1": {
+            "head": "Neck1_head",
+            "parent": "Neck",
+            "reference": ["neck01"],
+            "roll": 0.0,
+            "tail": "Neck1_tail"
+        },
+        "RHipJoint": {
+            "head": "RHipJoint_head",
+            "parent": "Hips",
+            "reference": ["pelvis.R"],
+            "roll": 2.563573122024536,
+            "tail": "RHipJoint_tail"
+        },
+        "RThumb": {
+            "head": "RThumb_head",
+            "parent": "RightHand",
+            "reference": ["finger1-1.R","finger1-2.R","finger1-2.R"],
+            "roll": 0.927350640296936,
+            "tail": "RThumb_tail"
+        },
+        "RightArm": {
+            "head": "RightArm_head",
+            "parent": "RightShoulder",
+            "reference": ["upperarm01.R","upperarm02.R"],
+            "roll": -3.138939619064331,
+            "tail": "RightArm_tail"
+        },
+        "RightFingerBase": {
+            "head": "RightFingerBase_head",
+            "parent": "RightHand",
+            "reference": ["finger2-1.R"],
+            "weights_reference": ["metacarpal1.R","metacarpal2.R","metacarpal3.R","metacarpal4.R"],
+            "roll": 0.7299057841300964,
+            "tail": "RightFingerBase_tail"
+        },
+        "RightFoot": {
+            "head": "RightFoot_head",
+            "parent": "RightLeg",
+            "reference": ["foot.R"],
+            "roll": -0.20731236040592194,
+            "tail": "RightFoot_tail"
+        },
+        "RightForeArm": {
+            "head": "RightForeArm_head",
+            "parent": "RightArm",
+            "reference": ["lowerarm01.R","lowerarm02.R"],
+            "roll": 0.0,
+            "tail": "RightForeArm_tail"
+        },
+        "RightHand": {
+            "head": "RightHand_head",
+            "parent": "RightForeArm",
+            "reference": ["wrist.R"],            
+            "roll": 0.5689927339553833,
+            "tail": "RightHand_tail"
+        },
+        "RightHandFinger1": {
+            "head": "RightHandFinger1_head",
+            "parent": "RightFingerBase",
+            "reference": ["finger2-2.R"], 
+            "weights_reference": ["finger2-1.R","finger3-1.R","finger4-1.R","finger5-1.R","finger2-2.R","finger3-2.R","finger4-2.R","finger5-2.R","finger2-3.R","finger3-3.R","finger4-3.R","finger5-3.R"],           
+            "roll": 0.7064877152442932,
+            "tail": "RightHandFinger1_tail"
+        },
+        "RightLeg": {
+            "head": "RightLeg_head",
+            "parent": "RightUpLeg",
+            "reference": ["lowerleg01.R","lowerleg02.R"],
+            "roll": 0.0,
+            "tail": "RightLeg_tail"
+        },
+        "RightShoulder": {
+            "head": "RightShoulder_head",
+            "parent": "Spine1",
+            "reference": ["clavicle.R","shoulder01.R"],
+            "roll": -3.1415927410125732,
+            "tail": "RightShoulder_tail"
+        },
+        "RightToeBase": {
+            "head": "RightToeBase_head",
+            "parent": "RightFoot",
+            "reference": ["toe1-1.R"],
+            "weights_reference": ["toe1-1.R","toe1-2.R","toe1-3.R","toe2-1.R","toe2-2.R","toe2-3.R","toe3-1.R","toe3-2.R","toe3-3.R","toe4-1.R","toe4-2.R","toe4-3.R","toe5-1.R","toe5-2.R","toe5-3.R"],
+            "roll": -0.07304878532886505,
+            "tail": "RightToeBase_tail"
+        },
+        "RightUpLeg": {
+            "head": "RightUpLeg_head",
+            "parent": "RHipJoint",
+            "reference": ["upperleg01.R","upperleg02.R"],
+            "roll": 0.0,
+            "tail": "RightUpLeg_tail"
+        },
+        "Spine": {
+            "head": "Spine_head",
+            "parent": "LowerBack",
+            "reference": ["spine02"],
+            "roll": -6.143906006172983e-08,
+            "tail": "Spine_tail"
+        },
+        "Spine1": {
+            "head": "Spine1_head",
+            "parent": "Spine",
+            "reference": ["spine01"],
+            "roll": -1.097262385119091e-11,
+            "tail": "Spine1_tail"
+        }
+    },
+    "copyright": "(c) 2016 Data Collection AB, Joel Palmius, Jonas Hauquier",
+    "description": "Optimized for Motion capture data from CMU Graphics Lab Motion Capture Database (http://mocap.cs.cmu.edu).",
+    "joints": {
+        "Head_head": [
+            14070,
+            14071,
+            14072,
+            14073,
+            14074,
+            14075,
+            14076,
+            14077
+        ],
+        "Head_tail": [
+            14566,
+            14567,
+            14568,
+            14569,
+            14570,
+            14571,
+            14572,
+            14573
+        ],
+        "Hips_head": [
+            13622,
+            13623,
+            13624,
+            13625,
+            13626,
+            13627,
+            13628,
+            13629
+        ],
+        "Hips_tail": [
+            13630,
+            13631,
+            13632,
+            13633,
+            13634,
+            13635,
+            13636,
+            13637
+        ],
+        "LHipJoint_head": [
+            13622,
+            13623,
+            13624,
+            13625,
+            13626,
+            13627,
+            13628,
+            13629
+        ],
+        "LHipJoint_tail": [
+            13846,
+            13847,
+            13848,
+            13849,
+            13850,
+            13851,
+            13852,
+            13853
+        ],
+        "LThumb_head": [
+            14006,
+            14007,
+            14008,
+            14009,
+            14010,
+            14011,
+            14012,
+            14013
+        ],
+        "LThumb_tail": [
+            13998,
+            13999,
+            14000,
+            14001,
+            14002,
+            14003,
+            14004,
+            14005
+        ],
+        "LeftArm_head": [
+            14046,
+            14047,
+            14048,
+            14049,
+            14050,
+            14051,
+            14052,
+            14053
+        ],
+        "LeftArm_tail": [
+            14038,
+            14039,
+            14040,
+            14041,
+            14042,
+            14043,
+            14044,
+            14045
+        ],
+        "LeftFingerBase_head": [
+            14014,
+            14015,
+            14016,
+            14017,
+            14018,
+            14019,
+            14020,
+            14021
+        ],
+        "LeftFingerBase_tail": [
+            13974,
+            13975,
+            13976,
+            13977,
+            13978,
+            13979,
+            13980,
+            13981
+        ],
+        "LeftFoot_head": [
+            13830,
+            13831,
+            13832,
+            13833,
+            13834,
+            13835,
+            13836,
+            13837
+        ],
+        "LeftFoot_tail": [
+            13790,
+            13791,
+            13792,
+            13793,
+            13794,
+            13795,
+            13796,
+            13797
+        ],
+        "LeftForeArm_head": [
+            14038,
+            14039,
+            14040,
+            14041,
+            14042,
+            14043,
+            14044,
+            14045
+        ],
+        "LeftForeArm_tail": [
+            14030,
+            14031,
+            14032,
+            14033,
+            14034,
+            14035,
+            14036,
+            14037
+        ],
+        "LeftHandFinger1_head": [
+            13974,
+            13975,
+            13976,
+            13977,
+            13978,
+            13979,
+            13980,
+            13981
+        ],
+        "LeftHandFinger1_tail": [
+            13918,
+            13919,
+            13920,
+            13921,
+            13922,
+            13923,
+            13924,
+            13925
+        ],
+        "LeftHand_head": [
+            14030,
+            14031,
+            14032,
+            14033,
+            14034,
+            14035,
+            14036,
+            14037
+        ],
+        "LeftHand_tail": [
+            14014,
+            14015,
+            14016,
+            14017,
+            14018,
+            14019,
+            14020,
+            14021
+        ],
+        "LeftLeg_head": [
+            13838,
+            13839,
+            13840,
+            13841,
+            13842,
+            13843,
+            13844,
+            13845
+        ],
+        "LeftLeg_tail": [
+            13830,
+            13831,
+            13832,
+            13833,
+            13834,
+            13835,
+            13836,
+            13837
+        ],
+        "LeftShoulder_head": [
+            14054,
+            14055,
+            14056,
+            14057,
+            14058,
+            14059,
+            14060,
+            14061
+        ],
+        "LeftShoulder_tail": [
+            14046,
+            14047,
+            14048,
+            14049,
+            14050,
+            14051,
+            14052,
+            14053
+        ],
+        "LeftToeBase_head": [
+            13790,
+            13791,
+            13792,
+            13793,
+            13794,
+            13795,
+            13796,
+            13797
+        ],
+        "LeftToeBase_tail": [
+            13750,
+            13751,
+            13752,
+            13753,
+            13754,
+            13755,
+            13756,
+            13757
+        ],
+        "LeftUpLeg_head": [
+            13846,
+            13847,
+            13848,
+            13849,
+            13850,
+            13851,
+            13852,
+            13853
+        ],
+        "LeftUpLeg_tail": [
+            13838,
+            13839,
+            13840,
+            13841,
+            13842,
+            13843,
+            13844,
+            13845
+        ],
+        "LowerBack_head": [
+            13630,
+            13631,
+            13632,
+            13633,
+            13634,
+            13635,
+            13636,
+            13637
+        ],
+        "LowerBack_tail": [
+            13646,
+            13647,
+            13648,
+            13649,
+            13650,
+            13651,
+            13652,
+            13653
+        ],
+        "Neck1_head": [
+            14534,
+            14535,
+            14536,
+            14537,
+            14538,
+            14539,
+            14540,
+            14541,
+            14070,
+            14071,
+            14072,
+            14073,
+            14074,
+            14075,
+            14076,
+            14077
+        ],
+        "Neck1_tail": [
+            14070,
+            14071,
+            14072,
+            14073,
+            14074,
+            14075,
+            14076,
+            14077
+        ],
+        "Neck_head": [
+            14534,
+            14535,
+            14536,
+            14537,
+            14538,
+            14539,
+            14540,
+            14541
+        ],
+        "Neck_tail": [
+            14534,
+            14535,
+            14536,
+            14537,
+            14538,
+            14539,
+            14540,
+            14541,
+            14070,
+            14071,
+            14072,
+            14073,
+            14074,
+            14075,
+            14076,
+            14077
+        ],
+        "RHipJoint_head": [
+            13622,
+            13623,
+            13624,
+            13625,
+            13626,
+            13627,
+            13628,
+            13629
+        ],
+        "RHipJoint_tail": [
+            14286,
+            14287,
+            14288,
+            14289,
+            14290,
+            14291,
+            14292,
+            14293
+        ],
+        "RThumb_head": [
+            14446,
+            14447,
+            14448,
+            14449,
+            14450,
+            14451,
+            14452,
+            14453
+        ],
+        "RThumb_tail": [
+            14438,
+            14439,
+            14440,
+            14441,
+            14442,
+            14443,
+            14444,
+            14445
+        ],
+        "RightArm_head": [
+            14486,
+            14487,
+            14488,
+            14489,
+            14490,
+            14491,
+            14492,
+            14493
+        ],
+        "RightArm_tail": [
+            14478,
+            14479,
+            14480,
+            14481,
+            14482,
+            14483,
+            14484,
+            14485
+        ],
+        "RightFingerBase_head": [
+            14454,
+            14455,
+            14456,
+            14457,
+            14458,
+            14459,
+            14460,
+            14461
+        ],
+        "RightFingerBase_tail": [
+            14414,
+            14415,
+            14416,
+            14417,
+            14418,
+            14419,
+            14420,
+            14421
+        ],
+        "RightFoot_head": [
+            14270,
+            14271,
+            14272,
+            14273,
+            14274,
+            14275,
+            14276,
+            14277
+        ],
+        "RightFoot_tail": [
+            14230,
+            14231,
+            14232,
+            14233,
+            14234,
+            14235,
+            14236,
+            14237
+        ],
+        "RightForeArm_head": [
+            14478,
+            14479,
+            14480,
+            14481,
+            14482,
+            14483,
+            14484,
+            14485
+        ],
+        "RightForeArm_tail": [
+            14470,
+            14471,
+            14472,
+            14473,
+            14474,
+            14475,
+            14476,
+            14477
+        ],
+        "RightHandFinger1_head": [
+            14414,
+            14415,
+            14416,
+            14417,
+            14418,
+            14419,
+            14420,
+            14421
+        ],
+        "RightHandFinger1_tail": [
+            14358,
+            14359,
+            14360,
+            14361,
+            14362,
+            14363,
+            14364,
+            14365
+        ],
+        "RightHand_head": [
+            14470,
+            14471,
+            14472,
+            14473,
+            14474,
+            14475,
+            14476,
+            14477
+        ],
+        "RightHand_tail": [
+            14454,
+            14455,
+            14456,
+            14457,
+            14458,
+            14459,
+            14460,
+            14461
+        ],
+        "RightLeg_head": [
+            14278,
+            14279,
+            14280,
+            14281,
+            14282,
+            14283,
+            14284,
+            14285
+        ],
+        "RightLeg_tail": [
+            14270,
+            14271,
+            14272,
+            14273,
+            14274,
+            14275,
+            14276,
+            14277
+        ],
+        "RightShoulder_head": [
+            14494,
+            14495,
+            14496,
+            14497,
+            14498,
+            14499,
+            14500,
+            14501
+        ],
+        "RightShoulder_tail": [
+            14486,
+            14487,
+            14488,
+            14489,
+            14490,
+            14491,
+            14492,
+            14493
+        ],
+        "RightToeBase_head": [
+            14230,
+            14231,
+            14232,
+            14233,
+            14234,
+            14235,
+            14236,
+            14237
+        ],
+        "RightToeBase_tail": [
+            14190,
+            14191,
+            14192,
+            14193,
+            14194,
+            14195,
+            14196,
+            14197
+        ],
+        "RightUpLeg_head": [
+            14286,
+            14287,
+            14288,
+            14289,
+            14290,
+            14291,
+            14292,
+            14293
+        ],
+        "RightUpLeg_tail": [
+            14278,
+            14279,
+            14280,
+            14281,
+            14282,
+            14283,
+            14284,
+            14285
+        ],
+        "Spine1_head": [
+            13654,
+            13655,
+            13656,
+            13657,
+            13658,
+            13659,
+            13660,
+            13661
+        ],
+        "Spine1_tail": [
+            14534,
+            14535,
+            14536,
+            14537,
+            14538,
+            14539,
+            14540,
+            14541
+        ],
+        "Spine_head": [
+            13646,
+            13647,
+            13648,
+            13649,
+            13650,
+            13651,
+            13652,
+            13653
+        ],
+        "Spine_tail": [
+            13654,
+            13655,
+            13656,
+            13657,
+            13658,
+            13659,
+            13660,
+            13661
+        ]
+    },
+    "license": "GNU Affero General Public License 3",
+    "name": "CMU compliant skeleton",
+    "tags": ["mocap"],
+    "version": 110    
+}
