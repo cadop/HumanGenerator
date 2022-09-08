@@ -2,6 +2,9 @@
 
 ovmh (ov_makehuman) is a MakeHuman extension for Nvidia Omniverse. This project relies on the makehuman project from https://github.com/makehumancommunity/makehuman. 
 
+![mh_ov_thumbnail](https://user-images.githubusercontent.com/11399119/189240366-adb86b3d-50dc-49e6-8ef7-4a55df441bf9.PNG)
+
+
 
 # Getting Started
 
