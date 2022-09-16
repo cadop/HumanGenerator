@@ -2,10 +2,10 @@
 # Semantic Versionning is used: https://semver.org/
 version = "0.0.1"
 
-preview_image = ""
+preview_image = "data/preview.png"
 
 # Icon is shown in Extensions window, it is recommended to be square, of size 256x256.
-icon = "data/etc/icon.jpg"
+icon = "data/icon.png"
 
 # The title and description fields are primarily for displaying extension info in UI
 title = "Makehuman for Omniverse"
@@ -33,6 +33,7 @@ keywords = ["kit", "makehuman","human","character"]
 "omni.anim.skelJoint" = {}
 "omni.kit.browser.core" = {}
 "omni.kit.browser.folder.core" = {}
+"omni.kit.window.extensions" = {}
 
 
 # Main python module this extension provides, it will be publicly available as "import omni.hello.world".
@@ -45,6 +46,7 @@ name = "siborg.create.human"
 #     ]
 exts."siborg.create.human.browser.asset".instanceable = []
 exts."siborg.create.human.browser.asset".timeout = 10
+exts."omni.kit.window.extensions".docUrl = "https://www.youtube.com/watch?v=8GD3ld1Ep7c"
 
 [python.pipapi]
 use_online_index = true
