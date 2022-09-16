@@ -16,10 +16,10 @@ class MakeHumanExtension(omni.ext.IExt):
     # this extension is located on filesystem.
 
     def on_startup(self, ext_id):
-        print("[siborg.create.human] MakeHumanExtension startup")
-        self._window = MHWindow("MakeHuman")
+        print("[siborg.create.human] HumanGeneratorExtension startup")
+        self._window = MHWindow("Human Generator")
 
     def on_shutdown(self):
-        print("[siborg.create.human] makehuman shutdown")
+        print("[siborg.create.human] HumanGenerator shutdown")
         self._window.destroy()
         self._window = None
