@@ -2,7 +2,7 @@ from logging import root
 from typing import List, TypeVar
 from numpy.random.tests import data
 from omni.kit.commands.command import create
-from siborg.human.generator.mhcaller import MHCaller
+from siborg.create.human.mhcaller import MHCaller
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import omni.usd
 import carb

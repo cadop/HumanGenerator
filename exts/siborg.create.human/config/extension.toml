@@ -39,8 +39,8 @@ keywords = ["kit", "makehuman","human","character","generator","person"]
 name = "siborg.create.human"
 
 [settings]
-exts."siborg.human.generator.browser.asset".instanceable = []
-exts."siborg.human.generator.browser.asset".timeout = 10
+exts."siborg.create.human.browser.asset".instanceable = []
+exts."siborg.create.human.browser.asset".timeout = 10
 
 [python.pipapi]
 use_online_index = true
