@@ -21,6 +21,6 @@ link_app.sh
 
 *.target
 
-exts/siborg.human.generator/data/*
-!exts/siborg.human.generator/data/rigs/
-!exts/siborg.human.generator/data/*.png
+exts/siborg.create.human/data/*
+!exts/siborg.create.human/data/rigs/
+!exts/siborg.create.human/data/*.png

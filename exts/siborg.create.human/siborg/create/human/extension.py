@@ -1,5 +1,5 @@
 import omni.ext
-import siborg.human.generator
+import siborg.create.human
 from .ext_ui import MHWindow
 import omni
 
@@ -16,10 +16,10 @@ class MakeHumanExtension(omni.ext.IExt):
     # this extension is located on filesystem.
 
     def on_startup(self, ext_id):
-        print("[siborg.human.generator] HumanGeneratorExtension startup")
+        print("[siborg.create.human] HumanGeneratorExtension startup")
         self._window = MHWindow("Human Generator")
 
     def on_shutdown(self):
-        print("[siborg.human.generator] HumanGenerator shutdown")
+        print("[siborg.create.human] HumanGenerator shutdown")
         self._window.destroy()
         self._window = None
