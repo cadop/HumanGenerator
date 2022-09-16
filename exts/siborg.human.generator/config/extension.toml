@@ -36,7 +36,7 @@ keywords = ["kit", "makehuman","human","character","generator","person"]
 
 # Main python module this extension provides, it will be publicly available as "import omni.hello.world".
 [[python.module]]
-name = "siborg.human.generator"
+name = "siborg.create.human"
 
 [settings]
 exts."siborg.human.generator.browser.asset".instanceable = []
