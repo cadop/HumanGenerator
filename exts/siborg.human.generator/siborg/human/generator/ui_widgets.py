@@ -1,6 +1,6 @@
 from xml.sax.xmlreader import AttributesImpl
 import carb
-from siborg.create.human.mhcaller import MHCaller
+from siborg.human.generator.mhcaller import MHCaller
 import omni.ui as ui
 import omni
 import os

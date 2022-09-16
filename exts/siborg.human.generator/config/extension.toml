@@ -8,8 +8,8 @@ preview_image = "data/preview.png"
 icon = "data/icon.png"
 
 # The title and description fields are primarily for displaying extension info in UI
-title = "Makehuman for Omniverse"
-description="MakeHuman Extension for Omniverse. Create and customize humans in your Omniverse scenes."
+title = "HumanGenerator"
+description="Human Generator for Omniverse. Create and customize humans in your Omniverse scenes."
 
 # Path (relative to the root) or content of readme markdown file for UI.
 readme  = "docs/README.md"
@@ -23,7 +23,7 @@ category = "Services"
 feature = true
 
 # Keywords for the extension
-keywords = ["kit", "makehuman","human","character"]
+keywords = ["kit", "makehuman","human","character","generator","person"]
 
 
 # Use omni.ui to build simple UI
@@ -36,15 +36,11 @@ keywords = ["kit", "makehuman","human","character"]
 
 # Main python module this extension provides, it will be publicly available as "import omni.hello.world".
 [[python.module]]
-name = "siborg.create.human"
+name = "siborg.human.generator"
 
 [settings]
-# exts."siborg.create.human.browser.asset".folders = [
-#     "exts/omni/makehuman/data"
-#     ]
-exts."siborg.create.human.browser.asset".instanceable = []
-exts."siborg.create.human.browser.asset".timeout = 10
-exts."omni.kit.window.extensions".docUrl = "https://www.youtube.com/watch?v=8GD3ld1Ep7c"
+exts."siborg.human.generator.browser.asset".instanceable = []
+exts."siborg.human.generator.browser.asset".timeout = 10
 
 [python.pipapi]
 use_online_index = true
