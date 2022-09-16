@@ -45,11 +45,17 @@ class MHWindow(ui.Window):
         with self.frame:
 
             # Widgets are built starting on the right
-            with ui.Stack(ui.Direction.RIGHT_TO_LEFT, spacing=2):
-
-                # Right-most panel includes panels for modifiers, listing/removing
-                # applied proxies, and executing Human creation and updates
-                self.panel = HumanPanel(mh_call)
+            with ui.Stack(ui.Direction.RIGHT_TO_LEFT):
+                with ui.ZStack(width=0):
+                    # Draggable splitter
+                    with ui.Placer(draggable=True, drag_axis=ui.Axis.X):
+                        ui.Rectangle(width=10, name="Splitter")
+                    with ui.VStack():
+                        with ui.HStack():
+                            # Right-most panel includes panels for modifiers, listing/removing
+                            # applied proxies, and executing Human creation and updates
+                            self.panel = HumanPanel(mh_call)
+                            ui.Spacer(width=10)
 
                 # Left-most panel is a browser for MakeHuman assets. It includes
                 # a reference to the list of applied proxies so that an update

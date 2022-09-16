@@ -39,7 +39,8 @@ class HumanPanel:
             toggle = ui.SimpleBoolModel()
 
             # UI for modifiers and parameters (affects physical characteristics)
-            self.params = ParamPanel(self.mh_call, toggle, width=300)
+            self.params = ParamPanel(self.mh_call, toggle)
+            # self.params = ParamPanel(self.mh_call, toggle, width=300)
 
             # UI for tracking applied assets and executing functions (eg. Create New Human)
             self.buttons = ButtonPanel(self.mh_call, toggle, self.params, width=200)
