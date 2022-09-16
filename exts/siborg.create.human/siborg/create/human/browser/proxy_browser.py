@@ -9,7 +9,7 @@ from .model import MHAssetBrowserModel
 from .options_menu import FolderOptionsMenu
 
 
-class AssetBrowserFrame(ui.Frame):
+class AssetBrowserFrame:
     """A widget to browse and select Makehuman assets
     Attributes
     ----------
@@ -33,10 +33,10 @@ class AssetBrowserFrame(ui.Frame):
         """
         super().__init__(**kwargs)
         self.mh_call = mhcaller
-        self.list_widget = list_widget
-        self.set_build_fn(self._build_widget)
+        self.list_widget = None
+        # self.set_build_fn(self._build_widget)
 
-    def _build_widget(self):
+    def build_widget(self):
         """Build UI widget"""
         # A model to hold browser data
         self._browser_model = MHAssetBrowserModel(

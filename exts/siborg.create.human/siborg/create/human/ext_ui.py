@@ -42,27 +42,30 @@ class MHWindow(ui.Window):
 
         mh_call.filepath = "D:/human.obj"
 
+        # Right-most panel includes panels for modifiers, listing/removing
+        # applied proxies, and executing Human creation and updates
+        self.panel = HumanPanel(mh_call)
+        # Left-most panel is a browser for MakeHuman assets. It includes
+        # a reference to the list of applied proxies so that an update
+        # can be triggered when new assets are added
+        self.browser = AssetBrowserFrame(mh_call, self.panel.toggle)
+
+        
         with self.frame:
 
             # Widgets are built starting on the right
-            with ui.Stack(ui.Direction.RIGHT_TO_LEFT):
+            with ui.HStack():
                 with ui.ZStack(width=0):
                     # Draggable splitter
-                    with ui.Placer(draggable=True, drag_axis=ui.Axis.X):
+                    with ui.Placer(offset_x=600,draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=10, name="Splitter")
                     with ui.VStack():
                         with ui.HStack():
-                            # Right-most panel includes panels for modifiers, listing/removing
-                            # applied proxies, and executing Human creation and updates
-                            self.panel = HumanPanel(mh_call)
+                            self.browser.build_widget()
                             ui.Spacer(width=10)
+                self.panel.build_widget()
 
-                # Left-most panel is a browser for MakeHuman assets. It includes
-                # a reference to the list of applied proxies so that an update
-                # can be triggered when new assets are added
-                self.browser = AssetBrowserFrame(
-                    mh_call, self.panel.buttons.drop.model
-                )
+
 
     # Properly destroying UI elements and references prevents 'Zombie UI'
     # (abandoned objects that interfere with Kit)
@@ -71,4 +74,3 @@ class MHWindow(ui.Window):
         """
         super().destroy()
         self.panel.destroy()
-        self.browser.destroy()

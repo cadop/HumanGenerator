@@ -12,7 +12,10 @@ class HumanPanel:
     Attributes
     ----------
     mh_call : MHCaller
-        Wrapper object for Makehuman data (including human instance data) and functions"""
+        Wrapper object for Makehuman data (including human instance data) and functions
+    toggle : SimpleBoolModel
+        Tracks whether updates should happen immediately
+    """
     
     def __init__(self, mhcaller: MHCaller, **kwargs):
         """Constructor for HumanPanel instance. Creates a two distinct UI widgets for managing human parameters. These are:
@@ -27,23 +30,22 @@ class HumanPanel:
         # TODO remove **kwargs
         # Reference to manager class for Makehuman
         self.mh_call = mhcaller
+        # Model to toggle whether human should update as soon as changes are made
+        self.toggle = ui.SimpleBoolModel()
 
-        self._build_widget()
-
-    def _build_widget(self):
+    def build_widget(self):
         """Build widget UI"""
 
         with ui.HStack():
 
-            # Model to toggle whether human should update as soon as changes are made
-            toggle = ui.SimpleBoolModel()
+
 
             # UI for modifiers and parameters (affects physical characteristics)
-            self.params = ParamPanel(self.mh_call, toggle)
+            self.params = ParamPanel(self.mh_call, self.toggle)
             # self.params = ParamPanel(self.mh_call, toggle, width=300)
 
             # UI for tracking applied assets and executing functions (eg. Create New Human)
-            self.buttons = ButtonPanel(self.mh_call, toggle, self.params, width=200)
+            self.buttons = ButtonPanel(self.mh_call, self.toggle, self.params)
 
 
 
