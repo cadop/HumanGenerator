@@ -1,6 +1,6 @@
 import omni.ui as ui
 from . import mhcaller
-from .human_ui import ParamPanel, ButtonPanel, ParamPanelModel
+from .human_ui import ParamPanel, ParamPanelModel
 from .browser import AssetBrowserFrame
 from .ui_widgets import *
 from .styles import window_style
@@ -68,16 +68,58 @@ class MHWindow(ui.Window):
             with ui.HStack(style = window_style):
                 with ui.ZStack(width=0):
                     # Draggable splitter
-                    with ui.Placer(offset_x=600,draggable=True, drag_axis=ui.Axis.X):
+                    with ui.Placer(offset_x=800,draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=5, name="splitter")
-                    with ui.VStack():
-                        with ui.HStack():
-                            # Left-most panel is a browser for MakeHuman assets. It includes
-                            # a reference to the list of applied proxies so that an update
-                            # can be triggered when new assets are added
-                            self.browser = AssetBrowserFrame(self.browser_model)
-                            ui.Spacer(width=10)
-                
+                    with ui.HStack():
+                        # Left-most panel is a browser for MakeHuman assets. It includes
+                        # a reference to the list of applied proxies so that an update
+                        # can be triggered when new assets are added
+                        self.browser = AssetBrowserFrame(self.browser_model)
+                        ui.Spacer(width=5)
+                with ui.ZStack(width=0):
+                    # Draggable splitter
+                    with ui.Placer(offset_x=300,draggable=True, drag_axis=ui.Axis.X):
+                        ui.Rectangle(width=5, name="splitter")
+                    with ui.HStack():
+                        self.param_panel = ParamPanel(self.param_model)
+                        ui.Spacer(width=5)
+                with ui.VStack():
+                    self.proxy_list = DropList("Currently Applied Assets", self.mh_call)
+                    with ui.HStack(height=0):
+                        # Toggle whether changes should propagate instantly
+                        ui.Label("Update Instantly")
+                        ui.CheckBox(self.toggle_model)
+                    # Creates a new human in scene and resets modifiers and assets
+                    ui.Button(
+                        "New Human",
+                        height=50,
+                        clicked_fn=lambda: self.new_human(),
+                    )
+                    # Updates current human in omniverse scene
+                    ui.Button(
+                        "Update Meshes in Scene",
+                        height=50,
+                        clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call),
+                    )
+                    # Apply skeleton
+                    ui.Button(
+                        "Bake and Rig",
+                        height=50,
+                        clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True),
+                    )
+
+    def new_human(self):
+        """Creates a new human in the stage. Makes calls to the Makehuman function wrapper MHCaller for resetting the human parameters and assets as well as flagging the human for renaming. Then creates a new human in the stage with the reset data. 
+        """
+        # Reset the human object in the makehuman wrapper. Also flags the human for
+        # name change to avoid overwriting existing humans
+        self.mh_call.reset_human()
+        # Reset list of applied assets
+        self.list_model.update()
+        # Reset list of modifiers
+        self.param_panel.reset()
+        # Add the new, now reset human to the scene
+        mh_usd.add_to_scene(self.mh_call)
 
 
 
@@ -87,4 +129,3 @@ class MHWindow(ui.Window):
         """Destroys the instance of MHWindow
         """
         super().destroy()
-        self.panel.destroy()
