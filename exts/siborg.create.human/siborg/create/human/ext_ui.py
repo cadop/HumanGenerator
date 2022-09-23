@@ -84,7 +84,7 @@ class MHWindow(ui.Window):
                         self.param_panel = ParamPanel(self.param_model)
                         ui.Spacer(width=5)
                 with ui.VStack():
-                    self.proxy_list = DropList("Currently Applied Assets", self.mh_call)
+                    self.proxy_list = DropList("Currently Applied Assets", self.list_model)
                     with ui.HStack(height=0):
                         # Toggle whether changes should propagate instantly
                         ui.Label("Update Instantly")
