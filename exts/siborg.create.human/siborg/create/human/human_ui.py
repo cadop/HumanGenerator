@@ -76,7 +76,6 @@ class ParamPanelModel(ui.AbstractItemModel):
 
 
 
-        # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
         # Wrapper around Makehuman data (including human data) and functions
         self.mh_call = mh_call
