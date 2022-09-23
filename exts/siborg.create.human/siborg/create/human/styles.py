@@ -26,6 +26,6 @@ frame_style = {
 
 # stylesheet for main UI window
 window_style = {
-    "Rectangle::splitter": {"background_color": 0xFF222222},
+    "Rectangle::splitter": {"background_color": 0xFF454545},
     "Rectangle::splitter:hovered": {"background_color": 0xFFFFCA83},
 }
