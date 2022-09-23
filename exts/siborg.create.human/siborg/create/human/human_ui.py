@@ -6,58 +6,7 @@ from .styles import *
 from . import mh_usd
 
 
-class HumanPanel:
-    """UI Widget that includes list of modifiers, applied assets, and function buttons.
-    Includes a ParamPanel and a ButtonPanel
-    Attributes
-    ----------
-    mh_call : MHCaller
-        Wrapper object for Makehuman data (including human instance data) and functions
-    toggle : SimpleBoolModel
-        Tracks whether updates should happen immediately
-    """
-    
-    def __init__(self, mhcaller: MHCaller, **kwargs):
-        """Constructor for HumanPanel instance. Creates a two distinct UI widgets for managing human parameters. These are:
-        + A scrollable list of available modifiers labeled and with images, grouped by type in collapseable panels
-        + A list of currently applied assets (proxies/skeletons) and a set of buttons for adding/updating the human in the stage
 
-        Parameters
-        ----------
-        mhcaller : MHCaller
-            Wrapper object for Makehuman functions
-        """
-        # TODO remove **kwargs
-        # Reference to manager class for Makehuman
-        self.mh_call = mhcaller
-        # Model to toggle whether human should update as soon as changes are made
-        self.toggle = ui.SimpleBoolModel()
-
-    def build_widget(self):
-        """Build widget UI"""
-
-        with ui.HStack():
-
-
-
-            # UI for modifiers and parameters (affects physical characteristics)
-            self.params = ParamPanel(self.mh_call, self.toggle)
-            # self.params = ParamPanel(self.mh_call, toggle, width=300)
-
-            # UI for tracking applied assets and executing functions (eg. Create New Human)
-            self.buttons = ButtonPanel(self.mh_call, self.toggle, self.params)
-
-
-
-
-
-
-
-    def destroy(self):
-        """Destructor for HumanPanel. Destroys subpanels"""
-        # super().destroy()
-        self.params.destroy()
-        self.buttons.destroy()
 
 
 Human = TypeVar('Human')
