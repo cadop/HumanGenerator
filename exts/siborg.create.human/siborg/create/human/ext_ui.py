@@ -32,7 +32,7 @@ class MHWindow(ui.Window):
         self.list_model = DropListModel(self.mh_call)
         self.param_model = ParamPanelModel(self.mh_call, self.toggle_model)
         # A model to hold browser data
-        self._browser_model = MHAssetBrowserModel(
+        self.browser_model = MHAssetBrowserModel(
             self.mh_call,
             self.list_model,
             filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
@@ -69,7 +69,7 @@ class MHWindow(ui.Window):
                             # Left-most panel is a browser for MakeHuman assets. It includes
                             # a reference to the list of applied proxies so that an update
                             # can be triggered when new assets are added
-                            self.browser = AssetBrowserFrame(self._browser_model)
+                            self.browser = AssetBrowserFrame(self.browser_model)
                             ui.Spacer(width=10)
                 
 
