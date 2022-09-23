@@ -27,10 +27,16 @@ class MHWindow(ui.Window):
 
         # Create instance of manager class
         self.mh_call = mhcaller.MHCaller()
-
+        
+        # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
+
+        # Holds the state of the proxy list
         self.list_model = DropListModel(self.mh_call)
+
+        # Holds the state of the parameter list
         self.param_model = ParamPanelModel(self.mh_call, self.toggle_model)
+        
         # A model to hold browser data
         self.browser_model = MHAssetBrowserModel(
             self.mh_call,
