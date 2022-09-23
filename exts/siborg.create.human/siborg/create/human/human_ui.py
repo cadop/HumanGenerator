@@ -61,21 +61,10 @@ class HumanPanel:
 
 
 Human = TypeVar('Human')
-class ParamPanel(ui.Frame):
-    """UI Widget for displaying and modifying human parameters
-    
-    Attributes
-    ----------
-    mh_call : MHCaller
-        Wrapper around Makehuman data (including human data) and functions
-    toggle : ui.SimpleBoolModel
-        Model to track whether changes should be instant
-    models : list of SliderEntryPanelModel
-        Models for each group of parameter sliders
-    """
 
+class ParamPanelModel(ui.AbstractItemModel):
     def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
-        """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
+        """Constructs an instance of ParamPanelModel, which stores data for a ParamPanel.
 
         Parameters
         ----------
@@ -84,6 +73,8 @@ class ParamPanel(ui.Frame):
         toggle : ui.SimpleBoolModel
             Model to track whether changes should be instant
         """
+
+
 
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
@@ -96,6 +87,39 @@ class ParamPanel(ui.Frame):
         # data for reference in the UI
         self.models = []
 
+    
+class ParamPanel(ui.Frame):
+    """UI Widget for displaying and modifying human parameters
+    
+    Attributes
+    ----------
+    model : ParamPanelModel
+        Stores data for the panel
+    mh_call : MHCaller
+        Wrapper around Makehuman data (including human data) and functions
+    toggle : ui.SimpleBoolModel
+        Model to track whether changes should be instant
+    models : list of SliderEntryPanelModel
+        Models for each group of parameter sliders
+    """
+
+    def __init__(self, model : ParamPanelModel, **kwargs):
+        """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
+
+        Parameters
+        ----------
+        mh_call : MHCaller
+            Wrapper around Makehuman data (including human data) and functions
+        toggle : ui.SimpleBoolModel
+            Model to track whether changes should be instant
+        """
+
+        # Subclassing ui.Frame allows us to use styling on the whole widget
+        super().__init__(**kwargs)
+        self.model = model
+        self.mh_call = model.mh_call
+        self.toggle = model.toggle
+        self.models = model.models
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
