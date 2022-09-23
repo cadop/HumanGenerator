@@ -1,6 +1,6 @@
 import omni.ui as ui
 from . import mhcaller
-from .human_ui import ParamPanel, ButtonPanel, HumanPanel, ParamPanelModel
+from .human_ui import ParamPanel, ButtonPanel, ParamPanelModel
 from .browser import AssetBrowserFrame
 from .ui_widgets import *
 from .styles import window_style
@@ -36,7 +36,7 @@ class MHWindow(ui.Window):
 
         # Holds the state of the parameter list
         self.param_model = ParamPanelModel(self.mh_call, self.toggle_model)
-        
+
         # A model to hold browser data
         self.browser_model = MHAssetBrowserModel(
             self.mh_call,
