@@ -1,9 +1,9 @@
 import omni.ui as ui
 from . import mhcaller
-from .human_ui import HumanPanel
+from .human_ui import ParamPanel, ButtonPanel, HumanPanel
 from .browser import AssetBrowserFrame
 from .ui_widgets import *
-
+from .styles import window_style
 
 class MHWindow(ui.Window):
     """
@@ -12,7 +12,7 @@ class MHWindow(ui.Window):
     Attributes
     -----------
     panel : HumanPanel
-        A widget that includes anels for modifiers, listing/removing applied
+        A widget that includes panels for modifiers, listing/removing applied
         proxies, and executing human creation and updates
     browser: AssetBrowserFrame
         A browser for MakeHuman assets, including clothing, hair, and skeleton rigs.
@@ -54,11 +54,11 @@ class MHWindow(ui.Window):
         with self.frame:
 
             # Widgets are built starting on the right
-            with ui.HStack():
+            with ui.HStack(style = window_style):
                 with ui.ZStack(width=0):
                     # Draggable splitter
                     with ui.Placer(offset_x=600,draggable=True, drag_axis=ui.Axis.X):
-                        ui.Rectangle(width=10, name="Splitter")
+                        ui.Rectangle(width=5, name="splitter")
                     with ui.VStack():
                         with ui.HStack():
                             self.browser.build_widget()
