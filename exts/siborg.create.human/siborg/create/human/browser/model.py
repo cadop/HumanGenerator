@@ -3,7 +3,7 @@ from typing import List, Union
 import carb.settings
 import omni.kit.commands
 from siborg.create.human.mhcaller import MHCaller
-from siborg.create.human.ui_widgets import DropList
+from siborg.create.human.ui_widgets import DropList, DropListModel
 import omni.usd
 from omni.kit.browser.core import DetailItem
 from omni.kit.browser.folder.core import (
@@ -41,19 +41,18 @@ class MHAssetBrowserModel(FolderBrowserModel):
         The widget in which to reflect changes when assets are added to the human
     """
 
-    def __init__(self, mhcaller: MHCaller, list_widget: DropList, *args, **kwargs):
+    def __init__(self, mhcaller: MHCaller, list_model: DropListModel, *args, **kwargs):
         """Constructs an instance of MHAssetBrowserModel
 
         Parameters
         ----------
         mhcaller : MHCaller
             Wrapper class for Makehuman functions
-        list_widget : DropList
-            The widget in which to reflect changes when assets are added to the
-            human
+        list_model : DropListModel
+            The list in which to reflect changes when assets are added
         """
         self.mhcaller = mhcaller
-        self.list_widget = list_widget
+        self.list_model = list_model
         super().__init__(
             *args,
             show_category_subfolders=True,

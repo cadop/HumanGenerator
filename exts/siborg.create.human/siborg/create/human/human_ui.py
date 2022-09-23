@@ -6,63 +6,43 @@ from .styles import *
 from . import mh_usd
 
 
-class HumanPanel:
-    """UI Widget that includes list of modifiers, applied assets, and function buttons.
-    Includes a ParamPanel and a ButtonPanel
-    Attributes
-    ----------
-    mh_call : MHCaller
-        Wrapper object for Makehuman data (including human instance data) and functions"""
-    
-    def __init__(self, mhcaller: MHCaller, **kwargs):
-        """Constructor for HumanPanel instance. Creates a two distinct UI widgets for managing human parameters. These are:
-        + A scrollable list of available modifiers labeled and with images, grouped by type in collapseable panels
-        + A list of currently applied assets (proxies/skeletons) and a set of buttons for adding/updating the human in the stage
 
-        Parameters
-        ----------
-        mhcaller : MHCaller
-            Wrapper object for Makehuman functions
-        """
-        # TODO remove **kwargs
-        # Reference to manager class for Makehuman
-        self.mh_call = mhcaller
-
-        self._build_widget()
-
-    def _build_widget(self):
-        """Build widget UI"""
-
-        with ui.HStack():
-
-            # Model to toggle whether human should update as soon as changes are made
-            toggle = ui.SimpleBoolModel()
-
-            # UI for modifiers and parameters (affects physical characteristics)
-            self.params = ParamPanel(self.mh_call, toggle, width=300)
-
-            # UI for tracking applied assets and executing functions (eg. Create New Human)
-            self.buttons = ButtonPanel(self.mh_call, toggle, self.params, width=200)
-
-
-
-
-
-
-
-    def destroy(self):
-        """Destructor for HumanPanel. Destroys subpanels"""
-        # super().destroy()
-        self.params.destroy()
-        self.buttons.destroy()
 
 
 Human = TypeVar('Human')
+
+class ParamPanelModel(ui.AbstractItemModel):
+    def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
+        """Constructs an instance of ParamPanelModel, which stores data for a ParamPanel.
+
+        Parameters
+        ----------
+        mh_call : MHCaller
+            Wrapper around Makehuman data (including human data) and functions
+        toggle : ui.SimpleBoolModel
+            Model to track whether changes should be instant
+        """
+
+
+
+        super().__init__(**kwargs)
+        # Wrapper around Makehuman data (including human data) and functions
+        self.mh_call = mh_call
+        # model to track whether changes should be instant
+        self.toggle = toggle
+
+        # Reference to models for each modifier/parameter. The models store modifier
+        # data for reference in the UI
+        self.models = []
+
+    
 class ParamPanel(ui.Frame):
     """UI Widget for displaying and modifying human parameters
     
     Attributes
     ----------
+    model : ParamPanelModel
+        Stores data for the panel
     mh_call : MHCaller
         Wrapper around Makehuman data (including human data) and functions
     toggle : ui.SimpleBoolModel
@@ -71,7 +51,7 @@ class ParamPanel(ui.Frame):
         Models for each group of parameter sliders
     """
 
-    def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
+    def __init__(self, model : ParamPanelModel, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
 
         Parameters
@@ -84,15 +64,10 @@ class ParamPanel(ui.Frame):
 
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
-        # Wrapper around Makehuman data (including human data) and functions
-        self.mh_call = mh_call
-        # model to track whether changes should be instant
-        self.toggle = toggle
-
-        # Reference to models for each modifier/parameter. The models store modifier
-        # data for reference in the UI
-        self.models = []
-
+        self.model = model
+        self.mh_call = model.mh_call
+        self.toggle = model.toggle
+        self.models = model.models
         self.set_build_fn(self._build_widget)
 
     def _build_widget(self):
@@ -246,87 +221,4 @@ class ParamPanel(ui.Frame):
         for model in self.models:
             model.destroy()
 
-class ButtonPanel:
-    """UI Widget that includes a list of assets currently applied to the human and
-    buttons for applying changes to the human in the stage
-    Attributes
-    ----------
-    mh_call : MHCaller
-        Wrapper object around Makehuman functions
-    param_panel : ParamPanel
-        Reference to UI list widget for resetting UI when human is reset
-    """
 
-    def __init__(self, mhcaller: MHCaller, toggle : ui.SimpleBoolModel, param_panel : ParamPanel, **kwargs):
-        """Constructs an instance of ButtonPanel, which contains a DropList for displaying currently applied assets, as well as the following buttons:
-        + Update in Scene - Updates the current human
-        + New Human - Abandons reference to previous human and creates a new one
-
-        Parameters
-        ----------
-        mhcaller : MHCaller
-            Wrapper object around Makehuman functions
-        toggle : ui.SimpleBoolModel
-            Model to toggle whether human should update immediately
-        param_panel : ParamPanel
-            Reference to UI list widget for resetting UI when human is reset
-        """
-        # Include instance of Makehuman wrapper class
-        self.mh_call = mhcaller
-        # Model to store whether changes should happen immediately
-        self.toggle = toggle
-        # Reference to UI list widget for resetting UI when human is reset
-        self.param_panel = param_panel
-
-        # Pass **kwargs to buildwidget so we can apply styling as though ButtonPanel
-        # extended a base ui class
-        self._build_widget(**kwargs)
-
-    def _build_widget(self, **kwargs):
-        """Build UI widget
-        """
-        with ui.VStack(**kwargs):
-            # Widget to list applied proxies TODO change to "Currently Applied Assets"
-            self.drop = DropList("Currently Applied Proxies", self.mh_call)
-            with ui.HStack(height=0):
-                # Toggle whether changes should propagate instantly
-                ui.Label("Update Instantly")
-                ui.CheckBox(self.toggle)
-            # Creates a new human in scene and resets modifiers and assets
-            ui.Button(
-                "New Human",
-                height=50,
-                clicked_fn=lambda: self.new_human(),
-            )
-            # Updates current human in omniverse scene
-            ui.Button(
-                "Update Meshes in Scene",
-                height=50,
-                clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call),
-            )
-            # Apply skeleton
-            ui.Button(
-                "Bake and Rig",
-                height=50,
-                clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True),
-            )
-
-    def new_human(self):
-        """Creates a new human in the stage. Makes calls to the Makehuman function wrapper MHCaller for resetting the human parameters and assets as well as flagging the human for renaming. Then creates a new human in the stage with the reset data. 
-        """
-        # Reset the human object in the makehuman wrapper. Also flags the human for
-        # name change to avoid overwriting existing humans
-        self.mh_call.reset_human()
-        # Reset list of applied assets
-        self.drop.model.update()
-        # Reset list of modifiers
-        self.param_panel.reset()
-        # Add the new, now reset human to the scene
-        mh_usd.add_to_scene(self.mh_call)
-
-    def destroy(self):
-        """Provides destructor for ButtonPanel instance. Currently doesn't do anything but avoid an exception when destroying all UI elements
-        """
-        # No superclass to destroy, no models to destroy
-        # TODO do we need to reference the DropList model for destruction?
-        pass

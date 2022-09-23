@@ -574,7 +574,7 @@ class DropList:
     model : DropListModel
         An object in which to store data for the list and all of its items
     """
-    def __init__(self, label : str, mhcaller : MHCaller):
+    def __init__(self, label : str, model : DropListModel):
         """Constructs an instance of DropList. Passes the Makehuman application
         wrapper to the DropListModel so changes to the human can be reflected in
         the list and vice-versa.
@@ -583,12 +583,12 @@ class DropList:
         ----------
         label : str
             Label to display above the list
-        mhcaller : MHCaller
-            Wrapper object around Makehuman data and functions 
+        model : DropListModel
+            Stores and tracks list contents
         """
         self.label = label
         # Model for storing widget data - accepts reference to Makehuman wrapper
-        self.model = DropListModel(mhcaller)
+        self.model = model
         self._build_widget()
 
     def _build_widget(self):

@@ -116,4 +116,4 @@ class AssetDetailDelegate(FolderDetailDelegate):
         item : FileDetailItem
             The item that has been doubleclicked
         """
-        self.model.list_widget.add_child(item.url)
+        self.model.list_model.add_child(item.url)
