@@ -23,3 +23,9 @@ frame_style = {
         "background_color": 0xFF1F2123,
     },
 }
+
+# stylesheet for main UI window
+window_style = {
+    "Rectangle::splitter": {"background_color": 0xFF222222},
+    "Rectangle::splitter:hovered": {"background_color": 0xFFFFCA83},
+}
