@@ -1,9 +1,10 @@
 import omni.ui as ui
 from . import mhcaller
-from .human_ui import ParamPanel, ButtonPanel, HumanPanel
+from .human_ui import ParamPanel, ButtonPanel, HumanPanel, ParamPanelModel
 from .browser import AssetBrowserFrame
 from .ui_widgets import *
 from .styles import window_style
+from .browser import MHAssetBrowserModel
 
 class MHWindow(ui.Window):
     """
@@ -24,10 +25,21 @@ class MHWindow(ui.Window):
 
         super().__init__(*args, **kwargs)
 
-        # Reference to UI panel for destructor
-        self.panel = None
-        # Reference to asset browser for destructor
-        self.browser = None
+        # Create instance of manager class
+        self.mh_call = mhcaller.MHCaller()
+
+        self.toggle_model = ui.SimpleBoolModel()
+        self.list_model = DropListModel(self.mh_call)
+        self.param_model = ParamPanelModel(self.mh_call, self.toggle_model)
+        # A model to hold browser data
+        self._browser_model = MHAssetBrowserModel(
+            self.mh_call,
+            self.list_model,
+            filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
+            timeout=carb.settings.get_settings().get(
+                "/exts/siborg.create.human.browser.asset/data/timeout"
+            ),
+        )
 
         # Dock UI wherever the "Content" tab is found (bottom panel by default)
         self.deferred_dock_in(
@@ -37,18 +49,11 @@ class MHWindow(ui.Window):
 
     def _build_ui(self):
 
-        # Create instance of manager class
-        mh_call = mhcaller.MHCaller()
 
-        mh_call.filepath = "D:/human.obj"
 
-        # Right-most panel includes panels for modifiers, listing/removing
-        # applied proxies, and executing Human creation and updates
-        self.panel = HumanPanel(mh_call)
-        # Left-most panel is a browser for MakeHuman assets. It includes
-        # a reference to the list of applied proxies so that an update
-        # can be triggered when new assets are added
-        self.browser = AssetBrowserFrame(mh_call, self.panel.toggle)
+        self.mh_call.filepath = "D:/human.obj"
+
+
 
         
         with self.frame:
@@ -61,9 +66,12 @@ class MHWindow(ui.Window):
                         ui.Rectangle(width=5, name="splitter")
                     with ui.VStack():
                         with ui.HStack():
-                            self.browser.build_widget()
+                            # Left-most panel is a browser for MakeHuman assets. It includes
+                            # a reference to the list of applied proxies so that an update
+                            # can be triggered when new assets are added
+                            self.browser = AssetBrowserFrame(self._browser_model)
                             ui.Spacer(width=10)
-                self.panel.build_widget()
+                
 
 
 
