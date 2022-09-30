@@ -2,7 +2,16 @@ from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 from typing import List, TypeVar
 from .shared import sanitize
 class SkelTMPL:
+    """Template for skeletons which can be imported using the HumanGenerator extension.
+    A class which provides compatible data and and methods can be used wherever
+    this type is specified. This class does not contain any data or functionality.
+
+    Attributes
+    ----------
+    
+    """
     def __init__(self) -> None:
+        
         pass
 
 class BoneTMPL:
@@ -18,7 +27,7 @@ class OVSkel:
     usdSkel : UsdSkel.Skeleton
         The USD formatted skeleton with parameters applied
     skel_in : SkelTMPL
-        A hierarchy of bones and joints which constitute a skeleton
+        A skeleton object compatible with the SkelTMPL definition
     joint_paths : list of: str
         List of joint paths that are used as joint indices
     joint_names : list of: str
@@ -47,7 +56,8 @@ class OVSkel:
         name : str
             Name to use for the path to the skeleton
         skel_in : SkelTMPL
-            A hierarchy of bones and joints which constitute a skeleton. The skeleton data to import into the scene
+            A skeleton object compatible with the SkelTMPL definition The skeleton
+            data to import into the scene
         offset : list of float, optional
             Offset vector for placement in scene, by default [0,0,0]
         scale : float, optional
