@@ -200,10 +200,6 @@ class OVSkel:
         # Get matrix which represents a joints transform in its binding position
         # for binding to a mesh. Move to offset to match mesh transform.
         bxform = bone.getBindMatrix(offsetVect=self.offset)
-        # getBindMatrix returns bindmat and bindinv - we want the uninverted
-        # matrix, however USD uses row first while most other programs use column
-        # first, so we use the provided inverse
-        bxform = bxform[1]
         # Convert type for USD and store
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
