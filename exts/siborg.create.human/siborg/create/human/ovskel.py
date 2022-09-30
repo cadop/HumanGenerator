@@ -6,10 +6,9 @@ from .shared import sanitize
 Skeleton = TypeVar("Skeleton")
 Bone = TypeVar("Bone")
 class OVSkel:
-    """Object which holds methods and data for creating a skeleton in the scene from
-    Makehuman skeleton data.
+    """Object which holds methods and data for creating a skeleton in the scene
 
-    Attributes`
+    Attributes
     ----------
     name : str
         Name of the human this skeleton represents. Used for prim path names.
