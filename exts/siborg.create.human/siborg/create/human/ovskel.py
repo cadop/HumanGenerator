@@ -1,6 +1,33 @@
-from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
-from typing import List, TypeVar
+from pxr import Usd, Gf, UsdSkel
+from typing import List, Tuple
 from .shared import sanitize
+import numpy as np
+
+
+class BoneTMPL:
+    """Template for skeletons which can be imported using the HumanGenerator extension.
+    A class which provides compatible data and and methods can be used wherever
+    this type is specified. This class does not contain any data or functionality.
+    
+    Attributes
+    ----------
+    name : str
+        Human-readable bone name.
+    """
+    def __init__(self) -> None:
+        self.name = ""
+        pass
+
+    def getRelativeMatrix(self, offsetVect : List[float] = [0,0,0]) -> np.NDArray:
+        pass
+
+    def getRestMatrix(self, offsetVect : List[float] = [0,0,0]) -> np.NDArray:
+        pass
+
+    def getBindMatrix(self, offsetVect : List[float] = [0,0,0]) -> Tuple[np.NDArray, np.NDArray]:
+        pass
+
+
 class SkelTMPL:
     """Template for skeletons which can be imported using the HumanGenerator extension.
     A class which provides compatible data and and methods can be used wherever
@@ -8,15 +35,18 @@ class SkelTMPL:
 
     Attributes
     ----------
-    
+    roots : list of BoneTMPL
+        Root bones. Bones which have children that can be traversed to form the 
+        entire skeleton.
     """
     def __init__(self) -> None:
-        
+        self.roots = []
+        pass
+    
+    def addBone(name : str, parentName : str, headJoint : str, tailJoint : str) -> BoneTMPL:
         pass
 
-class BoneTMPL:
-    def __init__(self) -> None:
-        pass
+
 class OVSkel:
     """Object which holds methods and data for creating a skeleton in the scene
 
