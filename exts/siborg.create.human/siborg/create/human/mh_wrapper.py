@@ -134,4 +134,6 @@ class Skeleton:
         Bone
             The bone which has been added to the skeleton
         """
-        self._mh_skeleton.addBone(name, parent, head, tail)
+        _bone = Bone(self, name, parent, head, tail)
+        _bone._mh_bone = self._mh_skeleton.addBone(name, parent, head, tail)
+        return _bone
