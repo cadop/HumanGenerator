@@ -39,18 +39,23 @@ class Bone:
         return self._mh_bone.getBindMatrix(offset)[1]
 
 
-class Skeleton(skeleton.Bone):
-    """Skeleton which can be imported using the HumanGenerator extension.
+class Skeleton:
+    """Skeleton which can be imported using the HumanGenerator extension. Provides
+    root bone(s), which have a tree of children that can be traversed to get the data
+    for the entire rig.
 
     Attributes
     ----------
+    name : str
+        Name of the skeleton rig, by default "Skeleton"
     roots : list of Bone
-        Root bones. Bones which have children that can be traversed to form the
+        Root bones. Bones which have children that can be traversed to constitute the
         entire skeleton.
     """
-    def __init__(self) -> None:
-        self.roots = []
-        pass
+    def __init__(self, name="Skeleton") -> None:
+        self._mh_skeleton = skeleton.Skeleton(name)
+        self.roots = self._mh_skeleton.roots
+        self.name = name
 
-    def addBone(name: str, parentName: str, headJoint: str, tailJoint: str) -> Bone:
-        pass
+    def addBone(self, name: str, parent: str, head: str, tail: str) -> Bone:
+        self._mh_skeleton.addBone(name, parent, head, tail)
