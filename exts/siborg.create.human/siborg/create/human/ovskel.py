@@ -2,9 +2,6 @@ from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 from typing import List, TypeVar
 from .shared import sanitize
 
-# Type definitions for Makehuman types which are not accessible before runtime
-Skeleton = TypeVar("Skeleton")
-Bone = TypeVar("Bone")
 class OVSkel:
     """Object which holds methods and data for creating a skeleton in the scene
 
@@ -14,8 +11,8 @@ class OVSkel:
         Name of the human this skeleton represents. Used for prim path names.
     usdSkel : UsdSkel.Skeleton
         The USD formatted skeleton with parameters applied
-    mhSkel : makehuman.skeleton.Skeleton
-        Reference to MakeHuman skeleton
+    skel_in : SkelTML
+        A hierarchy of bones and joints which constitute a skeleton
     joint_paths : list of: str
         List of joint paths that are used as joint indices
     joint_names : list of: str
@@ -32,7 +29,7 @@ class OVSkel:
         Offset vector for placement relative to origin
     """
 
-    def __init__(self, name : str, mhSkel: Skeleton, offset: List[float] = [0, 0, 0], scale : float = 10):
+    def __init__(self, name : str, skel_in : SkelTML, offset: List[float] = [0, 0, 0], scale : float = 10):
         """Get the skeleton data from makehuman and place it in the stage. Also adds
         a new parent to the root bone, so the root can have an identity transform at
         the origin. This helps keep the character above ground, and follows the
@@ -43,8 +40,8 @@ class OVSkel:
         ----------
         name : str
             Name to use for the path to the skeleton
-        mhSkel : makehuman.skeleton.Skeleton
-            The makehuman skeleton object
+        skel_in : SkelTML
+            A hierarchy of bones and joints which constitute a skeleton. The skeleton data to import into the scene
         offset : list of float, optional
             Offset vector for placement in scene, by default [0,0,0]
         scale : float, optional
@@ -52,7 +49,7 @@ class OVSkel:
         """
         self.name = name
         self.usdSkel = None
-        self.mhSkel = mhSkel
+        self.skel_in = skel_in
         self.joint_paths = []
         self.joint_names = []
         self.rel_transforms = []
@@ -73,7 +70,7 @@ class OVSkel:
         new_root : bool, optional
             Whether or not to prepend a new root at the origin, by default False
         """
-        root_bone = self.mhSkel.roots[0]
+        root_bone = self.skel_in.roots[0]
 
         if new_root:
             root_bone = self.prepend_root(root_bone)
@@ -98,16 +95,16 @@ class OVSkel:
         usdSkel.CreateRestTransformsAttr(self.rel_transforms)
 
     def setup_skeleton(self, bone : Bone) -> None:
-        """Traverse the Makehuman skeleton and get the data for each bone for
+        """Traverse the imported skeleton and get the data for each bone for
         adding to the stage
 
         Parameters
         ----------
         bone : Bone
-            The root bone at which to start traversing the Makehuman skeleton.
+            The root bone at which to start traversing the imported skeleton.
         """
         # Setup a breadth-first search of our skeleton as a tree
-        # Use the new root of the mh skeleton as the root bone of our tree
+        # Use the new root of the imported skeleton as the root bone of our tree
 
 
         visited = []  # List to keep track of visited bones.
@@ -154,7 +151,7 @@ class OVSkel:
         # make a "super-root" bone, parent to the root, with identity transforms so
         # we can abide by Lina Halper's animation retargeting guidelines:
         # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
-        newRoot = self.mhSkel.addBone(newroot_name, None, "newRoot_head", oldRoot.tailJoint)
+        newRoot = self.skel_in.addBone(newroot_name, None, "newRoot_head", oldRoot.tailJoint)
         oldRoot.parent = newRoot
         newRoot.headPos -= self.offset
         newRoot.build()
@@ -203,8 +200,8 @@ class OVSkel:
         # for binding to a mesh. Move to offset to match mesh transform.
         bxform = bone.getBindMatrix(offsetVect=self.offset)
         # getBindMatrix returns bindmat and bindinv - we want the uninverted
-        # matrix, however USD uses row first while mh uses column first, so we
-        # use the provided inverse
+        # matrix, however USD uses row first while most other programs use column
+        # first, so we use the provided inverse
         bxform = bxform[1]
         # Convert type for USD and store
         bind_transform = Gf.Matrix4d(bxform.tolist())
