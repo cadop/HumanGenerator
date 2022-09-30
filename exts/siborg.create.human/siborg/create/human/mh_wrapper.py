@@ -19,15 +19,15 @@ class Bone:
     name : str
         Human-readable bone name.
     """
-    def __init__(self, skel, name, parentName, headJoint, tailJoint) -> None:
+    def __init__(self, skel: Skeleton, name: str, parent: str, head: str, tail: str) -> None:
 
-        self._mh_bone = skeleton.Bone(skel, name, parentName, headJoint, tailJoint)
+        self._mh_bone = skeleton.Bone(skel, name, parent, head, tail)
 
         self.name = name
         self.skeleton = skel
 
-        self.headJoint = headJoint
-        self.tailJoint = tailJoint
+        self.headJoint = head
+        self.tailJoint = tail
 
     def getRelativeMatrix(self, offset: List[float] = [0, 0, 0]) -> np.NDArray:
         return self._mh_bone.getRelativeMatrix(offset)
