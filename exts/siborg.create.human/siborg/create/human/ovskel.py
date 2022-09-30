@@ -1,7 +1,7 @@
 from pxr import Usd, Gf, UsdSkel
 from typing import List
 from .shared import sanitize
-from mh_wrapper import Bone, Skeleton
+from .mh_wrapper import Bone, Skeleton
 
 
 class OVSkel:
