@@ -135,5 +135,7 @@ class Skeleton:
             The bone which has been added to the skeleton
         """
         _bone = Bone(self, name, parent, head, tail)
+        # HACK Bone() creates a new Bone for _mh_bone by default. How can we
+        # avoid doing this twice without revealing it to the user? 
         _bone._mh_bone = self._mh_skeleton.addBone(name, parent, head, tail)
         return _bone
