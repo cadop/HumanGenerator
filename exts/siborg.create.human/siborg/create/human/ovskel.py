@@ -1,50 +1,7 @@
 from pxr import Usd, Gf, UsdSkel
-from typing import List, Tuple
+from typing import List
 from .shared import sanitize
-import numpy as np
-
-
-class BoneTMPL:
-    """Template for skeletons which can be imported using the HumanGenerator extension.
-    A class which provides compatible data and and methods can be used wherever
-    this type is specified. This class does not contain any data or functionality.
-
-    Attributes
-    ----------
-    name : str
-        Human-readable bone name.
-    """
-    def __init__(self) -> None:
-        self.name = ""
-        pass
-
-    def getRelativeMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> np.NDArray:
-        pass
-
-    def getRestMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> np.NDArray:
-        pass
-
-    def getBindMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> Tuple[np.NDArray, np.NDArray]:
-        pass
-
-
-class SkelTMPL:
-    """Template for skeletons which can be imported using the HumanGenerator extension.
-    A class which provides compatible data and and methods can be used wherever
-    this type is specified. This class does not contain any data or functionality.
-
-    Attributes
-    ----------
-    roots : list of BoneTMPL
-        Root bones. Bones which have children that can be traversed to form the
-        entire skeleton.
-    """
-    def __init__(self) -> None:
-        self.roots = []
-        pass
-
-    def addBone(name: str, parentName: str, headJoint: str, tailJoint: str) -> BoneTMPL:
-        pass
+from mh_wrapper import Bone, Skeleton
 
 
 class OVSkel:
@@ -56,8 +13,8 @@ class OVSkel:
         Name of the human this skeleton represents. Used for prim path names.
     usdSkel : UsdSkel.Skeleton
         The USD formatted skeleton with parameters applied
-    skel_in : SkelTMPL
-        A skeleton object compatible with the SkelTMPL definition
+    skel_in : Skeleton
+        A skeleton object compatible with the Skeleton definition
     joint_paths : list of: str
         List of joint paths that are used as joint indices
     joint_names : list of: str
@@ -74,7 +31,7 @@ class OVSkel:
         Offset vector for placement relative to origin
     """
 
-    def __init__(self, name: str, skel_in: SkelTMPL, offset: List[float] = [0, 0, 0], scale: float = 10):
+    def __init__(self, name: str, skel_in: Skeleton, offset: List[float] = [0, 0, 0], scale: float = 10):
         """Get the skeleton data from makehuman and place it in the stage. Also adds
         a new parent to the root bone, so the root can have an identity transform at
         the origin. This helps keep the character above ground, and follows the
@@ -85,8 +42,8 @@ class OVSkel:
         ----------
         name : str
             Name to use for the path to the skeleton
-        skel_in : SkelTMPL
-            A skeleton object compatible with the SkelTMPL definition The skeleton
+        skel_in : Skeleton
+            A skeleton object compatible with the Skeleton definition The skeleton
             data to import into the scene
         offset : list of float, optional
             Offset vector for placement in scene, by default [0,0,0]
@@ -139,13 +96,13 @@ class OVSkel:
         # setup rest transforms in joint-local space
         usdSkel.CreateRestTransformsAttr(self.rel_transforms)
 
-    def setup_skeleton(self, bone: BoneTMPL) -> None:
+    def setup_skeleton(self, bone: Bone) -> None:
         """Traverse the imported skeleton and get the data for each bone for
         adding to the stage
 
         Parameters
         ----------
-        bone : BoneTMPL
+        bone : Bone
             The root bone at which to start traversing the imported skeleton.
         """
         # Setup a breadth-first search of our skeleton as a tree
@@ -177,19 +134,19 @@ class OVSkel:
 
                     self.process_bone(neighbor, path)
 
-    def prepend_root(self, oldRoot: BoneTMPL, newroot_name: str = "RootJoint") -> BoneTMPL:
+    def prepend_root(self, oldRoot: Bone, newroot_name: str = "RootJoint") -> Bone:
         """Adds a new root bone to the head of a skeleton, ahead of the existing root bone.
 
         Parameters
         ----------
-        oldRoot : BoneTMPL
+        oldRoot : Bone
             The original MakeHuman root bone
         newroot_name : str, optional
             The name for the new root bone, by default "RootJoint"
 
         Returns
         -------
-        newRoot : BoneTMPL
+        newRoot : Bone
             The new root bone of the Skeleton
         """
         # make a "super-root" bone, parent to the root, with identity transforms so
@@ -202,13 +159,13 @@ class OVSkel:
         newRoot.children.append(oldRoot)
         return newRoot
 
-    def process_bone(self, bone: BoneTMPL, path: str) -> None:
+    def process_bone(self, bone: Bone, path: str) -> None:
         """Get the name, path, relative transform, and bind transform of a joint
         and add its values to the lists of stored values
 
         Parameters
         ----------
-        bone : BoneTMPL
+        bone : Bone
             The Makehuman bone to process for Usd
         path : str
             Path to the parent of this bone
