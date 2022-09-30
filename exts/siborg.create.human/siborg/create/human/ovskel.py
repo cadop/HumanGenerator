@@ -8,7 +8,7 @@ class BoneTMPL:
     """Template for skeletons which can be imported using the HumanGenerator extension.
     A class which provides compatible data and and methods can be used wherever
     this type is specified. This class does not contain any data or functionality.
-    
+
     Attributes
     ----------
     name : str
@@ -18,13 +18,13 @@ class BoneTMPL:
         self.name = ""
         pass
 
-    def getRelativeMatrix(self, offsetVect : List[float] = [0,0,0]) -> np.NDArray:
+    def getRelativeMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> np.NDArray:
         pass
 
-    def getRestMatrix(self, offsetVect : List[float] = [0,0,0]) -> np.NDArray:
+    def getRestMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> np.NDArray:
         pass
 
-    def getBindMatrix(self, offsetVect : List[float] = [0,0,0]) -> Tuple[np.NDArray, np.NDArray]:
+    def getBindMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> Tuple[np.NDArray, np.NDArray]:
         pass
 
 
@@ -36,14 +36,14 @@ class SkelTMPL:
     Attributes
     ----------
     roots : list of BoneTMPL
-        Root bones. Bones which have children that can be traversed to form the 
+        Root bones. Bones which have children that can be traversed to form the
         entire skeleton.
     """
     def __init__(self) -> None:
         self.roots = []
         pass
-    
-    def addBone(name : str, parentName : str, headJoint : str, tailJoint : str) -> BoneTMPL:
+
+    def addBone(name: str, parentName: str, headJoint: str, tailJoint: str) -> BoneTMPL:
         pass
 
 
@@ -74,7 +74,7 @@ class OVSkel:
         Offset vector for placement relative to origin
     """
 
-    def __init__(self, name : str, skel_in : SkelTMPL, offset: List[float] = [0, 0, 0], scale : float = 10):
+    def __init__(self, name: str, skel_in: SkelTMPL, offset: List[float] = [0, 0, 0], scale: float = 10):
         """Get the skeleton data from makehuman and place it in the stage. Also adds
         a new parent to the root bone, so the root can have an identity transform at
         the origin. This helps keep the character above ground, and follows the
@@ -103,8 +103,7 @@ class OVSkel:
         self.scale = scale
         self.offset = offset
 
-    
-    def add_to_stage(self, stage : Usd.Stage, stage_root_path : str, new_root : bool = False):
+    def add_to_stage(self, stage: Usd.Stage, stage_root_path: str, new_root: bool = False):
         """Adds a skeleton to the Usd stage using data from the MakeHuman skeleton
 
         Parameters
@@ -140,7 +139,7 @@ class OVSkel:
         # setup rest transforms in joint-local space
         usdSkel.CreateRestTransformsAttr(self.rel_transforms)
 
-    def setup_skeleton(self, bone : BoneTMPL) -> None:
+    def setup_skeleton(self, bone: BoneTMPL) -> None:
         """Traverse the imported skeleton and get the data for each bone for
         adding to the stage
 
@@ -151,7 +150,6 @@ class OVSkel:
         """
         # Setup a breadth-first search of our skeleton as a tree
         # Use the new root of the imported skeleton as the root bone of our tree
-
 
         visited = []  # List to keep track of visited bones.
         queue = []  # Initialize a queue
@@ -179,7 +177,7 @@ class OVSkel:
 
                     self.process_bone(neighbor, path)
 
-    def prepend_root(self, oldRoot : BoneTMPL, newroot_name : str = "RootJoint") -> BoneTMPL:
+    def prepend_root(self, oldRoot: BoneTMPL, newroot_name: str = "RootJoint") -> BoneTMPL:
         """Adds a new root bone to the head of a skeleton, ahead of the existing root bone.
 
         Parameters
@@ -204,7 +202,7 @@ class OVSkel:
         newRoot.children.append(oldRoot)
         return newRoot
 
-    def process_bone(self, bone : BoneTMPL, path: str) -> None:
+    def process_bone(self, bone: BoneTMPL, path: str) -> None:
         """Get the name, path, relative transform, and bind transform of a joint
         and add its values to the lists of stored values
 
