@@ -1,35 +1,46 @@
 import numpy as np
 from typing import List, Tuple
+import makehuman
+
+# Makehuman loads most modules by manipulating the system path, so we have to
+# run this before we can run the rest of our makehuman imports
+makehuman.set_sys_path()
+# skeleton (imported from MakeHuman via path) provides Bone and Skeleton classes
+import skeleton
 
 
 class Bone:
-    """Template for skeletons which can be imported using the HumanGenerator extension.
-    A class which provides compatible data and and methods can be used wherever
-    this type is specified. This class does not contain any data or functionality.
+    """Bone which constitutes skeletons to be imported using the HumanGenerator
+    extension. Has a parent and children, transforms in space, and named joints
+    at the head and tail.
 
     Attributes
     ----------
     name : str
         Human-readable bone name.
     """
-    def __init__(self) -> None:
-        self.name = ""
-        pass
+    def __init__(self, skel, name, parentName, headJoint, tailJoint) -> None:
 
-    def getRelativeMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> np.NDArray:
-        pass
+        self._mh_bone = skeleton.Bone(skel, name, parentName, headJoint, tailJoint)
 
-    def getRestMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> np.NDArray:
-        pass
+        self.name = name
+        self.skeleton = skel
 
-    def getBindMatrix(self, offsetVect: List[float] = [0, 0, 0]) -> Tuple[np.NDArray, np.NDArray]:
-        pass
+        self.headJoint = headJoint
+        self.tailJoint = tailJoint
+
+    def getRelativeMatrix(self, offset: List[float] = [0, 0, 0]) -> np.NDArray:
+        return self._mh_bone.getRelativeMatrix(offset)
+
+    def getRestMatrix(self, offset: List[float] = [0, 0, 0]) -> np.NDArray:
+        return self._mh_bone.getRestMatrix(offset)
+
+    def getBindMatrix(self, offset: List[float] = [0, 0, 0]) -> np.NDArray:
+        return self._mh_bone.getBindMatrix(offset)[1]
 
 
-class Skeleton:
-    """Template for skeletons which can be imported using the HumanGenerator extension.
-    A class which provides compatible data and and methods can be used wherever
-    this type is specified. This class does not contain any data or functionality.
+class Skeleton(skeleton.Bone):
+    """Skeleton which can be imported using the HumanGenerator extension.
 
     Attributes
     ----------
