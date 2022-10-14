@@ -1,7 +1,3 @@
-import os
-import carb.settings
-from siborg.create.human.mhcaller import MHCaller
-from siborg.create.human.extension_ui import DropList, DropListModel
 import omni.ui as ui
 from omni.kit.browser.folder.core import FolderBrowserWidget
 from .delegate import AssetDetailDelegate
