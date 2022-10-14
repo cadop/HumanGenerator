@@ -15,6 +15,7 @@ class Bone:
     name : str
         Human-readable bone name.
     """
+
     def __init__(self, skel: Skeleton, name: str, parent: str, head: str, tail: str) -> None:
         """Create a Bone instance
 
@@ -105,6 +106,7 @@ class Skeleton:
         important that joints be ordered this way so that their indices can be
         used for skinning / weighting.
     """
+
     def __init__(self, name="Skeleton") -> None:
         """Create a skeleton instance
 
@@ -204,7 +206,8 @@ class Skeleton:
         # make a "super-root" bone, parent to the root, with identity transforms so
         # we can abide by Lina Halper's animation retargeting guidelines:
         # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
-        newRoot = self.addBone(newroot_name, None, "newRoot_head", oldRoot.tailJoint)
+        newRoot = self.addBone(
+            newroot_name, None, "newRoot_head", oldRoot.tailJoint)
         oldRoot.parent = newRoot
         newRoot.headPos -= offset
         newRoot.build()

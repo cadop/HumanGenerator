@@ -1,6 +1,7 @@
 from pathlib import Path
-
 # Shared methods that are useful to several modules
+
+
 def data_path(path):
     """Returns the absolute path of a path given relative to "exts/<omni.ext>/data"
 
@@ -17,4 +18,3 @@ def data_path(path):
     # Uses an absolute path, and then works its way up the folder directory to find the data folder
     data = str(Path(__file__).parents[3]) + "/data/" + path
     return data
- 
