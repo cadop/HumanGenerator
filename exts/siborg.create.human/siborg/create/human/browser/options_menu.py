@@ -1,11 +1,11 @@
-from typing import Optional, Callable
 from omni.kit.browser.core import OptionMenuDescription, OptionsMenu
 from omni.kit.browser.folder.core.models.folder_browser_item import FolderCollectionItem
-import omni.client, carb
-import aiohttp, asyncio
-import os, zipfile
+import carb
+import asyncio
 from ..shared import data_path
 from .downloader import Downloader
+
+
 class FolderOptionsMenu(OptionsMenu):
     """
     Represent options menu used in material browser. 
@@ -25,7 +25,7 @@ class FolderOptionsMenu(OptionsMenu):
     def destroy(self) -> None:
         super().destroy()
 
-    def log_fn(self, proportion : float):
+    def log_fn(self, proportion: float):
         carb.log_info(f"Download is {int(proportion * 100)}% done")
 
     def _get_menu_item_text(self) -> str:
