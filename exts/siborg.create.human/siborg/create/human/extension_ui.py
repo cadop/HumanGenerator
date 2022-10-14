@@ -303,7 +303,7 @@ class DropListItemModel(ui.SimpleStringModel):
     def __init__(self, text: str, mh_item: Union[Skeleton, Proxy] = None) -> None:
         """Construct an instance of DropListItemModel. Stores a string in the parent
         class (SimpleStringModel) to be accessed by UI widgets, and keeps a reference
-        to the asset that the list item refers to. 
+        to the asset that the list item refers to.
 
         Parameters
         ----------
@@ -363,16 +363,16 @@ class DropListModel(ui.AbstractItemModel):
     Attributes
     ----------
     mh_call : MHCaller
-        Wrapper object around Makehuman functions 
+        Wrapper object around Makehuman functions
     """
 
     def __init__(self, mhcaller: MHCaller, *args):
-        """Constructs an instance of 
+        """Constructs an instance of
 
         Parameters
         ----------
         mhcaller : MHCaller
-            Wrapper object around Makehuman functions 
+            Wrapper object around Makehuman functions
         """
         self.mh_call = mhcaller
         super().__init__()
@@ -383,7 +383,7 @@ class DropListModel(ui.AbstractItemModel):
 
         Parameters
         ----------
-        item_tagget : 
+        item_tagget :
             Maintains backwards compatibility with old API
         source : str
             The string returned by the item being dropped. Expected to be a path
@@ -391,7 +391,7 @@ class DropListModel(ui.AbstractItemModel):
         self.add_child(source)
 
     def add_child(self, item: str):
-        """Add a new item to the list. Propagates changes to the Makehuman app 
+        """Add a new item to the list. Propagates changes to the Makehuman app
         and uses those changes to update the UI with new elements.
 
         Parameters
@@ -623,7 +623,10 @@ class ParamPanel(ui.Frame):
     """
 
     def __init__(self, model: ParamPanelModel, **kwargs):
-        """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
+        """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include
+        a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for
+        different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly.
+        Values are restricted based on the limits of a particular modifier.
 
         Parameters
         ----------
@@ -652,7 +655,7 @@ class ParamPanel(ui.Frame):
             Parameters
             ----------
             m : Modifier
-                Makehuman Human modifier object. Represents a set of targets to apply to the human when modifying 
+                Makehuman Human modifier object. Represents a set of targets to apply to the human when modifying
 
             Returns
             -------
@@ -701,7 +704,8 @@ class ParamPanel(ui.Frame):
             return params
 
         def build_macro_frame():
-            """Builds UI widget for the group of macro modifiers (which affect multiple individual modifiers simultaneously). This includes:
+            """Builds UI widget for the group of macro modifiers (which affect multiple individual modifiers
+            simultaneously). This includes:
             + Gender
             + Age
             + Muscle
