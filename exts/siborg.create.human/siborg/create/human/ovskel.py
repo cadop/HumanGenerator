@@ -5,65 +5,6 @@ from .shared import sanitize
 from .mh_wrapper import skeleton as mhskel
 
 
-class OVSkel:
-    """Object which holds methods and data for creating a skeleton in the scene
-
-    Attributes
-    ----------
-    name : str
-        Name of the human this skeleton represents. Used for prim path names.
-    usdSkel : UsdSkel.Skeleton
-        The USD formatted skeleton with parameters applied
-    skel_in : Skeleton
-        A skeleton object compatible with the Skeleton definition
-    joint_paths : list of: str
-        List of joint paths that are used as joint indices
-    joint_names : list of: str
-        List of joint names in USD (breadth-first traversal) order. It is
-        important that joints be ordered this way so that their indices can be
-        used for skinning / weighting.
-    joint_paths : list of str
-        Paths to joints in the stage hierarchy
-    joint_names : list of str
-        Names of joints in the stage
-    scale : float
-        Scale factor
-    offset : list of float
-        Offset vector for placement relative to origin
-    """
-
-    def __init__(self, name: str, skel_in: Skeleton, offset: List[float] = [0, 0, 0], scale: float = 10):
-        """Get the skeleton data from makehuman and place it in the stage. Also adds
-        a new parent to the root bone, so the root can have an identity transform at
-        the origin. This helps keep the character above ground, and follows the
-        guidelines outlined by Lina Halper for the Animation Retargeting extension
-        See: docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
-
-        Parameters
-        ----------
-        name : str
-            Name to use for the path to the skeleton
-        skel_in : Skeleton
-            A skeleton object compatible with the Skeleton definition The skeleton
-            data to import into the scene
-        offset : list of float, optional
-            Offset vector for placement in scene, by default [0,0,0]
-        scale : float, optional
-            Scale factor, by default 10
-        """
-        self.name = name
-        self.usdSkel = None
-        self.skel_in = skel_in
-        self.joint_paths = []
-        self.joint_names = []
-        self.rel_transforms = []
-        self.bind_transforms = []
-        self.scale = scale
-        self.offset = offset
-
-
-
-
 class Bone:
     """Bone which constitutes skeletons to be imported using the HumanGenerator
     extension. Has a parent and children, transforms in space, and named joints
@@ -157,6 +98,12 @@ class Skeleton:
     roots : list of Bone
         Root bones. Bones which have children that can be traversed to constitute the
         entire skeleton.
+    joint_paths : list of: str
+        Paths to joints in the stage hierarchy that are used as joint indices
+    joint_names : list of: str
+        List of joint names in USD (breadth-first traversal) order. It is
+        important that joints be ordered this way so that their indices can be
+        used for skinning / weighting.
     """
     def __init__(self, name="Skeleton") -> None:
         """Create a skeleton instance
@@ -167,8 +114,13 @@ class Skeleton:
             Name of the skeleton, by default "Skeleton"
         """
         _mh_skeleton = mhskel.Skeleton(name)
+        self._rel_transforms = []
+        self._bind_transforms = []
+
         self.roots = _mh_skeleton.roots
         self.joint_paths = _mh_skeleton.joint_paths
+        self.joint_names = []
+
         self.name = name
 
     def addBone(self, name: str, parent: str, head: str, tail: str) -> Bone:
@@ -243,7 +195,7 @@ class Skeleton:
             The name for the new root bone, by default "RootJoint"
         offset : List[float], optional
             Geometric translation to apply, by default [0, 0, 0]
-          
+
         Returns
         -------
         newRoot : Bone
