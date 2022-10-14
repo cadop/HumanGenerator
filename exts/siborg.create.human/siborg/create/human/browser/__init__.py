@@ -1,4 +1,3 @@
-import omni.ui as ui
 from omni.kit.browser.folder.core import FolderBrowserWidget
 from .delegate import AssetDetailDelegate
 from .model import MHAssetBrowserModel
