@@ -19,6 +19,8 @@ tools/*
 link_app.bat
 link_app.sh
 
+/venv/
+
 *.target
 
 exts/siborg.create.human/data/*
