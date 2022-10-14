@@ -6,13 +6,11 @@ from .styles import *
 from . import mh_usd
 
 
-
-
-
 Human = TypeVar('Human')
 
+
 class ParamPanelModel(ui.AbstractItemModel):
-    def __init__(self, mh_call : MHCaller, toggle : ui.SimpleBoolModel, **kwargs):
+    def __init__(self, mh_call: MHCaller, toggle: ui.SimpleBoolModel, **kwargs):
         """Constructs an instance of ParamPanelModel, which stores data for a ParamPanel.
 
         Parameters
@@ -22,8 +20,6 @@ class ParamPanelModel(ui.AbstractItemModel):
         toggle : ui.SimpleBoolModel
             Model to track whether changes should be instant
         """
-
-
 
         super().__init__(**kwargs)
         # Wrapper around Makehuman data (including human data) and functions
@@ -35,10 +31,10 @@ class ParamPanelModel(ui.AbstractItemModel):
         # data for reference in the UI
         self.models = []
 
-    
+
 class ParamPanel(ui.Frame):
     """UI Widget for displaying and modifying human parameters
-    
+
     Attributes
     ----------
     model : ParamPanelModel
@@ -51,7 +47,7 @@ class ParamPanel(ui.Frame):
         Models for each group of parameter sliders
     """
 
-    def __init__(self, model : ParamPanelModel, **kwargs):
+    def __init__(self, model: ParamPanelModel, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly. Values are restricted based on the limits of a particular modifier.
 
         Parameters
@@ -159,7 +155,8 @@ class ParamPanel(ui.Frame):
                 Param("Proportions", human.setBodyProportions),
             )
             # Create a model for storing macro parameter data
-            macro_model = SliderEntryPanelModel(macro_params, self.mh_call, self.toggle)
+            macro_model = SliderEntryPanelModel(
+                macro_params, self.mh_call, self.toggle)
 
             # Separate set of race parameters to also be included in the Macros group
             # TODO make race parameters automatically normalize in UI
@@ -169,7 +166,8 @@ class ParamPanel(ui.Frame):
                 Param("Caucasian", human.setCaucasian),
             )
             # Create a model for storing race parameter data
-            race_model = SliderEntryPanelModel(race_params, self.mh_call, self.toggle)
+            race_model = SliderEntryPanelModel(
+                race_params, self.mh_call, self.toggle)
 
             self.models.append(macro_model)
             self.models.append(race_model)
@@ -203,7 +201,8 @@ class ParamPanel(ui.Frame):
                     # Create a collapseable frame for each modifier group
                     with ui.CollapsableFrame(group.capitalize(), style=styles.frame_style, collapsed=True):
                         # Model to hold panel parameters
-                        model = SliderEntryPanelModel(group_params(group), self.mh_call, self.toggle)
+                        model = SliderEntryPanelModel(
+                            group_params(group), self.mh_call, self.toggle)
                         self.models.append(model)
                         # Create panel of slider entries for modifier group
                         SliderEntryPanel(model)
@@ -220,5 +219,3 @@ class ParamPanel(ui.Frame):
         super().destroy()
         for model in self.models:
             model.destroy()
-
-
