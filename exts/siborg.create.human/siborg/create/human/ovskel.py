@@ -338,3 +338,28 @@ class Skeleton:
 
         # setup rest transforms in joint-local space
         usdSkel.CreateRestTransformsAttr(self.rel_transforms)
+
+    def prepend_root(self, oldRoot: Bone, newroot_name: str = "RootJoint") -> Bone:
+        """Adds a new root bone to the head of a skeleton, ahead of the existing root bone.
+
+        Parameters
+        ----------
+        oldRoot : Bone
+            The original MakeHuman root bone
+        newroot_name : str, optional
+            The name for the new root bone, by default "RootJoint"
+
+        Returns
+        -------
+        newRoot : Bone
+            The new root bone of the Skeleton
+        """
+        # make a "super-root" bone, parent to the root, with identity transforms so
+        # we can abide by Lina Halper's animation retargeting guidelines:
+        # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
+        newRoot = self.addBone(newroot_name, None, "newRoot_head", oldRoot.tailJoint)
+        oldRoot.parent = newRoot
+        newRoot.headPos -= self.offset
+        newRoot.build()
+        newRoot.children.append(oldRoot)
+        return newRoot
