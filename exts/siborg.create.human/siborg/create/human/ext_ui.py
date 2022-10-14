@@ -56,7 +56,6 @@ class MHWindow(ui.Window):
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
-        self.mh_call.filepath = "D:/human.obj"
 
         with self.frame:
             # Widgets are built starting on the right
