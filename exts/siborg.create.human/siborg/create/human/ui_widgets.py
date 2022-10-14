@@ -220,11 +220,6 @@ class SliderEntryPanelModel:
         if self.toggle.get_value_as_bool():
             mh_usd.add_to_scene(self.mh_call)
 
-    # def get_float_model(self, param : Param):
-    #     # TODO add docstring
-    #     index = self.params.index(param)
-    #     return self.float_models[index]
-
     def destroy(self):
         """Destroys the instance of SliderEntryPanelModel. Deletes event
         subscriptions. Important for preventing zombie-UI and unintended behavior
