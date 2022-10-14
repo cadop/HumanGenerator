@@ -15,7 +15,7 @@ class AssetBrowserFrame:
         The widget in which to reflect changes when assets are added 
     """
 
-    def __init__(self, model : MHAssetBrowserModel, **kwargs):
+    def __init__(self, model: MHAssetBrowserModel, **kwargs):
         """Constructs an instance of AssetBrowserFrame. This is a browser that
         displays available Makehuman assets (skeletons/rigs, proxies) and allows
         a user to apply them to the human.
@@ -38,5 +38,4 @@ class AssetBrowserFrame:
         with ui.VStack(spacing=15):
             # Create the widget
             self._widget = FolderBrowserWidget(
-                self.model, detail_delegate=self._delegate, options_menu = self._options_menu
-            )
+                self.model, detail_delegate=self._delegate, options_menu=self._options_menu)
