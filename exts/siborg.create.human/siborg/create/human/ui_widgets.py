@@ -71,9 +71,7 @@ class SliderEntry:
 
     def _build_widget(self):
         """Construct the UI elements"""
-        # TODO Remove width and include height in style
-        with ui.HStack(width=ui.Percent(100), height=0, style=styles.sliderentry_style):
-            # TODO include height and alignment in style
+        with ui.HStack(height=0, style=styles.sliderentry_style):
             ui.Label(
                 self.label,
                 height=15,
@@ -183,8 +181,6 @@ class SliderEntryPanelModel:
         # Set the float model value to the default value of the parameter
         float_model.set_value(param.default)
         # Subscribe to changes in parameter editing
-        # TODO Make option to update human in stage everytime a change is made
-        # TODO Implement viewport for realtime changes
         self.subscriptions.append(
             float_model.subscribe_end_edit_fn(
                 lambda m: self._sanitize_and_run(param, float_model))
@@ -265,7 +261,6 @@ class SliderEntryPanel:
     def _build_widget(self):
         """Construct the UI elements"""
         # Layer widgets on top of a rectangle to create a group frame
-        # TODO add height to style
         with ui.ZStack(style=styles.panel_style, height=0):
             ui.Rectangle(name="group_rect")
             with ui.VStack(name="contents"):
@@ -398,7 +393,6 @@ class DropListModel(ui.AbstractItemModel):
         source : str
             The string returned by the item being dropped. Expected to be a path
         """
-        # TODO determine if this should be moved to a delegate
         self.add_child(source)
 
     def add_child(self, item: str):
@@ -476,33 +470,13 @@ class DropListModel(ui.AbstractItemModel):
         """Gathers all assets (Skeleton/Proxies) from the human, and updates the
         list UI to reflect any changes.
         """
-        # TODO use makehuman internal function to gather proxies
         # Gather all proxies from the human object
-        items = [
-            self.mh_call.human.eyebrowsProxy,
-            self.mh_call.human.eyelashesProxy,
-            self.mh_call.human.eyesProxy,
-            self.mh_call.human.hairProxy,
-            self.mh_call.human.proxy,
-            self.mh_call.human.skeleton,
-        ]
-        # Add clothing from dict
-        items += self.mh_call.human.clothesProxies.values()
+        items = self.mh_call.human.getProxies()
         # Populate the list with non-Nonetype items
-        # TODO change whitespace
         self.children = [DropListItem(i.name, item=i)
                          for i in items if i is not None]
         # Propagate changes to UI
         self._item_changed(None)
-
-    # TODO remove
-    # def drop_accepted(self, url, *args):
-    #     if self.types is None:
-    #         return True
-    #     if os.path.splitext(url)[1] in self.types:
-    #         return True
-    #     else:
-    #         return False
 
 
 class DropListDelegate(ui.AbstractItemDelegate):
@@ -745,7 +719,6 @@ class ParamPanel(ui.Frame):
             + Asian
             + Caucasian
             """
-            # TODO rename to indicate private function
             # Shorten human reference for convenience
             human = self.mh_call.human
 
