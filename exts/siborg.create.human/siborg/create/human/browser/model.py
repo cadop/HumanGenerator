@@ -3,7 +3,7 @@ from typing import List, Union
 import carb.settings
 import omni.kit.commands
 from siborg.create.human.mhcaller import MHCaller
-from siborg.create.human.ui_widgets import DropList, DropListModel
+from siborg.create.human.extension_ui import DropList, DropListModel
 import omni.usd
 from omni.kit.browser.core import DetailItem
 from omni.kit.browser.folder.core import (

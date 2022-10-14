@@ -4,7 +4,7 @@ import omni.ui as ui
 from . import mh_usd
 from . import mhcaller
 from .browser import AssetBrowserFrame
-from .ui_widgets import DropListModel, DropList, ParamPanelModel, ParamPanel
+from .extension_ui import DropListModel, DropList, ParamPanelModel, ParamPanel
 import carb
 from .styles import window_style
 from .browser import MHAssetBrowserModel
