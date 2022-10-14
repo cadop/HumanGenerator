@@ -259,7 +259,7 @@ class Skeleton:
         newRoot.children.append(oldRoot)
         return newRoot
 
-    def _process_bone(self, bone: Bone, path: str) -> None:
+    def _process_bone(self, bone: Bone, path: str, offset: List[float] = [0, 0, 0]) -> None:
         """Get the name, path, relative transform, and bind transform of a joint
         and add its values to the lists of stored values
 
@@ -269,6 +269,8 @@ class Skeleton:
             The bone to process for Usd
         path : str
             Path to the parent of this bone
+        offset : List[float], optional
+            Geometric translation to apply, by default [0, 0, 0]
         """
 
         # sanitize the name for USD paths
@@ -281,7 +283,7 @@ class Skeleton:
 
         # Get matrix for joint transform relative to its parent. Move to offset
         # to match mesh transform in scene
-        relxform = bone.getRelativeMatrix(offsetVect=self.offset)
+        relxform = bone.getRelativeMatrix(offsetVect=offset)
         # Transpose the matrix as USD stores transforms in row-major format
         relxform = relxform.transpose()
         # Convert type for USD and store
@@ -290,7 +292,7 @@ class Skeleton:
 
         # Get matrix for joint transform at rest in global coordinate space. Move
         # to offset to match mesh transform in scene
-        gxform = bone.getRestMatrix(offsetVect=self.offset)
+        gxform = bone.getRestMatrix(offsetVect=offset)
         # Transpose the matrix as USD stores transforms in row-major format
         gxform = gxform.transpose()
         # Convert type for USD and store
@@ -299,13 +301,13 @@ class Skeleton:
 
         # Get matrix which represents a joints transform in its binding position
         # for binding to a mesh. Move to offset to match mesh transform.
-        bxform = bone.getBindMatrix(offsetVect=self.offset)
+        bxform = bone.getBindMatrix(offsetVect=offset)
         # Convert type for USD and store
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
         self.bind_transforms.append(bind_transform)
 
-    def setup_skeleton(self, bone: Bone) -> None:
+    def setup_skeleton(self, bone: Bone, offset: List[float] = [0, 0, 0]) -> None:
         """Traverse the imported skeleton and get the data for each bone for
         adding to the stage
 
@@ -343,4 +345,4 @@ class Skeleton:
                     name = sanitize(neighbor.name)
                     path_queue.append(path + name + "/")
 
-                    self._process_bone(neighbor, path)
+                    self._process_bone(neighbor, path, offset)
