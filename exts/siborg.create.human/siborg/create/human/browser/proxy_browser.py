@@ -34,8 +34,6 @@ class AssetBrowserFrame:
         # Drop down menu to hold options
         self._options_menu = FolderOptionsMenu()
 
-        # TODO does this need to be in a vstack?
-        with ui.VStack(spacing=15):
-            # Create the widget
-            self._widget = FolderBrowserWidget(
-                self.model, detail_delegate=self._delegate, options_menu=self._options_menu)
+        # Build the actual widget
+        self._widget = FolderBrowserWidget(
+            self.model, detail_delegate=self._delegate, options_menu=self._options_menu)
