@@ -3,7 +3,6 @@ import siborg.create.human
 import omni.ui as ui
 from . import mh_usd
 from . import mhcaller
-from .human_ui import ParamPanel, ParamPanelModel
 from .browser import AssetBrowserFrame
 from .ui_widgets import DropListModel, DropList
 import carb
