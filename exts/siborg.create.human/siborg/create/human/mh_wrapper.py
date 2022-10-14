@@ -1,5 +1,3 @@
-import numpy as np
-from typing import List, Tuple
 import makehuman
 
 # Makehuman loads most modules by manipulating the system path, so we have to
