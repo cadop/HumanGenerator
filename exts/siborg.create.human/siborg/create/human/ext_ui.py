@@ -56,27 +56,27 @@ class MHWindow(ui.Window):
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
-
+        spacer_width = 5
         with self.frame:
             # Widgets are built starting on the right
             with ui.HStack(style=window_style):
                 with ui.ZStack(width=0):
                     # Draggable splitter
-                    with ui.Placer(offset_x=800, draggable=True, drag_axis=ui.Axis.X):
+                    with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=5, name="splitter")
                     with ui.HStack():
                         # Left-most panel is a browser for MakeHuman assets. It includes
                         # a reference to the list of applied proxies so that an update
                         # can be triggered when new assets are added
                         self.browser = AssetBrowserFrame(self.browser_model)
-                        ui.Spacer(width=5)
+                        ui.Spacer(width=spacer_width)
                 with ui.ZStack(width=0):
                     # Draggable splitter
-                    with ui.Placer(offset_x=300, draggable=True, drag_axis=ui.Axis.X):
+                    with ui.Placer(offset_x=self.frame.computed_content_width/4, draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=5, name="splitter")
                     with ui.HStack():
                         self.param_panel = ParamPanel(self.param_model)
-                        ui.Spacer(width=5)
+                        ui.Spacer(width=spacer_width)
                 with ui.VStack():
                     self.proxy_list = DropList("Currently Applied Assets", self.list_model)
                     with ui.HStack(height=0):
