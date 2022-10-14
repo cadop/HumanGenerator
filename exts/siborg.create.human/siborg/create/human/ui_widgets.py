@@ -1,15 +1,8 @@
-from xml.sax.xmlreader import AttributesImpl
-import carb
-from siborg.create.human.mhcaller import MHCaller
 import omni.ui as ui
-import omni
-import os
-from typing import List, Tuple, TypeVar, Union
+from typing import List, TypeVar, Union
 from dataclasses import dataclass
-import carb
-from . import styles, mh_usd, ui_widgets
+from . import styles, mh_usd
 from .mhcaller import MHCaller
-# TODO remove unused imports
 
 
 class SliderEntry:
