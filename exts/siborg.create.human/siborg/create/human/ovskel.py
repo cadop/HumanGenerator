@@ -363,3 +363,49 @@ class Skeleton:
         newRoot.build()
         newRoot.children.append(oldRoot)
         return newRoot
+
+    def _process_bone(self, bone: Bone, path: str) -> None:
+        """Get the name, path, relative transform, and bind transform of a joint
+        and add its values to the lists of stored values
+
+        Parameters
+        ----------
+        bone : Bone
+            The Makehuman bone to process for Usd
+        path : str
+            Path to the parent of this bone
+        """
+
+        # sanitize the name for USD paths
+        name = sanitize(bone.name)
+        path += name
+        self.joint_paths.append(path)
+
+        # store original name for later joint weighting
+        self.joint_names.append(bone.name)
+
+        # Get matrix for joint transform relative to its parent. Move to offset
+        # to match mesh transform in scene
+        relxform = bone.getRelativeMatrix(offsetVect=self.offset)
+        # Transpose the matrix as USD stores transforms in row-major format
+        relxform = relxform.transpose()
+        # Convert type for USD and store
+        relative_transform = Gf.Matrix4d(relxform.tolist())
+        self.rel_transforms.append(relative_transform)
+
+        # Get matrix for joint transform at rest in global coordinate space. Move
+        # to offset to match mesh transform in scene
+        gxform = bone.getRestMatrix(offsetVect=self.offset)
+        # Transpose the matrix as USD stores transforms in row-major format
+        gxform = gxform.transpose()
+        # Convert type for USD and store
+        global_transform = Gf.Matrix4d(gxform.tolist())
+        self.global_transforms.append(global_transform)
+
+        # Get matrix which represents a joints transform in its binding position
+        # for binding to a mesh. Move to offset to match mesh transform.
+        bxform = bone.getBindMatrix(offsetVect=self.offset)
+        # Convert type for USD and store
+        bind_transform = Gf.Matrix4d(bxform.tolist())
+        # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
+        self.bind_transforms.append(bind_transform)
