@@ -61,7 +61,6 @@ class OVSkel:
         self.scale = scale
         self.offset = offset
 
-
     def setup_skeleton(self, bone: Bone) -> None:
         """Traverse the imported skeleton and get the data for each bone for
         adding to the stage
@@ -300,7 +299,7 @@ class Skeleton:
         """
         _bone = Bone(self, name, parent, head, tail)
         # HACK Bone() creates a new Bone for _mh_bone by default. How can we
-        # avoid doing this twice without revealing it to the user? 
+        # avoid doing this twice without revealing it to the user?
         _bone._mh_bone = self._mh_skeleton.addBone(name, parent, head, tail)
         return _bone
 
