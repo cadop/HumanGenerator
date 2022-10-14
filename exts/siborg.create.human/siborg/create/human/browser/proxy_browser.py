@@ -12,7 +12,7 @@ class AssetBrowserFrame:
     mhcaller : MHCaller
         Wrapper object for Makehuman functions
     list_widget : DropList
-        The widget in which to reflect changes when assets are added 
+        The widget in which to reflect changes when assets are added
     """
 
     def __init__(self, model: MHAssetBrowserModel, **kwargs):
@@ -22,7 +22,8 @@ class AssetBrowserFrame:
 
         Parameters
         ----------
-        # TODO
+        model : MHAssetBrowserModel
+            A model to hold browser data
         """
         self.model = model
         self.build_widget()
