@@ -339,4 +339,4 @@ class Skeleton:
                     name = sanitize(neighbor.name)
                     path_queue.append(path + name + "/")
 
-                    self.process_bone(neighbor, path)
+                    self._process_bone(neighbor, path)
