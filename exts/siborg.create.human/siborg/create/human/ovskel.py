@@ -61,41 +61,6 @@ class OVSkel:
         self.scale = scale
         self.offset = offset
 
-    def add_to_stage(self, stage: Usd.Stage, stage_root_path: str, new_root: bool = False):
-        """Adds a skeleton to the Usd stage using data from the MakeHuman skeleton
-
-        Parameters
-        ----------
-        stage : Usd.Stage
-            Stage in which to create skeleton prims
-        stage_root_path : str
-            Path to the root prim in the stage
-        new_root : bool, optional
-            Whether or not to prepend a new root at the origin, by default False
-        """
-        root_bone = self.skel_in.roots[0]
-
-        if new_root:
-            root_bone = self.prepend_root(root_bone)
-
-        self.setup_skeleton(root_bone)
-
-        skel_root_path = stage_root_path + self.name
-        skeleton_path = skel_root_path + "/Skeleton"
-
-        skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
-        usdSkel = UsdSkel.Skeleton.Define(stage, skeleton_path)
-
-        # add joints to skeleton by path
-        attribute = usdSkel.GetJointsAttr()
-        # exclude root
-        attribute.Set(self.joint_paths)
-
-        # Add bind transforms to skeleton
-        usdSkel.CreateBindTransformsAttr(self.bind_transforms)
-
-        # setup rest transforms in joint-local space
-        usdSkel.CreateRestTransformsAttr(self.rel_transforms)
 
     def setup_skeleton(self, bone: Bone) -> None:
         """Traverse the imported skeleton and get the data for each bone for
@@ -337,3 +302,39 @@ class Skeleton:
         # avoid doing this twice without revealing it to the user? 
         _bone._mh_bone = self._mh_skeleton.addBone(name, parent, head, tail)
         return _bone
+
+    def add_to_stage(self, stage: Usd.Stage, stage_root_path: str, new_root: bool = False):
+        """Adds the skeleton to the USD stage
+
+        Parameters
+        ----------
+        stage : Usd.Stage
+            Stage in which to create skeleton prims
+        stage_root_path : str
+            Path to the root prim in the stage
+        new_root : bool, optional
+            Whether or not to prepend a new root at the origin, by default False
+        """
+        root_bone = self.skel_in.roots[0]
+
+        if new_root:
+            root_bone = self.prepend_root(root_bone)
+
+        self.setup_skeleton(root_bone)
+
+        skel_root_path = stage_root_path + self.name
+        skeleton_path = skel_root_path + "/Skeleton"
+
+        skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
+        usdSkel = UsdSkel.Skeleton.Define(stage, skeleton_path)
+
+        # add joints to skeleton by path
+        attribute = usdSkel.GetJointsAttr()
+        # exclude root
+        attribute.Set(self.joint_paths)
+
+        # Add bind transforms to skeleton
+        usdSkel.CreateBindTransformsAttr(self.bind_transforms)
+
+        # setup rest transforms in joint-local space
+        usdSkel.CreateRestTransformsAttr(self.rel_transforms)
