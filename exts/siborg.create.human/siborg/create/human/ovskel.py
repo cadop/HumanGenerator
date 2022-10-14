@@ -105,7 +105,7 @@ class Bone:
         Parameters
         ----------
         offset : List[float], optional
-            _description_, by default [0, 0, 0]
+            Geometric translation to apply, by default [0, 0, 0]
 
         Returns
         -------
@@ -120,7 +120,7 @@ class Bone:
         Parameters
         ----------
         offset : List[float], optional
-            _description_, by default [0, 0, 0]
+            Geometric translation to apply, by default [0, 0, 0]
 
         Returns
         -------
@@ -135,7 +135,7 @@ class Bone:
         Parameters
         ----------
         offset : List[float], optional
-            _description_, by default [0, 0, 0]
+            Geometric translation to apply, by default [0, 0, 0]
 
         Returns
         -------
@@ -242,8 +242,8 @@ class Skeleton:
         newroot_name : str, optional
             The name for the new root bone, by default "RootJoint"
         offset : List[float], optional
-            _description_, by default [0, 0, 0]
-            
+            Geometric translation to apply, by default [0, 0, 0]
+          
         Returns
         -------
         newRoot : Bone
@@ -313,6 +313,8 @@ class Skeleton:
         ----------
         bone : Bone
             The root bone at which to start traversing the imported skeleton.
+        offset : List[float], optional
+            Geometric translation to apply, by default [0, 0, 0]
         """
         # Setup a breadth-first search of our skeleton as a tree
         # Use the new root of the imported skeleton as the root bone of our tree
