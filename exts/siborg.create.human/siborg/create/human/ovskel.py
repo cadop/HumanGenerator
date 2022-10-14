@@ -2,7 +2,7 @@ from pxr import Usd, Gf, UsdSkel
 from typing import List
 import numpy as np
 from .shared import sanitize
-from .mh_wrapper import skeleton
+from .mh_wrapper import skeleton as mhskel
 
 
 class OVSkel:
@@ -199,7 +199,7 @@ class Bone:
         tail : str
             Name of the tail joint
         """
-        self._mh_bone = skeleton.Bone(skel, name, parent, head, tail)
+        self._mh_bone = mhskel.Bone(skel, name, parent, head, tail)
 
         self.name = name
         self.skeleton = skel
@@ -274,8 +274,9 @@ class Skeleton:
         name : str, optional
             Name of the skeleton, by default "Skeleton"
         """
-        self._mh_skeleton = skeleton.Skeleton(name)
-        self.roots = self._mh_skeleton.roots
+        _mh_skeleton = mhskel.Skeleton(name)
+        self.roots = _mh_skeleton.roots
+        self.joint_paths = _mh_skeleton.joint_paths
         self.name = name
 
     def addBone(self, name: str, parent: str, head: str, tail: str) -> Bone:
@@ -315,7 +316,7 @@ class Skeleton:
         new_root : bool, optional
             Whether or not to prepend a new root at the origin, by default False
         """
-        root_bone = self.skel_in.roots[0]
+        root_bone = self.roots[0]
 
         if new_root:
             root_bone = self.prepend_root(root_bone)
