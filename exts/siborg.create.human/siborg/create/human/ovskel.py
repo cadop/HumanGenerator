@@ -264,7 +264,7 @@ class Skeleton:
         Parameters
         ----------
         bone : Bone
-            The Makehuman bone to process for Usd
+            The bone to process for Usd
         path : str
             Path to the parent of this bone
         """
