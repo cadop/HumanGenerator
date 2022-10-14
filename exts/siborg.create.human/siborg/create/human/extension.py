@@ -89,7 +89,8 @@ class MHWindow(ui.Window):
                         self.param_panel = ParamPanel(self.param_model)
                         ui.Spacer(width=spacer_width)
                 with ui.VStack():
-                    self.proxy_list = DropList("Currently Applied Assets", self.list_model)
+                    self.proxy_list = DropList(
+                        "Currently Applied Assets", self.list_model)
                     with ui.HStack(height=0):
                         # Toggle whether changes should propagate instantly
                         ui.Label("Update Instantly")
@@ -110,5 +111,4 @@ class MHWindow(ui.Window):
                     ui.Button(
                         "Bake and Rig",
                         height=50,
-                        clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True),
-                    )
+                        clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True))
