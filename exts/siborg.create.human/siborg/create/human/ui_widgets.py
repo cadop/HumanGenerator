@@ -2,7 +2,7 @@ import omni.ui as ui
 from typing import List, TypeVar, Union
 from dataclasses import dataclass
 from . import styles, mh_usd
-from .mhcaller import MHCaller
+from .mhcaller import MHCaller, modifier_image
 
 
 class SliderEntry:
