@@ -8,6 +8,7 @@ import carb
 from .styles import window_style
 from .browser import MHAssetBrowserModel
 
+
 class MHWindow(ui.Window):
     """
     Main UI window. Contains all UI widgets. Extends omni.ui.Window.
@@ -103,7 +104,9 @@ class MHWindow(ui.Window):
                     )
 
     def new_human(self):
-        """Creates a new human in the stage. Makes calls to the Makehuman function wrapper MHCaller for resetting the human parameters and assets as well as flagging the human for renaming. Then creates a new human in the stage with the reset data. 
+        """Creates a new human in the stage. Makes calls to the Makehuman function wrapper MHCaller for resetting the
+        human parameters and assets as well as flagging the human for renaming. Then creates a new human in the stage
+        with the reset data.
         """
         # Reset the human object in the makehuman wrapper. Also flags the human for
         # name change to avoid overwriting existing humans
