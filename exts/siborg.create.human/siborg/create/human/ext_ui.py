@@ -3,7 +3,8 @@ from . import mh_usd
 from . import mhcaller
 from .human_ui import ParamPanel, ParamPanelModel
 from .browser import AssetBrowserFrame
-from .ui_widgets import *
+from .ui_widgets import DropListModel, DropList
+import carb
 from .styles import window_style
 from .browser import MHAssetBrowserModel
 
