@@ -61,114 +61,7 @@ class OVSkel:
         self.scale = scale
         self.offset = offset
 
-    def setup_skeleton(self, bone: Bone) -> None:
-        """Traverse the imported skeleton and get the data for each bone for
-        adding to the stage
 
-        Parameters
-        ----------
-        bone : Bone
-            The root bone at which to start traversing the imported skeleton.
-        """
-        # Setup a breadth-first search of our skeleton as a tree
-        # Use the new root of the imported skeleton as the root bone of our tree
-
-        visited = []  # List to keep track of visited bones.
-        queue = []  # Initialize a queue
-        path_queue = []  # Keep track of paths in a parallel queue
-
-        visited.append(bone)
-        queue.append(bone)
-        name = sanitize(bone.name)
-        path_queue.append(name + "/")
-
-        # joints are relative to the root, so we don't prepend a path for the root
-        self.process_bone(bone, "")
-
-        # Traverse skeleton (breadth-first) and store joint data
-        while queue:
-            v = queue.pop(0)
-            path = path_queue.pop(0)
-
-            for neighbor in v.children:
-                if neighbor not in visited:
-                    visited.append(neighbor)
-                    queue.append(neighbor)
-                    name = sanitize(neighbor.name)
-                    path_queue.append(path + name + "/")
-
-                    self.process_bone(neighbor, path)
-
-    def prepend_root(self, oldRoot: Bone, newroot_name: str = "RootJoint") -> Bone:
-        """Adds a new root bone to the head of a skeleton, ahead of the existing root bone.
-
-        Parameters
-        ----------
-        oldRoot : Bone
-            The original MakeHuman root bone
-        newroot_name : str, optional
-            The name for the new root bone, by default "RootJoint"
-
-        Returns
-        -------
-        newRoot : Bone
-            The new root bone of the Skeleton
-        """
-        # make a "super-root" bone, parent to the root, with identity transforms so
-        # we can abide by Lina Halper's animation retargeting guidelines:
-        # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
-        newRoot = self.skel_in.addBone(newroot_name, None, "newRoot_head", oldRoot.tailJoint)
-        oldRoot.parent = newRoot
-        newRoot.headPos -= self.offset
-        newRoot.build()
-        newRoot.children.append(oldRoot)
-        return newRoot
-
-    def process_bone(self, bone: Bone, path: str) -> None:
-        """Get the name, path, relative transform, and bind transform of a joint
-        and add its values to the lists of stored values
-
-        Parameters
-        ----------
-        bone : Bone
-            The Makehuman bone to process for Usd
-        path : str
-            Path to the parent of this bone
-        """
-
-        # sanitize the name for USD paths
-        name = sanitize(bone.name)
-        path += name
-        self.joint_paths.append(path)
-
-        # store original name for later joint weighting
-        self.joint_names.append(bone.name)
-
-        # Get matrix for joint transform relative to its parent. Move to offset
-        # to match mesh transform in scene
-        relxform = bone.getRelativeMatrix(offsetVect=self.offset)
-        # Transpose the matrix as USD stores transforms in row-major format
-        relxform = relxform.transpose()
-        # Convert type for USD and store
-        relative_transform = Gf.Matrix4d(relxform.tolist())
-        self.rel_transforms.append(relative_transform)
-
-        # Get matrix for joint transform at rest in global coordinate space. Move
-        # to offset to match mesh transform in scene
-        gxform = bone.getRestMatrix(offsetVect=self.offset)
-        # Transpose the matrix as USD stores transforms in row-major format
-        gxform = gxform.transpose()
-        # Convert type for USD and store
-        global_transform = Gf.Matrix4d(gxform.tolist())
-        self.global_transforms.append(global_transform)
-
-        # Get matrix which represents a joints transform in its binding position
-        # for binding to a mesh. Move to offset to match mesh transform.
-        bxform = bone.getBindMatrix(offsetVect=self.offset)
-        # Convert type for USD and store
-        bind_transform = Gf.Matrix4d(bxform.tolist())
-        # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
-        self.bind_transforms.append(bind_transform)
 
 
 class Bone:
@@ -409,3 +302,41 @@ class Skeleton:
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
         self.bind_transforms.append(bind_transform)
+
+    def setup_skeleton(self, bone: Bone) -> None:
+        """Traverse the imported skeleton and get the data for each bone for
+        adding to the stage
+
+        Parameters
+        ----------
+        bone : Bone
+            The root bone at which to start traversing the imported skeleton.
+        """
+        # Setup a breadth-first search of our skeleton as a tree
+        # Use the new root of the imported skeleton as the root bone of our tree
+
+        visited = []  # List to keep track of visited bones.
+        queue = []  # Initialize a queue
+        path_queue = []  # Keep track of paths in a parallel queue
+
+        visited.append(bone)
+        queue.append(bone)
+        name = sanitize(bone.name)
+        path_queue.append(name + "/")
+
+        # joints are relative to the root, so we don't prepend a path for the root
+        self.process_bone(bone, "")
+
+        # Traverse skeleton (breadth-first) and store joint data
+        while queue:
+            v = queue.pop(0)
+            path = path_queue.pop(0)
+
+            for neighbor in v.children:
+                if neighbor not in visited:
+                    visited.append(neighbor)
+                    queue.append(neighbor)
+                    name = sanitize(neighbor.name)
+                    path_queue.append(path + name + "/")
+
+                    self.process_bone(neighbor, path)
