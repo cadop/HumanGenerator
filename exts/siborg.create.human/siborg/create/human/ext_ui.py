@@ -1,4 +1,5 @@
 import omni.ui as ui
+from . import mh_usd
 from . import mhcaller
 from .human_ui import ParamPanel, ParamPanelModel
 from .browser import AssetBrowserFrame
@@ -18,7 +19,6 @@ class MHWindow(ui.Window):
     browser: AssetBrowserFrame
         A browser for MakeHuman assets, including clothing, hair, and skeleton rigs.
     """
-    
 
     def __init__(self, *args, **kwargs):
         """Constructs an instance of MHWindow"""
@@ -27,7 +27,7 @@ class MHWindow(ui.Window):
 
         # Create instance of manager class
         self.mh_call = mhcaller.MHCaller()
-        
+
         # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
 
@@ -54,21 +54,14 @@ class MHWindow(ui.Window):
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
-
-
-
         self.mh_call.filepath = "D:/human.obj"
 
-
-
-        
         with self.frame:
-
             # Widgets are built starting on the right
-            with ui.HStack(style = window_style):
+            with ui.HStack(style=window_style):
                 with ui.ZStack(width=0):
                     # Draggable splitter
-                    with ui.Placer(offset_x=800,draggable=True, drag_axis=ui.Axis.X):
+                    with ui.Placer(offset_x=800, draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=5, name="splitter")
                     with ui.HStack():
                         # Left-most panel is a browser for MakeHuman assets. It includes
@@ -78,7 +71,7 @@ class MHWindow(ui.Window):
                         ui.Spacer(width=5)
                 with ui.ZStack(width=0):
                     # Draggable splitter
-                    with ui.Placer(offset_x=300,draggable=True, drag_axis=ui.Axis.X):
+                    with ui.Placer(offset_x=300, draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=5, name="splitter")
                     with ui.HStack():
                         self.param_panel = ParamPanel(self.param_model)
@@ -120,8 +113,6 @@ class MHWindow(ui.Window):
         self.param_panel.reset()
         # Add the new, now reset human to the scene
         mh_usd.add_to_scene(self.mh_call)
-
-
 
     # Properly destroying UI elements and references prevents 'Zombie UI'
     # (abandoned objects that interfere with Kit)
