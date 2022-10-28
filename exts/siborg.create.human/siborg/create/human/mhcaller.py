@@ -125,18 +125,6 @@ class MHCaller:
         # self.human.setSkeleton(self.base_skel)
         self.human.applyAllTargets()
 
-    def set_age(self, age : float):
-        """Set human age, safety checking that it's within an acceptable range
-
-        Parameters
-        ----------
-        age : float
-            Desired age in years
-        """
-        if not (age > 1 and age < 89):
-            return
-        self.human.setAgeYears(age)
-
     @property
     def objects(self):
         """List of objects attached to the human.
