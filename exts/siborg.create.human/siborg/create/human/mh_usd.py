@@ -121,9 +121,9 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
         UsdGeom.Xform.Define(stage, rootPath)
 
     if mhskel and add_skeleton:
-        update_skeleton(cur_human, stage, mhskel, offset)
+        pose_transforms = get_pose(cur_human, stage, mhskel, offset)
         # Create the USD skeleton in our stage using the mhskel data
-        (usdSkel, rootPath, joint_names, joint_paths) = setup_skeleton(rootPath, 
+        (usdSkel, rootPath, joint_names, joint_paths, rest_transforms) = setup_skeleton(rootPath, 
                                                                         stage, 
                                                                         mhskel, 
                                                                         offset
@@ -133,6 +133,31 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
         cur_human.skel_root_path = rootPath
         cur_human.joint_names = joint_names
         cur_human.joint_paths = joint_paths
+
+        # Check if there is an existing SkelAnimation under the skeleton
+        skelroot = stage.GetPrimAtPath(cur_human.skel_root_path)
+        skeletons = [x for x in skelroot.GetChildren() if x.GetTypeName() =='Skeleton']
+        # TODO assert that there is only one skeleton
+        if len(skeletons) > 0:
+            skel_children = skeletons[0].GetChildren()
+        else:
+            skel_children = []
+
+        animations = [x for x in skel_children if x.GetTypeName() =='SkelAnimation']
+        # TODO assert that there is only one animation
+        if len(animations) > 0:
+            animation = UsdSkel.Animation(animations[0])
+            
+            pose_np = np.array(pose_transforms)
+            rest_np = np.array(rest_transforms)
+
+            rest_np[:,0:3,0:3] = pose_np[:,0:3,0:3]
+
+            new_rest = Vt.Matrix4dArray([Gf.Matrix4d(x.tolist()) for x in rest_np])
+
+            animation.SetTransforms(rest_transforms)
+
+        
 
         # delete mesh geometry not previously in the skelroot
 
@@ -551,7 +576,6 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     rel_transforms = []
     global_transforms = []
     bind_transforms = []
-    matrix_transforms = []
 
     # Process each node individually
     def process_node(node, path):
@@ -603,16 +627,6 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
         bind_transforms.append(bind_transform)
-
-        # Get matrix which represents a joints transform in its current position
-        matxform = node.matPose
-        # Move to offset to match mesh transform.
-        matxform[:3,3] += offset
-        # Transpose the matrix as USD stores transforms in row-major format
-        matxform = matxform.transpose()
-        # Convert type for USD and store
-        matrix_transform = Gf.Matrix4d(matxform.tolist())
-        matrix_transforms.append(matrix_transform)
 
 
     # TODO Move below super-root code
@@ -677,10 +691,10 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     # setup rest transforms in joint-local space
     usdSkel.CreateRestTransformsAttr(rel_transforms)
 
-    return usdSkel, skel_root_path, joint_names, joint_paths
+    return usdSkel, skel_root_path, joint_names, joint_paths, rel_transforms
 
-def update_skeleton(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
-    '''Update the skeleton in makehuman to match the current pose of the human in the scene'''
+def get_pose(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
+    '''Get the rotations of the skeleton joints at the current frame'''
 
     if not human.skel_root_path:
         return
@@ -695,12 +709,8 @@ def update_skeleton(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, off
     if usd_skel:
         skel_query = skel_cache.GetSkelQuery(UsdSkel.Skeleton(usd_skel))
         transforms = skel_query.ComputeJointLocalTransforms(time_code)
-        # Convert to numpy array
-        transforms = np.array(transforms)
-        # Transpose to match makehuman's column-major format
-        # transforms = transforms.transpose()
-        # Apply pose to skeleton
-        skeleton.setPose(transforms)
+        translates, rotations, scales = UsdSkel.DecomposeTransforms(transforms)
+        return transforms
         
 
 
