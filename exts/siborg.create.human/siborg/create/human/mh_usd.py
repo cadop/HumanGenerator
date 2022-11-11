@@ -121,26 +121,25 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
         UsdGeom.Xform.Define(stage, rootPath)
 
     if mhskel and add_skeleton:
-        # Only redefine a skeleton if it doesn't exist 
-        if not cur_human.usdSkel:
-            # Create the USD skeleton in our stage using the mhskel data
-            (usdSkel, rootPath, joint_names, joint_paths) = setup_skeleton(rootPath, 
-                                                                            stage, 
-                                                                            mhskel, 
-                                                                            offset
-                                                                           )
+        #TODO update MH stored skeleton pose so that it matches the USD skeleton pose
+        # Create the USD skeleton in our stage using the mhskel data
+        (usdSkel, rootPath, joint_names, joint_paths) = setup_skeleton(rootPath, 
+                                                                        stage, 
+                                                                        mhskel, 
+                                                                        offset
+                                                                        )
 
-            cur_human.usdSkel = usdSkel
-            cur_human.skel_root_path = rootPath
-            cur_human.joint_names = joint_names
-            cur_human.joint_paths = joint_paths
+        cur_human.usdSkel = usdSkel
+        cur_human.skel_root_path = rootPath
+        cur_human.joint_names = joint_names
+        cur_human.joint_paths = joint_paths
 
-            # delete mesh geometry not previously in the skelroot
+        # delete mesh geometry not previously in the skelroot
 
-            for path in cur_human.usd_mesh_paths:
-                prim = stage.GetPrimAtPath(path)
-                if prim.IsValid():
-                    stage.RemovePrim(path)
+        for path in cur_human.usd_mesh_paths:
+            prim = stage.GetPrimAtPath(path)
+            if prim.IsValid():
+                stage.RemovePrim(path)
 
         usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
