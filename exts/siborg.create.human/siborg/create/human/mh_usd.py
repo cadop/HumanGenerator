@@ -612,14 +612,14 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     # we can abide by Lina Halper's animation retargeting guidelines:
     # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
     # TODO encapsulate in scope for clarity
-    originalRoot = skeleton.roots[0]
-    newRoot = skeleton.addBone(
-        "RootJoint", None, "newRoot_head", originalRoot.tailJoint
-    )
-    originalRoot.parent = newRoot
-    newRoot.headPos -= offset
-    newRoot.build()
-    newRoot.children.append(originalRoot)
+    # originalRoot = skeleton.roots[0]
+    # newRoot = skeleton.addBone(
+    #     "RootJoint", None, "newRoot_head", originalRoot.tailJoint
+    # )
+    # originalRoot.parent = newRoot
+    # newRoot.headPos -= offset
+    # newRoot.build()
+    # newRoot.children.append(originalRoot)
 
     # Setup a breadth-first search of our skeleton as a tree
     # TODO encapsulate in scope for clarity
