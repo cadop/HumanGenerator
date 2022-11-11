@@ -170,7 +170,7 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
 
         # Create bindings between meshes and the skeleton. Returns a list of
         # bindings the length of the number of meshes
-        bindings = setup_bindings(usd_mesh_paths, stage, cur_human.usdSkel)
+        bindings = setup_bindings(usd_mesh_paths, stage, cur_human.usdSkel, joint_paths)
 
         # Setup weights for corresponding mh_meshes (which hold the data) and
         # bindings (which link USD_meshes to the skeleton)
@@ -332,7 +332,7 @@ def calculate_influences(mh_mesh: Object3D, joint_names: List[str]):
     return indices, weights
 
 
-def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Skeleton):
+def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Skeleton, joint_tokens):
     """Setup bindings between meshes in the USD scene and the skeleton
 
     Parameters
@@ -372,6 +372,13 @@ def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Sk
             binding = UsdSkel.BindingAPI.Apply(prim)
             # Create a relationship between the binding and the skeleton
             binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+            # Create a skeleton animation
+            anim = UsdSkel.Animation.Define(stage, skeleton.GetPath().AppendChild("Anim"))
+            # Create a relationship between the binding and the skeleton animation
+            binding.CreateSkeletonRel().SetTargets([anim.GetPrim().GetPath()])
+
+            anim.GetJointsAttr().Set(joint_tokens)
+
 
         # Add the binding to the list to return
         bindings.append(binding)
