@@ -121,7 +121,7 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
         UsdGeom.Xform.Define(stage, rootPath)
 
     if mhskel and add_skeleton:
-        #TODO update MH stored skeleton pose so that it matches the USD skeleton pose
+        update_skeleton(cur_human, stage, mhskel, offset)
         # Create the USD skeleton in our stage using the mhskel data
         (usdSkel, rootPath, joint_names, joint_paths) = setup_skeleton(rootPath, 
                                                                         stage, 
@@ -551,6 +551,7 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     rel_transforms = []
     global_transforms = []
     bind_transforms = []
+    matrix_transforms = []
 
     # Process each node individually
     def process_node(node, path):
@@ -602,6 +603,17 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
         bind_transforms.append(bind_transform)
+
+        # Get matrix which represents a joints transform in its current position
+        matxform = node.matPose
+        # Move to offset to match mesh transform.
+        matxform[:3,3] += offset
+        # Transpose the matrix as USD stores transforms in row-major format
+        matxform = matxform.transpose()
+        # Convert type for USD and store
+        matrix_transform = Gf.Matrix4d(matxform.tolist())
+        matrix_transforms.append(matrix_transform)
+
 
     # TODO Move below super-root code
     visited = []  # List to keep track of visited nodes.
@@ -668,8 +680,28 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     return usdSkel, skel_root_path, joint_names, joint_paths
 
 def update_skeleton(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
-    
-    pass
+    '''Update the skeleton in makehuman to match the current pose of the human in the scene'''
+
+    if not human.skel_root_path:
+        return
+
+    # Get USD skeleton cache
+    skel_cache = UsdSkel.Cache()
+
+    # Get current time code
+    time_code = Usd.TimeCode.Default()
+
+    usd_skel = stage.GetPrimAtPath(human.skel_root_path+"/Skeleton")
+    if usd_skel:
+        skel_query = skel_cache.GetSkelQuery(UsdSkel.Skeleton(usd_skel))
+        transforms = skel_query.ComputeJointLocalTransforms(time_code)
+        # Convert to numpy array
+        transforms = np.array(transforms)
+        # Transpose to match makehuman's column-major format
+        # transforms = transforms.transpose()
+        # Apply pose to skeleton
+        skeleton.setPose(transforms)
+        
 
 
 def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
