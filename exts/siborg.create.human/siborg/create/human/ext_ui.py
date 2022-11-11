@@ -99,7 +99,7 @@ class MHWindow(ui.Window):
                     ui.Button(
                         "Update Meshes in Scene",
                         height=50,
-                        clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call),
+                        clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True),
                     )
                     # Apply skeleton
                     ui.Button(
