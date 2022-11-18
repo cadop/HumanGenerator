@@ -91,8 +91,6 @@ class MHApp(object):
         proxies. Does not reset the skeleton. Also flags the human as having been
         reset so that the new name can be created when adding to the Usd stage.
         """
-        self.is_reset = True
-        self.name = self.default_name
         self.human.resetMeshValues()
         # Restore eyes
         # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
