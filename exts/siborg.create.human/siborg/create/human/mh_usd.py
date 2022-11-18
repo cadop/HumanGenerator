@@ -134,28 +134,28 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
         cur_human.joint_names = joint_names
         cur_human.joint_paths = joint_paths
 
-        # Check if there is an existing SkelAnimation under the skeleton
-        skelroot = stage.GetPrimAtPath(cur_human.skel_root_path)
-        skeletons = [x for x in skelroot.GetChildren() if x.GetTypeName() =='Skeleton']
-        # TODO assert that there is only one skeleton
-        if len(skeletons) > 0:
-            skel_children = skeletons[0].GetChildren()
-        else:
-            skel_children = []
+        # # Check if there is an existing SkelAnimation under the skeleton
+        # skelroot = stage.GetPrimAtPath(cur_human.skel_root_path)
+        # skeletons = [x for x in skelroot.GetChildren() if x.GetTypeName() =='Skeleton']
+        # # TODO assert that there is only one skeleton
+        # if len(skeletons) > 0:
+        #     skel_children = skeletons[0].GetChildren()
+        # else:
+        #     skel_children = []
 
-        animations = [x for x in skel_children if x.GetTypeName() =='SkelAnimation']
-        # TODO assert that there is only one animation
-        if len(animations) > 0:
-            animation = UsdSkel.Animation(animations[0])
+        # animations = [x for x in skel_children if x.GetTypeName() =='SkelAnimation']
+        # # TODO assert that there is only one animation
+        # if len(animations) > 0:
+        #     animation = UsdSkel.Animation(animations[0])
             
-            pose_np = np.array(pose_transforms)
-            rest_np = np.array(rest_transforms)
+        #     pose_np = np.array(pose_transforms)
+        #     rest_np = np.array(rest_transforms)
 
-            rest_np[:,0:3,0:3] = pose_np[:,0:3,0:3]
+        #     rest_np[:,0:3,0:3] = pose_np[:,0:3,0:3]
 
-            new_rest = Vt.Matrix4dArray([Gf.Matrix4d(x.tolist()) for x in rest_np])
+        #     new_rest = Vt.Matrix4dArray([Gf.Matrix4d(x.tolist()) for x in rest_np])
 
-            animation.SetTransforms(rest_transforms)
+        #     animation.SetTransforms(rest_transforms)
 
         
 
@@ -373,11 +373,11 @@ def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Sk
             # Create a relationship between the binding and the skeleton
             binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
             # Create a skeleton animation
-            anim = UsdSkel.Animation.Define(stage, skeleton.GetPath().AppendChild("Anim"))
-            # Create a relationship between the binding and the skeleton animation
-            binding.CreateSkeletonRel().SetTargets([anim.GetPrim().GetPath()])
+            # anim = UsdSkel.Animation.Define(stage, skeleton.GetPath().AppendChild("Anim"))
+            # # Create a relationship between the binding and the skeleton animation
+            # binding.CreateSkeletonRel().SetTargets([anim.GetPrim().GetPath()])
 
-            anim.GetJointsAttr().Set(joint_tokens)
+            # anim.GetJointsAttr().Set(joint_tokens)
 
 
         # Add the binding to the list to return
