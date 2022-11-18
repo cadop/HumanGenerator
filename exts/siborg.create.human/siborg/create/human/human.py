@@ -57,6 +57,20 @@ class Human:
         # Import makehuman objects into the scene
         self.import_meshes(prim_path, stage)
 
+    def update_in_scene(self, prim_path: str):
+        """Updates the human in the scene. Writes the properties of the human to the
+        human prim and imports the human and proxy meshes. This is called when the
+        human is updated"""
+
+        # Get the current stage
+        stage = omni.usd.get_context().get_stage()
+
+        # Write the properties of the human to the prim
+        self.write_properties(prim_path, stage)
+
+        # Import makehuman objects into the scene
+        self.import_meshes(prim_path, stage)
+
     def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: Tuple[float, float, float] = (0, 0, 0)):
         """Imports the meshes of the human into the scene. This is called when the human is
         added to the scene, and when the human is updated. This function creates mesh prims
