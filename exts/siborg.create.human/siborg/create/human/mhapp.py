@@ -127,6 +127,17 @@ class MHApp(object):
         """
         return [m for m in self.modifiers if m.getValue() or m.isMacro()]
 
+    @property
+    def proxies(self):
+        """List of proxies attached to the human.
+
+        Returns
+        -------
+        list of: proxy.Proxy
+            All proxies included in the human
+        """
+        return self.human.getProxies()
+
     def update(self):
         """Propagate changes to meshes and proxies"""
         # For every mesh object except for the human (first object), update the
