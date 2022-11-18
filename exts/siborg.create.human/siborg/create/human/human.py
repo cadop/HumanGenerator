@@ -46,6 +46,11 @@ class Human:
         # Create a path for the next available prim
         prim_path = omni.usd.get_stage_next_free_path(root_path + "/" + self.name, False)
 
+        UsdGeom.Xform.Define(stage, prim_path)
+
+        # Write the properties of the human to the prim
+        self.write_properties(prim_path, stage)
+
     def write_properties(self, prim_path: str, stage: Usd.Stage):
         """Writes the properties of the human to the human prim. This includes modifiers and
         proxies. This is called when the human is added to the scene, and when the human is
@@ -59,16 +64,13 @@ class Human:
             Stage to write to
         """
 
-        # Get the properties of the human in MHApp
-        properties = self.mhapp.properties
-
-
         prim = stage.GetPrimAtPath(prim_path)
 
-        prim.SetCustomDataByKey("swni", "sing")
+        # Get the properties of the human in MHApp
+        modifiers = self.mhapp.modifiers
+
+        for name, value in modifiers.items():
+            # Add the modifier to the prim as custom data by key
+            prim.SetCustomDataByKey("modifiers:" + name, value)
 
         # keyname can be a ':'-separated path identifying a value in subdictionaries
-        prim.SetCustomDataByKey("swn:anid", 622)
-        print(prim.GetCustomDataByKey("swn:anid"))  # prints 622
-
-        prim.SetCustomDataByKey("ui:nodegraph:node:previewState:open", "loop")

@@ -116,14 +116,14 @@ class MHApp(object):
         return self.human.getObjects()
 
     @property
-    def properties(self):
-        """List of properties attached to the human.
+    def modifiers(self):
+        """List of modifers attached to the human. These are all macros as well as any
+        individual modifiers which have changed.
 
         Returns
         -------
         list of: humanmodifier.Modifier
-            All properties included in the human. This includes any modifiers and their values
-            as well as any proxies.
+            The macros and changed modifiers included in the human
         """
         return [m for m in self.modifiers if m.getValue() or m.isMacro()]
 
