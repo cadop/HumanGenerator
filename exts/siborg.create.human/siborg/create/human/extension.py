@@ -68,7 +68,7 @@ class MHWindow(ui.Window):
     def _build_ui(self):
         spacer_width = 5
         with self.frame:
-            # Widgets are built starting on the right
+            # Widgets are built starting on the left
             with ui.HStack(style=window_style):
                 with ui.ZStack(width=0):
                     # Draggable splitter
