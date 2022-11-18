@@ -121,32 +121,56 @@ def add_to_scene(mh_call: MHCaller, add_skeleton : bool = False):
         UsdGeom.Xform.Define(stage, rootPath)
 
     if mhskel and add_skeleton:
-        # Only redefine a skeleton if it doesn't exist 
-        if not cur_human.usdSkel:
-            # Create the USD skeleton in our stage using the mhskel data
-            (usdSkel, rootPath, joint_names, joint_paths) = setup_skeleton(rootPath, 
-                                                                            stage, 
-                                                                            mhskel, 
-                                                                            offset
-                                                                           )
+        pose_transforms = get_pose(cur_human, stage, mhskel, offset)
+        # Create the USD skeleton in our stage using the mhskel data
+        (usdSkel, rootPath, joint_names, joint_paths, rest_transforms) = setup_skeleton(rootPath, 
+                                                                        stage, 
+                                                                        mhskel, 
+                                                                        offset
+                                                                        )
 
-            cur_human.usdSkel = usdSkel
-            cur_human.skel_root_path = rootPath
-            cur_human.joint_names = joint_names
-            cur_human.joint_paths = joint_paths
+        cur_human.usdSkel = usdSkel
+        cur_human.skel_root_path = rootPath
+        cur_human.joint_names = joint_names
+        cur_human.joint_paths = joint_paths
 
-            # delete mesh geometry not previously in the skelroot
+        # # Check if there is an existing SkelAnimation under the skeleton
+        # skelroot = stage.GetPrimAtPath(cur_human.skel_root_path)
+        # skeletons = [x for x in skelroot.GetChildren() if x.GetTypeName() =='Skeleton']
+        # # TODO assert that there is only one skeleton
+        # if len(skeletons) > 0:
+        #     skel_children = skeletons[0].GetChildren()
+        # else:
+        #     skel_children = []
 
-            for path in cur_human.usd_mesh_paths:
-                prim = stage.GetPrimAtPath(path)
-                if prim.IsValid():
-                    stage.RemovePrim(path)
+        # animations = [x for x in skel_children if x.GetTypeName() =='SkelAnimation']
+        # # TODO assert that there is only one animation
+        # if len(animations) > 0:
+        #     animation = UsdSkel.Animation(animations[0])
+            
+        #     pose_np = np.array(pose_transforms)
+        #     rest_np = np.array(rest_transforms)
+
+        #     rest_np[:,0:3,0:3] = pose_np[:,0:3,0:3]
+
+        #     new_rest = Vt.Matrix4dArray([Gf.Matrix4d(x.tolist()) for x in rest_np])
+
+        #     animation.SetTransforms(rest_transforms)
+
+        
+
+        # delete mesh geometry not previously in the skelroot
+
+        for path in cur_human.usd_mesh_paths:
+            prim = stage.GetPrimAtPath(path)
+            if prim.IsValid():
+                stage.RemovePrim(path)
 
         usd_mesh_paths = setup_meshes(mh_meshes, stage, cur_human.skel_root_path, offset)
 
         # Create bindings between meshes and the skeleton. Returns a list of
         # bindings the length of the number of meshes
-        bindings = setup_bindings(usd_mesh_paths, stage, cur_human.usdSkel)
+        bindings = setup_bindings(usd_mesh_paths, stage, cur_human.usdSkel, joint_paths)
 
         # Setup weights for corresponding mh_meshes (which hold the data) and
         # bindings (which link USD_meshes to the skeleton)
@@ -308,7 +332,7 @@ def calculate_influences(mh_mesh: Object3D, joint_names: List[str]):
     return indices, weights
 
 
-def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Skeleton):
+def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Skeleton, joint_tokens):
     """Setup bindings between meshes in the USD scene and the skeleton
 
     Parameters
@@ -348,6 +372,13 @@ def setup_bindings(paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Sk
             binding = UsdSkel.BindingAPI.Apply(prim)
             # Create a relationship between the binding and the skeleton
             binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+            # Create a skeleton animation
+            # anim = UsdSkel.Animation.Define(stage, skeleton.GetPath().AppendChild("Anim"))
+            # # Create a relationship between the binding and the skeleton animation
+            # binding.CreateSkeletonRel().SetTargets([anim.GetPrim().GetPath()])
+
+            # anim.GetJointsAttr().Set(joint_tokens)
+
 
         # Add the binding to the list to return
         bindings.append(binding)
@@ -604,6 +635,7 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
         bind_transforms.append(bind_transform)
 
+
     # TODO Move below super-root code
     visited = []  # List to keep track of visited nodes.
     queue = []  # Initialize a queue
@@ -613,14 +645,14 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     # we can abide by Lina Halper's animation retargeting guidelines:
     # https://docs.omniverse.nvidia.com/prod_extensions/prod_extensions/ext_animation-retargeting.html
     # TODO encapsulate in scope for clarity
-    originalRoot = skeleton.roots[0]
-    newRoot = skeleton.addBone(
-        "RootJoint", None, "newRoot_head", originalRoot.tailJoint
-    )
-    originalRoot.parent = newRoot
-    newRoot.headPos -= offset
-    newRoot.build()
-    newRoot.children.append(originalRoot)
+    # originalRoot = skeleton.roots[0]
+    # newRoot = skeleton.addBone(
+    #     "RootJoint", None, "newRoot_head", originalRoot.tailJoint
+    # )
+    # originalRoot.parent = newRoot
+    # newRoot.headPos -= offset
+    # newRoot.build()
+    # newRoot.children.append(originalRoot)
 
     # Setup a breadth-first search of our skeleton as a tree
     # TODO encapsulate in scope for clarity
@@ -666,11 +698,27 @@ def setup_skeleton(rootPath: str, stage: Usd.Stage, skeleton: Skeleton, offset: 
     # setup rest transforms in joint-local space
     usdSkel.CreateRestTransformsAttr(rel_transforms)
 
-    return usdSkel, skel_root_path, joint_names, joint_paths
+    return usdSkel, skel_root_path, joint_names, joint_paths, rel_transforms
 
-def update_skeleton(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
-    
-    pass
+def get_pose(human : mhov.MHOV, stage: Usd.Stage, skeleton: Skeleton, offset: List[float] = [0, 0, 0]):
+    '''Get the rotations of the skeleton joints at the current frame'''
+
+    if not human.skel_root_path:
+        return
+
+    # Get USD skeleton cache
+    skel_cache = UsdSkel.Cache()
+
+    # Get current time code
+    time_code = Usd.TimeCode.Default()
+
+    usd_skel = stage.GetPrimAtPath(human.skel_root_path+"/Skeleton")
+    if usd_skel:
+        skel_query = skel_cache.GetSkelQuery(UsdSkel.Skeleton(usd_skel))
+        transforms = skel_query.ComputeJointLocalTransforms(time_code)
+        translates, rotations, scales = UsdSkel.DecomposeTransforms(transforms)
+        return transforms
+        
 
 
 def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
