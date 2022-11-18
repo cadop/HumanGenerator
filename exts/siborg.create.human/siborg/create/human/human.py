@@ -1,10 +1,10 @@
 from typing import Tuple
-from mhapp import MHApp
+from .mhapp import MHApp
 import numpy as np
 import omni.kit
 import omni.usd
 from pxr import Sdf, Usd, UsdGeom
-from shared import sanitize
+from .shared import sanitize
 
 
 class Human:
