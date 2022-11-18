@@ -69,9 +69,8 @@ class Human:
         # Get the modifiers of the human in MHApp
         modifiers = self.mhapp.modifiers
 
-        for name, value in modifiers.items():
+        for m in modifiers:
             # Add the modifier to the prim as custom data by key
             # NOTE for USD, keyname can be a ':'-separated path identifying a value
             # in a subdictionary
-            prim.SetCustomDataByKey("modifiers:" + name, value)
-
+            prim.SetCustomDataByKey("modifiers:" + m.fullName, m.getValue())
