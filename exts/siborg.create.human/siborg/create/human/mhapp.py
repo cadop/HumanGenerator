@@ -14,6 +14,7 @@ import humanmodifier, skeleton
 import proxy, gui3d, events3d, targets
 from getpath import findFile
 
+
 class MHApp(object):
     """A singleton wrapper around the Makehuman app. Lets us use Makehuman functions without
     launching the whole application. Also holds all data about the state of our Human
