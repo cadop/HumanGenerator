@@ -99,3 +99,17 @@ class MHApp(object):
         self.human.skeleton = None
         # HACK Set the age to itself to force an update of targets
         self.human.setAge(self.human.getAge())
+
+    @property
+    def objects(self):
+        """List of objects attached to the human.
+
+        Returns
+        -------
+        list of: guiCommon.Object
+            All 3D objects included in the human. This includes the human
+            itself, as well as any proxies
+        """
+        # Make sure proxies are up-to-date
+        self.update()
+        return self.human.getObjects()

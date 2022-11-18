@@ -1,3 +1,5 @@
+from mhapp import MHApp
+
 class Human:
     def __init__(self, name='human', **kwargs):
         """Constructs an instance of Human.
@@ -8,19 +10,18 @@ class Human:
             Name of the human. Defaults to 'human'
         """
 
+        self.name = name
+
+        # Create or get instance of interface to Makehuman app
+        self.mhapp = MHApp()
+
+        # Set the human in makehuman to default values
+        self.mhapp.reset_human()
+
     @property
     def objects(self):
-        """List of objects attached to the human.
-
-        Returns
-        -------
-        list of: guiCommon.Object
-            All 3D objects included in the human. This includes the human
-            itself, as well as any proxies
-        """
-        # Make sure proxies are up-to-date
-        self.update()
-        return self.human.getObjects()
+        """List of objects attached to the human. Fetched from the makehuman app"""
+        return self.mhapp.objects
 
     def add_to_scene(self):
         """Adds the human to the scene. Creates a prim for the human with custom attributes
