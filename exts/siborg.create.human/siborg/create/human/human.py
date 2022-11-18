@@ -1,5 +1,5 @@
 from typing import Tuple
-from .mhapp import MHApp
+from .mhcaller import MHCaller
 import numpy as np
 import omni.kit
 import omni.usd
@@ -20,15 +20,15 @@ class Human:
         self.name = name
 
         # Create or get instance of interface to Makehuman app
-        self.mhapp = MHApp()
+        self.mhcaller = MHCaller()
 
         # Set the human in makehuman to default values
-        self.mhapp.reset_human()
+        self.mhcaller.reset_human()
 
     @property
     def objects(self):
         """List of objects attached to the human. Fetched from the makehuman app"""
-        return self.mhapp.objects
+        return self.mhcaller.objects
 
     def add_to_scene(self):
         """Adds the human to the scene. Creates a prim for the human with custom attributes
@@ -92,8 +92,8 @@ class Human:
             Usd Sdf paths to geometry prims in the scene
         """
 
-        # Get the objects of the human from MHApp
-        objects = self.mhapp.objects
+        # Get the objects of the human from mhcaller
+        objects = self.mhcaller.objects
         meshes = [o.mesh for o in objects]
 
         usd_mesh_paths = []
@@ -213,8 +213,8 @@ class Human:
 
         prim = stage.GetPrimAtPath(prim_path)
 
-        # Get the modifiers of the human in MHApp
-        modifiers = self.mhapp.modifiers
+        # Get the modifiers of the human in mhcaller
+        modifiers = self.mhcaller.modifiers
 
         for m in modifiers:
             # Add the modifier to the prim as custom data by key
@@ -222,8 +222,8 @@ class Human:
             # in a subdictionary
             prim.SetCustomDataByKey("Modifiers:" + m.fullName, m.getValue())
 
-        # Get the proxies of the human in MHApp
-        proxies = self.mhapp.proxies
+        # Get the proxies of the human in mhcaller
+        proxies = self.mhcaller.proxies
 
         for p in proxies:
             # Add the proxy to the prim as custom data by key, specifying type
