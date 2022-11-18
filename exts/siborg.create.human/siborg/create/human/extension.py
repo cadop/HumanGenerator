@@ -99,7 +99,7 @@ class MHWindow(ui.Window):
                     ui.Button(
                         "New Human",
                         height=50,
-                        clicked_fn=lambda: self.new_human(),
+                        clicked_fn=self.new_human,
                     )
                     # Updates current human in omniverse scene
                     ui.Button(
