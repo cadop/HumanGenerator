@@ -59,7 +59,9 @@ class Human:
             Stage to write to
         """
 
-        properties = MHApp.properties
+        # Get the properties of the human in MHApp
+        properties = self.mhapp.properties
+
 
         prim = stage.GetPrimAtPath(prim_path)
 
