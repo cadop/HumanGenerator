@@ -132,6 +132,27 @@ class MHCaller:
         (clothing, hair, musculature, eyes, etc.)"""
         return [o.mesh for o in self.objects]
 
+    @property
+    def modifiers(self):
+        """List of modifers attached to the human. These are all macros as well as any
+        individual modifiers which have changed.
+        Returns
+        -------
+        list of: humanmodifier.Modifier
+            The macros and changed modifiers included in the human
+        """
+        return [m for m in self.human.modifiers if m.getValue() or m.isMacro()]
+
+    @property
+    def proxies(self):
+        """List of proxies attached to the human.
+        Returns
+        -------
+        list of: proxy.Proxy
+            All proxies included in the human
+        """
+        return self.human.getProxies()
+
     def update(self):
         """Propagate changes to meshes and proxies"""
         # For every mesh object except for the human (first object), update the
