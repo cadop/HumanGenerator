@@ -1,30 +1,3 @@
-from typing import TypeVar, Union
-import warnings
-import io
-import makehuman
-from pathlib import Path
-import inspect
-import os
-from . import mhov
-
-# Makehuman loads most modules by manipulating the system path, so we have to
-# run this before we can run the rest of our makehuman imports
-makehuman.set_sys_path()
-
-import human
-import files3d
-import mh
-from core import G
-from mhmain import MHApplication
-from shared import wavefront
-import humanmodifier, skeleton
-import proxy, gui3d, events3d, targets
-from getpath import findFile
-import numpy as np
-import carb
-from .shared import data_path
-
-
 class Human:
     def __init__(self, name='human', **kwargs):
         self.default_name = name
@@ -64,5 +37,3 @@ class Human:
         """Adds the human to the scene. Creates a prim for the human with custom attributes
         to hold modifiers and proxies. Also creates a prim for each proxy and attaches it to
         the human prim."""
-        
-        
