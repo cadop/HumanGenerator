@@ -47,7 +47,7 @@ class Human:
             root_path = default_prim.GetPath().pathString
 
         # Create a path for the next available prim
-        prim_path = omni.usd.get_stage_next_free_path(root_path + "/" + self.name, False)
+        prim_path = omni.usd.get_stage_next_free_path(stage, root_path + "/" + self.name, False)
 
         UsdGeom.Xform.Define(stage, prim_path)
 
