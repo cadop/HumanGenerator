@@ -74,3 +74,13 @@ class Human:
             # NOTE for USD, keyname can be a ':'-separated path identifying a value
             # in a subdictionary
             prim.SetCustomDataByKey("modifiers:" + m.fullName, m.getValue())
+
+        # Get the proxies of the human in MHApp
+        proxies = self.mhapp.proxies
+
+        for p in proxies:
+            # Add the proxy to the prim as custom data by key, specifying type
+            # proxy type should be "Proxies" if type cannot be determined from the
+            # proxy.type property
+            type = p.type if p.type else "Proxies"
+            prim.SetCustomDataByKey(type + ":" + p.name, p.getUuid())
