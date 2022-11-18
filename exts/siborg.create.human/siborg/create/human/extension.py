@@ -9,6 +9,7 @@ import carb
 from .styles import window_style
 from .browser import MHAssetBrowserModel
 import omni
+from .human import Human
 
 
 class MakeHumanExtension(omni.ext.IExt):
@@ -109,4 +110,5 @@ class MHWindow(ui.Window):
 
     def new_human(self):
         """Creates a new human in the scene and resets modifiers and assets"""
-        
+        human = Human()
+        human.add_to_scene()
