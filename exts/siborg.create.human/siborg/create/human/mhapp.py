@@ -83,3 +83,19 @@ class MHApp(object):
         # Actually add the skeleton
         # self.human.setSkeleton(self.base_skel)
         self.human.applyAllTargets()
+
+    def reset_human(self):
+        """Resets the human object to its initial state. This involves setting the
+        human's name to its default, resetting all modifications, and resetting all
+        proxies. Does not reset the skeleton. Also flags the human as having been
+        reset so that the new name can be created when adding to the Usd stage.
+        """
+        self.is_reset = True
+        self.name = self.default_name
+        self.human.resetMeshValues()
+        # Restore eyes
+        # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
+        # Remove skeleton
+        self.human.skeleton = None
+        # HACK Set the age to itself to force an update of targets
+        self.human.setAge(self.human.getAge())
