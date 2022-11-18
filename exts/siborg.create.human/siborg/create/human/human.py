@@ -71,6 +71,7 @@ class Human:
 
         for name, value in modifiers.items():
             # Add the modifier to the prim as custom data by key
+            # NOTE for USD, keyname can be a ':'-separated path identifying a value
+            # in a subdictionary
             prim.SetCustomDataByKey("modifiers:" + name, value)
 
-        # keyname can be a ':'-separated path identifying a value in subdictionaries
