@@ -66,7 +66,7 @@ class Human:
 
         prim = stage.GetPrimAtPath(prim_path)
 
-        # Get the properties of the human in MHApp
+        # Get the modifiers of the human in MHApp
         modifiers = self.mhapp.modifiers
 
         for name, value in modifiers.items():
