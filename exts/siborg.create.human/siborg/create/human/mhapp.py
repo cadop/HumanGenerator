@@ -123,7 +123,7 @@ class MHApp(object):
         list of: humanmodifier.Modifier
             The macros and changed modifiers included in the human
         """
-        return [m for m in self.modifiers if m.getValue() or m.isMacro()]
+        return [m for m in self.human.modifiers if m.getValue() or m.isMacro()]
 
     @property
     def proxies(self):
