@@ -1,7 +1,7 @@
 import omni.ext
 import siborg.create.human
 import omni.ui as ui
-from . import mhcaller
+from .mhcaller import MHCaller
 from .browser import AssetBrowserFrame
 from .ext_ui import DropListModel, DropList, ParamPanelModel, ParamPanel
 import carb
@@ -42,16 +42,16 @@ class MHWindow(ui.Window):
         """Constructs an instance of MHWindow"""
         super().__init__(*args, **kwargs)
         # Create instance of manager class
-        self.mh_call = mhcaller.MHCaller()
+        self.mhcaller = MHCaller()
         # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
         # Holds the state of the proxy list
-        self.list_model = DropListModel(self.mh_call)
+        self.list_model = DropListModel(self.mhcaller)
         # Holds the state of the parameter list
-        self.param_model = ParamPanelModel(self.mh_call, self.toggle_model)
+        self.param_model = ParamPanelModel(self.mhcaller, self.toggle_model)
         # A model to hold browser data
         self.browser_model = MHAssetBrowserModel(
-            self.mh_call,
+            self.mhcaller,
             self.list_model,
             filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
             timeout=carb.settings.get_settings().get(
@@ -104,10 +104,14 @@ class MHWindow(ui.Window):
                     # ui.Button(
                     #     "Update Meshes in Scene",
                     #     height=50,
-                    #     clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True),
+                    #     clicked_fn=lambda: mh_usd.add_to_scene(self.mhcaller, True),
                     # )
 
     def new_human(self):
-        """Creates a new human in the scene and resets modifiers and assets"""
+        """Creates a new human in the scene and selects it"""
         human = Human()
-        human.add_to_scene()
+        prim_path = human.add_to_scene()
+        # Get selection.
+        selection = omni.usd.get_context().get_selection()
+        # Select the new human.
+        selection.set_selected_prim_paths([prim_path], True)

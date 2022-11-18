@@ -33,7 +33,12 @@ class Human:
     def add_to_scene(self):
         """Adds the human to the scene. Creates a prim for the human with custom attributes
         to hold modifiers and proxies. Also creates a prim for each proxy and attaches it to
-        the human prim."""
+        the human prim.
+        
+        Returns
+        -------
+        str
+            Path to the human prim"""
 
         # Get the current stage
         stage = omni.usd.get_context().get_stage()
@@ -56,6 +61,8 @@ class Human:
 
         # Import makehuman objects into the scene
         self.import_meshes(prim_path, stage)
+
+        return prim_path
 
     def update_in_scene(self, prim_path: str):
         """Updates the human in the scene. Writes the properties of the human to the
