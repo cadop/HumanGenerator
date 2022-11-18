@@ -106,3 +106,7 @@ class MHWindow(ui.Window):
                         height=50,
                         clicked_fn=lambda: mh_usd.add_to_scene(self.mh_call, True),
                     )
+
+    def new_human(self):
+        """Creates a new human in the scene and resets modifiers and assets"""
+        
