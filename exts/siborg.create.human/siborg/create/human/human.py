@@ -59,6 +59,8 @@ class Human:
             Stage to write to
         """
 
+        properties = MHApp.properties
+
         prim = stage.GetPrimAtPath(prim_path)
 
         prim.SetCustomDataByKey("swni", "sing")

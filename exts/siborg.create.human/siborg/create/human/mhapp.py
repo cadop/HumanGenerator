@@ -115,6 +115,18 @@ class MHApp(object):
         self.update()
         return self.human.getObjects()
 
+    @property
+    def properties(self):
+        """List of properties attached to the human.
+
+        Returns
+        -------
+        list of: humanmodifier.Modifier
+            All properties included in the human. This includes any modifiers and their values
+            as well as any proxies.
+        """
+        return [m for m in self.modifiers if m.getValue() or m.isMacro()]
+
     def update(self):
         """Propagate changes to meshes and proxies"""
         # For every mesh object except for the human (first object), update the
