@@ -30,35 +30,6 @@ class Human:
         self.default_name = name
         self.reset_human()
 
-    def init_human(self):
-        """Initialize the human and set some required files from disk. This
-            includes the skeleton and any proxies (hair, clothes, accessories etc.)
-            The weights from the base skeleton must be transfered to the chosen
-            skeleton or else there will be unweighted verts on the meshes.
-            """
-        self.human = human.Human(files3d.loadMesh(
-            mh.getSysDataPath("3dobjs/base.obj"), maxFaces=5))
-        # set the makehuman instance human so that features (eg skeletons) can
-        # access it globally
-        self.G.app.selectedHuman = self.human
-        humanmodifier.loadModifiers(mh.getSysDataPath(
-            "modifiers/modeling_modifiers.json"), self.human)
-        # Add eyes
-        # self.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
-        self.base_skel = skeleton.load(
-            mh.getSysDataPath("rigs/default.mhskel"),
-            self.human.meshData,
-        )
-        # cmu_skel = skeleton.load(data_path("rigs/cmu_mb.mhskel"), self.human.meshData)
-        # Build joint weights on our chosen skeleton, derived from the base
-        # skeleton
-        # cmu_skel.autoBuildWeightReferences(self.base_skel)
-
-        self.human.setBaseSkeleton(self.base_skel)
-        # Actually add the skeleton
-        # self.human.setSkeleton(self.base_skel)
-        self.human.applyAllTargets()
-
     def reset_human(self):
         """Resets the human object to its initial state. This involves setting the
         human's name to its default, resetting all modifications, and resetting all
@@ -88,3 +59,10 @@ class Human:
         # Make sure proxies are up-to-date
         self.update()
         return self.human.getObjects()
+
+    def add_to_scene(self):
+        """Adds the human to the scene. Creates a prim for the human with custom attributes
+        to hold modifiers and proxies. Also creates a prim for each proxy and attaches it to
+        the human prim."""
+        
+        
