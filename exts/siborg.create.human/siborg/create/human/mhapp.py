@@ -113,3 +113,16 @@ class MHApp(object):
         # Make sure proxies are up-to-date
         self.update()
         return self.human.getObjects()
+
+    def update(self):
+        """Propagate changes to meshes and proxies"""
+        # For every mesh object except for the human (first object), update the
+        # mesh and corresponding proxy
+        # See https://github.com/makehumancommunity/makehuman/search?q=adaptproxytohuman
+        for obj in self.human.getObjects()[1:]:
+            mesh = obj.getSeedMesh()
+            pxy = obj.getProxy()
+            # Update the proxy
+            pxy.update(mesh, False)
+            # Update the mesh
+            mesh.update()
