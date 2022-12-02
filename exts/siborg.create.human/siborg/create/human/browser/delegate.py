@@ -23,9 +23,7 @@ class AssetDetailDelegate(FolderDetailDelegate):
     Attributes
     ----------
     model : MHAssetBrowserModel
-        Model that stores AssetBrowser data. Contains reference to MHCaller
-    mhcaller : MHCaller
-        Wrapper around Makehuman data and functions. Tracks human data.
+        Model that stores AssetBrowser data
     """
     def __init__(self, model: MHAssetBrowserModel):
         """Constructs an instance of AssetDetailDelegate, which handles
@@ -39,8 +37,6 @@ class AssetDetailDelegate(FolderDetailDelegate):
         super().__init__(model=model)
         # Reference to the browser asset model
         self.model = model
-        # Reference to the Makehuman wrapper
-        self.mhcaller = model.mhcaller
         self._settings = carb.settings.get_settings()
         # The context menu that opens on right_click
         self._context_menu: Optional[ui.Menu] = None
