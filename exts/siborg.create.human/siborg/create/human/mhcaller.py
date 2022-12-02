@@ -42,12 +42,13 @@ class MHCaller:
         modifiers, skeletons, meshes, assets, etc) and functions.
     """
 
+    G = G
+    human = None
+
     def __init__(self):
         """Constructs an instance of MHCaller. This involves setting up the
         needed components to use makehuman modules independent of the GUI.
         This includes app globals (G) and the human object."""
-        self.G = G
-        self.human = None
         self._config_mhapp()
         self.init_human()
 
@@ -57,6 +58,7 @@ class MHCaller:
             cls.instance = super(MHCaller, cls).__new__(cls)
         return cls.instance
 
+    @classmethod
     def _config_mhapp(self):
         """Declare and initialize the makehuman app, and move along if we
         encounter any errors (omniverse sometimes fails to purge the app
@@ -70,6 +72,7 @@ class MHCaller:
 
         self.human_mapper = {}
 
+    @classmethod
     def reset_human(self):
         """Resets the human object to its initial state. This involves setting the
         human's name to its default, resetting all modifications, and resetting all
@@ -84,6 +87,7 @@ class MHCaller:
         # HACK Set the age to itself to force an update of targets
         self.human.setAge(self.human.getAge())
 
+    @classmethod
     def init_human(self):
         """Initialize the human and set some required files from disk. This
         includes the skeleton and any proxies (hair, clothes, accessories etc.)
@@ -153,6 +157,7 @@ class MHCaller:
         """
         return self.human.getProxies()
 
+    @classmethod
     def update(self):
         """Propagate changes to meshes and proxies"""
         # For every mesh object except for the human (first object), update the
@@ -180,6 +185,7 @@ class MHCaller:
 
         wavefront.writeObjFile(filepath, self.meshes)
 
+    @classmethod
     def add_proxy(self, proxypath : str, proxy_type  : str = None):
         """Load a proxy (hair, nails, clothes, etc.) and apply it to the human
 
@@ -246,6 +252,7 @@ class MHCaller:
 
     Proxy = TypeVar("Proxy")
 
+    @classmethod
     def remove_proxy(self, proxy: Proxy):
         """Removes a proxy from the human. Executes a particular method for removal
         based on proxy type.
@@ -273,6 +280,7 @@ class MHCaller:
 
     Skeleton = TypeVar("Skeleton")
 
+    @classmethod
     def remove_item(self, item : Union[Skeleton, Proxy]):
         """Removes a Makehuman asset from the human. Assets include Skeletons
         as well as proxies. Determines removal method based on asset object type.
@@ -288,6 +296,7 @@ class MHCaller:
         else:
             return
 
+    @classmethod
     def add_item(self, path : str):
         """Add a Makehuman asset (skeleton or proxy) to the human.
 
@@ -301,6 +310,7 @@ class MHCaller:
         elif "mhskel" in path:
             self.set_skel(path)
 
+    @classmethod
     def set_skel(self, path : str):
         """Change the skeleton applied to the human. Loads a skeleton from disk.
         The skeleton position can be used to drive the human position in the scene.
@@ -318,6 +328,7 @@ class MHCaller:
         self.human.setSkeleton(skel)
         self.human.applyAllTargets()
 
+    @classmethod
     def guess_proxy_type(self, path : str):
         """Guesses a proxy's type based on the path from which it is loaded.
 
