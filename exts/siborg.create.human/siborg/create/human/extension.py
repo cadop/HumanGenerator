@@ -16,13 +16,54 @@ class MakeHumanExtension(omni.ext.IExt):
     # this extension is located on filesystem.
 
     def on_startup(self, ext_id):
+
+        # subscribe to stage events
+        # see https://github.com/mtw75/kit_customdata_view
+        self._usd_context = omni.usd.get_context()
+        self._selection = self._usd_context.get_selection()
+        self._events = self._usd_context.get_stage_event_stream()
+        self._stage_event_sub = self._events.create_subscription_to_pop(
+            self._on_stage_event,
+            name='human seletion changed',
+            )
+
+        # create a model to hold the selected prim path
+        self._selected_primpath_model = ui.SimpleStringModel("-") 
+
+        # create a window for the extension
         print("[siborg.create.human] HumanGeneratorExtension startup")
         self._window = MHWindow("Human Generator")
+
+    def _on_stage_event(self, event):
+        if event.type == int(omni.usd.StageEventType.SELECTION_CHANGED):
+            self._on_selection_changed()
+
+    def _on_selection_changed(self):
+        # get the current selection and stage
+        selection = self._selection.get_selected_prim_paths()
+        stage = self._usd_context.get_stage()
+        print(f"== selection changed with {len(selection)} items")
+
+        if selection and stage:
+            # Set last selected element in property model
+            if len(selection) > 0:
+                path = selection[-1]
+                self._selected_primpath_model.set_value(path)
+                prim = stage.GetPrimAtPath(path)
+                self._customdata_model.set_prim(prim)
+            # print out all selected custom data
+            for selected_path in selection:
+                print(f" item {selected_path}:")
+                prim = stage.GetPrimAtPath(selected_path)
+                for key in prim.GetCustomData():
+                    print(f"   - {key} = {prim.GetCustomDataByKey(key)}")
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")
         self._window.destroy()
         self._window = None
+        # unsubscribe from stage events
+        self._stage_event_sub = None
 
 
 class MHWindow(ui.Window):
