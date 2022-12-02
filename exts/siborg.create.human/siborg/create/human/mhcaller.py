@@ -27,6 +27,16 @@ import carb
 from .shared import data_path
 
 
+class classproperty:
+    """Class property decorator. Allows us to define a property on a class
+    method rather than an instance method."""
+    def __init__(self, fget):
+        self.fget = fget
+
+    def __get__(self, obj, owner):
+        return self.fget(owner)
+
+
 class MHCaller:
     """A singleton wrapper around the Makehuman app. Lets us use Makehuman functions without
     launching the whole application. Also holds all data about the state of our Human
@@ -115,7 +125,7 @@ class MHCaller:
         # self.human.setSkeleton(self.base_skel)
         self.human.applyAllTargets()
 
-    @property
+    @classproperty
     def objects(self):
         """List of objects attached to the human.
 
@@ -129,14 +139,14 @@ class MHCaller:
         self.update()
         return self.human.getObjects()
 
-    @property
+    @classproperty
     def meshes(self):
         """All of the meshes of all of the objects attached to a human. This
         includes the mesh of the human itself as well as the meshes of all proxies
         (clothing, hair, musculature, eyes, etc.)"""
         return [o.mesh for o in self.objects]
 
-    @property
+    @classproperty
     def modifiers(self):
         """List of modifers attached to the human. These are all macros as well as any
         individual modifiers which have changed.
@@ -147,7 +157,7 @@ class MHCaller:
         """
         return [m for m in self.human.modifiers if m.getValue() or m.isMacro()]
 
-    @property
+    @classproperty
     def proxies(self):
         """List of proxies attached to the human.
         Returns
