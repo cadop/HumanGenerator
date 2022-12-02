@@ -20,12 +20,12 @@ class Human:
         self.name = name
 
         # Set the human in makehuman to default values
-        self.mhcaller.reset_human()
+        MHCaller.reset_human()
 
     @property
     def objects(self):
         """List of objects attached to the human. Fetched from the makehuman app"""
-        return self.mhcaller.objects
+        return MHCaller.objects
 
     def add_to_scene(self):
         """Adds the human to the scene. Creates a prim for the human with custom attributes
@@ -97,7 +97,7 @@ class Human:
         """
 
         # Get the objects of the human from mhcaller
-        objects = self.mhcaller.objects
+        objects = MHCaller.objects
         meshes = [o.mesh for o in objects]
 
         usd_mesh_paths = []
@@ -218,7 +218,7 @@ class Human:
         prim = stage.GetPrimAtPath(prim_path)
 
         # Get the modifiers of the human in mhcaller
-        modifiers = self.mhcaller.modifiers
+        modifiers = MHCaller.modifiers
 
         for m in modifiers:
             # Add the modifier to the prim as custom data by key
@@ -227,7 +227,7 @@ class Human:
             prim.SetCustomDataByKey("Modifiers:" + m.fullName, m.getValue())
 
         # Get the proxies of the human in mhcaller
-        proxies = self.mhcaller.proxies
+        proxies = MHCaller.proxies
 
         for p in proxies:
             # Add the proxy to the prim as custom data by key, specifying type
