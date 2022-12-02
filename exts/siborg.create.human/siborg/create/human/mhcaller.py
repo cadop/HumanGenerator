@@ -380,3 +380,7 @@ def modifier_image(name : str):
     # TODO determine if images can be loaded from the Makehuman module stored in
     # site-packages so we don't have to include the data twice
     return os.path.join(os.path.dirname(inspect.getfile(makehuman)),targets.getTargets().images.get(name, name))
+
+
+# Create an instance of MHCaller when imported
+MHCaller()
