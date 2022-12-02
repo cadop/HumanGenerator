@@ -26,3 +26,6 @@ link_app.sh
 exts/siborg.create.human/data/*
 !exts/siborg.create.human/data/rigs/
 !exts/siborg.create.human/data/*.png
+
+# Deprecated files
+*.old
