@@ -129,15 +129,13 @@ class SliderEntryPanelModel:
         List of parameter objects
     toggle : ui.SimpleBoolModel
         Tracks whether or not the human should update immediately when changes are made
-    mh_call : MHCaller
-        Wrapper object for Makehuman functions and data
     float_models : list of `ui.SimpleFloatModel`
         List of models to track SliderEntry values
     subscriptions : list of `Subscription`
         List of event subscriptions triggered by editing a SliderEntry
     """
 
-    def __init__(self, params: List[Param], mh_call: MHCaller, toggle: ui.SimpleBoolModel = None):
+    def __init__(self, params: List[Param], toggle: ui.SimpleBoolModel = None):
         """Constructs an instance of SliderEntryPanelModel and instantiates models
         to hold parameter data for individual SliderEntries
 
@@ -146,15 +144,12 @@ class SliderEntryPanelModel:
         params : list of `Param`
             A list of parameter objects, each of which contains the data to create
             a SliderEntry widget
-        mh_call : MHCaller
-            Wrapper object for Makehuman functions and data
         toggle : ui.SimpleBoolModel, optional
             Tracks whether or not the human should update immediately when changes are made, by default None
         """
         self.params = []
         """Param objects corresponding to each SliderEntry widget"""
         self.toggle = toggle
-        self.mh_call = mh_call
         self.float_models = []
         """Models corresponding to each SliderEntry widget. Each model
         tracks the corresponding widget's value"""
@@ -218,7 +213,7 @@ class SliderEntryPanelModel:
         param.fn(m.get_value_as_float())
         # If instant update is toggled on, add the changes to the stage instantly
         if self.toggle.get_value_as_bool():
-            mh_usd.add_to_scene(self.mh_call)
+            mh_usd.add_to_scene()
 
     def destroy(self):
         """Destroys the instance of SliderEntryPanelModel. Deletes event
@@ -359,22 +354,12 @@ class DropListModel(ui.AbstractItemModel):
     Model to reference DropList data. Handles references to the data of each
     list item, as well as updating the UI, Makehuman app, and human instance when
     assets are added or removed.
-
-    Attributes
-    ----------
-    mh_call : MHCaller
-        Wrapper object around Makehuman functions
     """
 
-    def __init__(self, mhcaller: MHCaller, *args):
-        """Constructs an instance of
-
-        Parameters
-        ----------
-        mhcaller : MHCaller
-            Wrapper object around Makehuman functions
+    def __init__(self, *args):
+        """Constructs an instance of DropListModel. Initializes superclass and
+        updates the list UI.
         """
-        self.mh_call = mhcaller
         super().__init__()
         self.update()
 
@@ -400,7 +385,7 @@ class DropListModel(ui.AbstractItemModel):
             Path to an asset on disk
         """
         # Add an item through the MakeHuman instance and update the widget view
-        self.mh_call.add_item(item)
+        MHCaller.add_item(item)
         self.update()
 
     def get_item_children(self, item):
@@ -466,7 +451,7 @@ class DropListModel(ui.AbstractItemModel):
         list UI to reflect any changes.
         """
         # Gather all proxies from the human object
-        items = self.mh_call.human.getProxies()
+        items = MHCaller.human.getProxies()
         # Populate the list with non-Nonetype items
         self.children = [DropListItem(i.name, item=i)
                          for i in items if i is not None]
@@ -527,7 +512,7 @@ class DropListDelegate(ui.AbstractItemDelegate):
         """
         if button != 0:
             return
-        list_model.mh_call.remove_item(item)
+        MHCaller.remove_item(item)
         list_model.update()
 
 
@@ -585,20 +570,16 @@ class DropList:
 
 
 class ParamPanelModel(ui.AbstractItemModel):
-    def __init__(self, mh_call: MHCaller, toggle: ui.SimpleBoolModel, **kwargs):
+    def __init__(self, toggle: ui.SimpleBoolModel, **kwargs):
         """Constructs an instance of ParamPanelModel, which stores data for a ParamPanel.
 
         Parameters
         ----------
-        mh_call : MHCaller
-            Wrapper around Makehuman data (including human data) and functions
         toggle : ui.SimpleBoolModel
             Model to track whether changes should be instant
         """
 
         super().__init__(**kwargs)
-        # Wrapper around Makehuman data (including human data) and functions
-        self.mh_call = mh_call
         # model to track whether changes should be instant
         self.toggle = toggle
 
@@ -614,8 +595,6 @@ class ParamPanel(ui.Frame):
     ----------
     model : ParamPanelModel
         Stores data for the panel
-    mh_call : MHCaller
-        Wrapper around Makehuman data (including human data) and functions
     toggle : ui.SimpleBoolModel
         Model to track whether changes should be instant
     models : list of SliderEntryPanelModel
@@ -630,8 +609,6 @@ class ParamPanel(ui.Frame):
 
         Parameters
         ----------
-        mh_call : MHCaller
-            Wrapper around Makehuman data (including human data) and functions
         toggle : ui.SimpleBoolModel
             Model to track whether changes should be instant
         """
@@ -639,7 +616,6 @@ class ParamPanel(ui.Frame):
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
         self.model = model
-        self.mh_call = model.mh_call
         self.toggle = model.toggle
         self.models = model.models
         self.set_build_fn(self._build_widget)
@@ -700,7 +676,7 @@ class ParamPanel(ui.Frame):
                 A list of all the parameters built from modifiers in the group
             """
             params = [modifier_param(m)
-                      for m in self.mh_call.human.getModifiersByGroup(group)]
+                      for m in MHCaller.human.getModifiersByGroup(group)]
             return params
 
         def build_macro_frame():
@@ -719,7 +695,7 @@ class ParamPanel(ui.Frame):
             + Caucasian
             """
             # Shorten human reference for convenience
-            human = self.mh_call.human
+            human = MHCaller.human
 
             # Explicitly create parameters for panel of macros (general modifiers that
             # affect a group of targets). Otherwise these look bad. Creates a nice
@@ -733,8 +709,7 @@ class ParamPanel(ui.Frame):
                 Param("Proportions", human.setBodyProportions),
             )
             # Create a model for storing macro parameter data
-            macro_model = SliderEntryPanelModel(
-                macro_params, self.mh_call, self.toggle)
+            macro_model = SliderEntryPanelModel(macro_params, self.toggle)
 
             # Separate set of race parameters to also be included in the Macros group
             # TODO make race parameters automatically normalize in UI
@@ -744,8 +719,7 @@ class ParamPanel(ui.Frame):
                 Param("Caucasian", human.setCaucasian),
             )
             # Create a model for storing race parameter data
-            race_model = SliderEntryPanelModel(
-                race_params, self.mh_call, self.toggle)
+            race_model = SliderEntryPanelModel(race_params, self.toggle)
 
             self.models.append(macro_model)
             self.models.append(race_model)
@@ -767,20 +741,20 @@ class ParamPanel(ui.Frame):
 
                 # Create a set of all modifier groups that include macros
                 macrogroups = [
-                    g for g in self.mh_call.human.modifierGroups if "macrodetails" in g]
+                    g for g in MHCaller.human.modifierGroups if "macrodetails" in g]
                 macrogroups = set(macrogroups)
 
                 # Remove macro groups from list of modifier groups as we have already
                 # included them explicitly
                 allgroups = set(
-                    self.mh_call.human.modifierGroups).difference(macrogroups)
+                    MHCaller.human.modifierGroups).difference(macrogroups)
 
                 for group in allgroups:
                     # Create a collapseable frame for each modifier group
                     with ui.CollapsableFrame(group.capitalize(), style=styles.frame_style, collapsed=True):
                         # Model to hold panel parameters
                         model = SliderEntryPanelModel(
-                            group_params(group), self.mh_call, self.toggle)
+                            group_params(group), self.toggle)
                         self.models.append(model)
                         # Create panel of slider entries for modifier group
                         SliderEntryPanel(model)
