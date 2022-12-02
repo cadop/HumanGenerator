@@ -1,5 +1,4 @@
 import omni.ext
-import siborg.create.human
 import omni.ui as ui
 from .mhcaller import MHCaller
 from .browser import AssetBrowserFrame
@@ -27,8 +26,10 @@ class MakeHumanExtension(omni.ext.IExt):
             name='human seletion changed',
             )
 
+        self._human = Human()
+
         # create a model to hold the selected prim path
-        self._selected_primpath_model = ui.SimpleStringModel("-") 
+        self._selected_primpath_model = ui.SimpleStringModel("-")
 
         # create a window for the extension
         print("[siborg.create.human] HumanGeneratorExtension startup")
@@ -48,15 +49,17 @@ class MakeHumanExtension(omni.ext.IExt):
             # Set last selected element in property model
             if len(selection) > 0:
                 path = selection[-1]
+                print(path)
                 self._selected_primpath_model.set_value(path)
                 prim = stage.GetPrimAtPath(path)
-                self._customdata_model.set_prim(prim)
-            # print out all selected custom data
-            for selected_path in selection:
-                print(f" item {selected_path}:")
-                prim = stage.GetPrimAtPath(selected_path)
-                for key in prim.GetCustomData():
-                    print(f"   - {key} = {prim.GetCustomDataByKey(key)}")
+                self._human.set_prim(prim)
+        #         self._customdata_model.set_prim(prim)
+        #     # print out all selected custom data
+        #     for selected_path in selection:
+        #         print(f" item {selected_path}:")
+        #         prim = stage.GetPrimAtPath(selected_path)
+        #         for key in prim.GetCustomData():
+        #             print(f"   - {key} = {prim.GetCustomDataByKey(key)}")
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")

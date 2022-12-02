@@ -5,7 +5,8 @@ import omni.kit
 import omni.usd
 from pxr import Sdf, Usd, UsdGeom
 from .shared import sanitize
-
+from omni import ui
+import carb
 
 class Human:
     def __init__(self, name='human', **kwargs):
@@ -18,6 +19,7 @@ class Human:
         """
 
         self.name = name
+        self.prim = None
 
         # Set the human in makehuman to default values
         MHCaller.reset_human()
@@ -235,3 +237,15 @@ class Human:
             # proxy.type property
             type = p.type if p.type else "Proxies"
             prim.SetCustomDataByKey(type + ":" + p.name, p.getUuid())
+
+    def set_prim(self, usd_prim):
+        """Sets the prim of the human to the given prim and updates the human
+        based on the prim's attributes"""
+        self._prim = usd_prim
+
+        # Get the modifiers from the prim
+        modifiers = self._prim.GetCustomDataByKey("Modifiers")
+
+        # Set the modifiers of the human in mhcaller
+        for m in modifiers:
+            carb.log_warn(str(m))
