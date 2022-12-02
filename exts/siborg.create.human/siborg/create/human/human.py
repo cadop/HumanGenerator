@@ -19,9 +19,6 @@ class Human:
 
         self.name = name
 
-        # Create or get instance of interface to Makehuman app
-        self.mhcaller = MHCaller()
-
         # Set the human in makehuman to default values
         self.mhcaller.reset_human()
 
