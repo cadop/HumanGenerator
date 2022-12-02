@@ -1,7 +1,7 @@
 import omni.ui as ui
 from typing import List, TypeVar, Union
 from dataclasses import dataclass
-from . import styles, mh_usd
+from . import styles
 from .mhcaller import MHCaller, modifier_image
 
 
@@ -213,7 +213,8 @@ class SliderEntryPanelModel:
         param.fn(m.get_value_as_float())
         # If instant update is toggled on, add the changes to the stage instantly
         if self.toggle.get_value_as_bool():
-            mh_usd.add_to_scene()
+            # TODO make changes to human immediately
+            pass
 
     def destroy(self):
         """Destroys the instance of SliderEntryPanelModel. Deletes event
