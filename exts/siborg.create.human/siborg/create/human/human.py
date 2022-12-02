@@ -255,4 +255,4 @@ class Human:
         # Get the modifiers from the prim
         modifiers = humandata.get("Modifiers")
         for m, v in modifiers.items():
-            MHCaller.human.getModifier(m).setValue(v,skipDependencies=True)
+            MHCaller.human.getModifier(m).setValue(v, skipDependencies=True)
