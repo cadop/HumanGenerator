@@ -33,7 +33,7 @@ class Human:
         """Adds the human to the scene. Creates a prim for the human with custom attributes
         to hold modifiers and proxies. Also creates a prim for each proxy and attaches it to
         the human prim.
-        
+
         Returns
         -------
         str
