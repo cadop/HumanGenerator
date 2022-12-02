@@ -8,6 +8,7 @@ from .shared import sanitize
 from omni import ui
 import carb
 
+
 class Human:
     def __init__(self, name='human', **kwargs):
         """Constructs an instance of Human.
