@@ -8,6 +8,7 @@ from .styles import window_style
 from .browser import MHAssetBrowserModel
 import omni
 from .human import Human
+from pxr import Usd
 
 
 class MakeHumanExtension(omni.ext.IExt):
@@ -52,14 +53,10 @@ class MakeHumanExtension(omni.ext.IExt):
                 print(path)
                 self._selected_primpath_model.set_value(path)
                 prim = stage.GetPrimAtPath(path)
-                self._human.set_prim(prim)
-        #         self._customdata_model.set_prim(prim)
-        #     # print out all selected custom data
-        #     for selected_path in selection:
-        #         print(f" item {selected_path}:")
-        #         prim = stage.GetPrimAtPath(selected_path)
-        #         for key in prim.GetCustomData():
-        #             print(f"   - {key} = {prim.GetCustomDataByKey(key)}")
+                prim_kind = prim.GetTypeName()
+                if prim_kind == "Xform" and prim.GetCustomDataByKey("human"):
+                    carb.log_warn("Human selected")
+                    self._human.set_prim(prim)
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")

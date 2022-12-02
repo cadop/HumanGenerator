@@ -220,6 +220,9 @@ class Human:
 
         prim = stage.GetPrimAtPath(prim_path)
 
+        # Add custom data to the prim by key, designating the prim is a human
+        prim.SetCustomDataByKey("human", True)
+
         # Get the modifiers of the human in mhcaller
         modifiers = MHCaller.modifiers
 
