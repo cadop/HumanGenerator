@@ -27,7 +27,7 @@ class MakeHumanExtension(omni.ext.IExt):
             name='human seletion changed',
             )
 
-        self._human = Human()
+        self.human = Human()
 
         # create a model to hold the selected prim path
         self._selected_primpath_model = ui.SimpleStringModel("-")
@@ -56,7 +56,7 @@ class MakeHumanExtension(omni.ext.IExt):
                 prim_kind = prim.GetTypeName()
                 if prim_kind == "Xform" and prim.GetCustomDataByKey("human"):
                     carb.log_warn("Human selected")
-                    self._human.set_prim(prim)
+                    self.human.set_prim(prim)
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")
