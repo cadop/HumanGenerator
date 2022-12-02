@@ -47,7 +47,7 @@ class MakeHumanExtension(omni.ext.IExt):
         print(f"== selection changed with {len(selection)} items")
 
         if selection and stage:
-            # Set last selected element in property model
+            # TODO reject multiple selection
             if len(selection) > 0:
                 path = selection[-1]
                 print(path)
