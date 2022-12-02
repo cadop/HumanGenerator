@@ -41,17 +41,14 @@ class MHWindow(ui.Window):
     def __init__(self, *args, **kwargs):
         """Constructs an instance of MHWindow"""
         super().__init__(*args, **kwargs)
-        # Create instance of manager class
-        self.mhcaller = MHCaller()
         # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
         # Holds the state of the proxy list
-        self.list_model = DropListModel(self.mhcaller)
+        self.list_model = DropListModel()
         # Holds the state of the parameter list
-        self.param_model = ParamPanelModel(self.mhcaller, self.toggle_model)
+        self.param_model = ParamPanelModel(self.toggle_model)
         # A model to hold browser data
         self.browser_model = MHAssetBrowserModel(
-            self.mhcaller,
             self.list_model,
             filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
             timeout=carb.settings.get_settings().get(
@@ -104,7 +101,7 @@ class MHWindow(ui.Window):
                     # ui.Button(
                     #     "Update Meshes in Scene",
                     #     height=50,
-                    #     clicked_fn=lambda: mh_usd.add_to_scene(self.mhcaller, True),
+                    #     clicked_fn=lambda: mh_usd.add_to_scene(True),
                     # )
 
     def new_human(self):
