@@ -35,23 +35,18 @@ class MHAssetBrowserModel(FolderBrowserModel):
     """Represents Makehuman asset browser model
     Attributes
     ----------
-    mhcaller : MHCaller
-        Wrapper class for Makehuman functions
     list_widget : DropList
         The widget in which to reflect changes when assets are added to the human
     """
 
-    def __init__(self, mhcaller: MHCaller, list_model: DropListModel, *args, **kwargs):
+    def __init__(self, list_model: DropListModel, *args, **kwargs):
         """Constructs an instance of MHAssetBrowserModel
 
         Parameters
         ----------
-        mhcaller : MHCaller
-            Wrapper class for Makehuman functions
         list_model : DropListModel
             The list in which to reflect changes when assets are added
         """
-        self.mhcaller = mhcaller
         self.list_model = list_model
         super().__init__(
             *args,
