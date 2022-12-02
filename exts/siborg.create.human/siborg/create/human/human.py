@@ -240,12 +240,15 @@ class Human:
 
     def set_prim(self, usd_prim):
         """Sets the prim of the human to the given prim and updates the human
-        based on the prim's attributes"""
+        based on the prim's attributes
+
+        Parameters
+        ----------
+        usd_prim : Usd.Prim
+            Prim from which to update the human model. We also update this prim
+            when the human model is updated"""
         self._prim = usd_prim
 
-        # Get the modifiers from the prim
-        modifiers = self._prim.GetCustomDataByKey("Modifiers")
-
-        # Set the modifiers of the human in mhcaller
-        for m in modifiers:
-            carb.log_warn(str(m))
+        # Get the data from the prim
+        humandata = self._prim.GetCustomData()
+        carb.log_warn(str(humandata))
