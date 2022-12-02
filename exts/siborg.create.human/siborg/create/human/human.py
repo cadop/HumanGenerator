@@ -223,9 +223,8 @@ class Human:
         modifiers = MHCaller.modifiers
 
         for m in modifiers:
-            # Add the modifier to the prim as custom data by key
-            # NOTE for USD, keyname can be a ':'-separated path identifying a value
-            # in a subdictionary
+            # Add the modifier to the prim as custom data by key. For modifiers,
+            # the format is "group/modifer:value"
             prim.SetCustomDataByKey("Modifiers:" + m.fullName, m.getValue())
 
         # Get the proxies of the human in mhcaller
