@@ -251,4 +251,8 @@ class Human:
 
         # Get the data from the prim
         humandata = self._prim.GetCustomData()
-        carb.log_warn(str(humandata))
+
+        # Get the modifiers from the prim
+        modifiers = humandata.get("Modifiers")
+        for m, v in modifiers.items():
+            MHCaller.human.getModifier(m).setValue(v,skipDependencies=True)
