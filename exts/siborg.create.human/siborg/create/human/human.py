@@ -241,12 +241,12 @@ class Human:
 
             # Only "proxymeshes" and "clothes" should be subdictionaries of "Proxies"
             if type == "clothes" or type == "proxymeshes":
-                prim.SetCustomDataByKey("Proxies:" + type + ":" + p.name, p.getUuid())
+                prim.SetCustomDataByKey("Proxies:" + type + ":" + p.name, p.path)
 
             # Other proxy types should be added as a key to the prim with their
-            # type as a prefix to the key and the UUID as the value
+            # type as a prefix to the key and the path as the value
             else:
-                prim.SetCustomDataByKey("Proxies:" + type + "/" + p.name, p.getUuid())
+                prim.SetCustomDataByKey("Proxies:" + type + "/" + p.name, p.path)
 
     def set_prim(self, usd_prim):
         """Updates the human based on the given prim's attributes
