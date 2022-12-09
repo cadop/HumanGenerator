@@ -773,7 +773,9 @@ class ParamPanel(ui.Frame):
             model.reset()
 
     def load_values(self, human_prim: Usd.Prim):
-        """Load values from the human prim into the UI
+        """Load values from the human prim into the UI. Specifically, this function
+        loads the values of the modifiers from the prim and updates any which
+        have changed.
 
         Parameters
         ----------
