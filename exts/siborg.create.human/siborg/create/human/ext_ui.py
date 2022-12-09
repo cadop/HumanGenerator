@@ -3,6 +3,7 @@ from typing import List, TypeVar, Union
 from dataclasses import dataclass
 from . import styles
 from .mhcaller import MHCaller, modifier_image
+from pxr import Usd
 
 
 class SliderEntry:
@@ -770,6 +771,26 @@ class ParamPanel(ui.Frame):
         """
         for model in self.models:
             model.reset()
+
+    def load_values(self, human_prim: Usd.Prim):
+        """Load values from the human prim into the UI
+
+        Parameters
+        ----------
+        HumanPrim : Usd.Prim
+            The USD prim representing the human
+        """
+
+        # Get the data from the prim
+        humandata = human_prim.GetCustomData()
+
+        modifiers = humandata.get("Modifiers")
+
+        # Set any changed values in the models
+        for SliderEntryPanelModel in self.models:
+            for param, float_model in zip(SliderEntryPanelModel.params, SliderEntryPanelModel.float_models):
+                if param.full_name in modifiers:
+                    float_model.set_value(modifiers[param.full_name])
 
     def destroy(self):
         """Destroys the ParamPanel instance as well as the models attached to each group of parameters
