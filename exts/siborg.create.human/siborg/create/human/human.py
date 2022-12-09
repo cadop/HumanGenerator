@@ -234,11 +234,19 @@ class Human:
         proxies = MHCaller.proxies
 
         for p in proxies:
-            # Add the proxy to the prim as custom data by key, specifying type
-            # proxy type should be "Proxies" if type cannot be determined from the
-            # proxy.type property
-            type = p.type if p.type else "Proxies"
-            prim.SetCustomDataByKey(type + ":" + p.name, p.getUuid())
+            # Add the proxy to the prim as custom data by key under "Proxies".
+            # Proxy type should be "proxymeshes" if type cannot be determined from the
+            # proxy.type property.
+            type = p.type if p.type else "proxymeshes"
+
+            # Only "proxymeshes" and "clothes" should be subdictionaries of "Proxies"
+            if type == "clothes" or type == "proxymeshes":
+                prim.SetCustomDataByKey("Proxies:" + type + ":" + p.name, p.getUuid())
+
+            # Other proxy types should be added as a key to the prim with their
+            # type as a prefix to the key and the UUID as the value
+            else:
+                prim.SetCustomDataByKey("Proxies:" + type + "/" + p.name, p.getUuid())
 
     def set_prim(self, usd_prim):
         """Updates the human based on the given prim's attributes
