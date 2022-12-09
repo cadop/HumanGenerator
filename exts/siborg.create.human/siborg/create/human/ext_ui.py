@@ -99,6 +99,8 @@ class Param:
     ----------
     name: str
         The name of the parameter. Used for labeling.
+    full_name: str
+        The full name of the parameter. Used for referencing
     fn: object
         The method to execute when making changes to the parameter
     image: str, optional
@@ -112,6 +114,7 @@ class Param:
     """
 
     name: str
+    full_name: str
     fn: object
     image: str = None
     min: float = 0
@@ -639,6 +642,7 @@ class ParamPanel(ui.Frame):
             Param
                 Parameter data object holding all the modifier data needed to build UI elements
             """
+            print(m.name)
             # Guess a suitable title from the modifier name
             tlabel = m.name.split("-")
             if "|" in tlabel[len(tlabel) - 1]:
@@ -656,6 +660,7 @@ class ParamPanel(ui.Frame):
             # Store modifier info in dataclass for building UI elements
             return Param(
                 label,
+                m.name,
                 m.updateValue,
                 image=image,
                 min=m.getMin(),
@@ -702,12 +707,12 @@ class ParamPanel(ui.Frame):
             # affect a group of targets). Otherwise these look bad. Creates a nice
             # panel to have open by default
             macro_params = (
-                Param("Gender", human.setGender),
-                Param("Age", human.setAge),
-                Param("Muscle", human.setMuscle),
-                Param("Weight", human.setWeight),
-                Param("Height", human.setHeight),
-                Param("Proportions", human.setBodyProportions),
+                Param("Gender", "macrodetails/Gender", human.setGender),
+                Param("Age", "macrodetails/Age", human.setAge),
+                Param("Muscle", "macrodetails-universal/Muscle", human.setMuscle),
+                Param("Weight", "macrodetails-universal/Weight", human.setWeight),
+                Param("Height", "macrodetails-height/Height", human.setHeight),
+                Param("Proportions", "macrodetails-proportions/BodyProportions", human.setBodyProportions),
             )
             # Create a model for storing macro parameter data
             macro_model = SliderEntryPanelModel(macro_params, self.toggle)
@@ -715,9 +720,9 @@ class ParamPanel(ui.Frame):
             # Separate set of race parameters to also be included in the Macros group
             # TODO make race parameters automatically normalize in UI
             race_params = (
-                Param("African", human.setAfrican),
-                Param("Asian", human.setAsian),
-                Param("Caucasian", human.setCaucasian),
+                Param("African", "macrodetails/African", human.setAfrican),
+                Param("Asian", "macrodetails/Asian", human.setAsian),
+                Param("Caucasian", "macrodetails/Caucasian", human.setCaucasian),
             )
             # Create a model for storing race parameter data
             race_model = SliderEntryPanelModel(race_params, self.toggle)
