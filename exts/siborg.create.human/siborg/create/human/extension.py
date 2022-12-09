@@ -25,11 +25,16 @@ class MakeHumanExtension(omni.ext.IExt):
         self._usd_context = omni.usd.get_context()
         self._selection = self._usd_context.get_selection()
         self._human_selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
+        
+        # subscribe to stage events
         self._events = self._usd_context.get_stage_event_stream()
         self._stage_event_sub = self._events.create_subscription_to_pop(
             self._on_stage_event,
             name='human seletion changed',
             )
+
+        # get message bus event stream so we can push events to the message bus
+        self._bus = omni.kit.app.get_app().get_message_bus_event_stream()
 
         # create a model to hold the selected prim path
         self._selected_primpath_model = ui.SimpleStringModel("-")
@@ -60,7 +65,7 @@ class MakeHumanExtension(omni.ext.IExt):
                 # This event will be picked up by the window and used to update the UI
                 if prim_kind == "Xform" and prim.GetCustomDataByKey("human"):
                     carb.log_warn("Human selected")
-                    self._events.push(self._human_selection_event, payload={"prim": prim})
+                    self._bus.push(self._human_selection_event, payload={"prim_path": path})
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")
@@ -105,10 +110,10 @@ class MHWindow(ui.Window):
         self.deferred_dock_in(
             "Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
 
-        # Subscribe to human selection events
-        events = omni.usd.get_context().get_stage_event_stream()
+        # Subscribe to human selection events on the message bus
+        bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
-        self._selection_sub = events.create_subscription_to_pop(selection_event, self._on_human_selected)
+        self._selection_sub = bus.create_subscription_to_pop_by_type(selection_event, self._on_human_selected)
 
         self.frame.set_build_fn(self._build_ui)
 
@@ -160,9 +165,14 @@ class MHWindow(ui.Window):
         Parameters
         ----------
         event : carb.events.Event
-            The event that was pushed to the event stream. Contains payload data with the selected prim
+            The event that was pushed to the event stream. Contains payload data with
+            the selected prim
         """
-        prim = event.payload["prim"]
+
+        # Get the stage
+        stage = omni.usd.get_context().get_stage()
+        # Get the prim from the path in the event payload
+        prim = stage.GetPrimAtPath(event.payload["prim_path"])
         # Update the list of applied proxies
         # self.list_model.set_value(prim.GetCustomDataByKey("proxies"))
         # Update the list of applied modifiers
