@@ -20,7 +20,6 @@ class Human:
         """
 
         self.name = name
-        self.prim = None
 
         # Set the human in makehuman to default values
         MHCaller.reset_human()
@@ -242,20 +241,20 @@ class Human:
             prim.SetCustomDataByKey(type + ":" + p.name, p.getUuid())
 
     def set_prim(self, usd_prim):
-        """Sets the prim of the human to the given prim and updates the human
-        based on the prim's attributes
+        """Updates the human based on the given prim's attributes
 
         Parameters
         ----------
         usd_prim : Usd.Prim
-            Prim from which to update the human model. We also update this prim
-            when the human model is updated"""
-        self._prim = usd_prim
+            Prim from which to update the human model."""
 
         # Get the data from the prim
-        humandata = self._prim.GetCustomData()
+        humandata = usd_prim.GetCustomData()
 
         # Get the modifiers from the prim
         modifiers = humandata.get("Modifiers")
         for m, v in modifiers.items():
-            MHCaller.human.getModifier(m).setValue(v, skipDependencies=True)
+            MHCaller.human.getModifier(m).setValue(v, skipDependencies=False)
+
+        # Update the human in MHCaller
+        MHCaller.human.applyAllTargets()
