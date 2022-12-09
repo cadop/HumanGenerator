@@ -4,6 +4,7 @@ from .mhcaller import MHCaller
 from .browser import AssetBrowserFrame
 from .ext_ui import DropListModel, DropList, ParamPanelModel, ParamPanel
 import carb
+import carb.events
 from .styles import window_style
 from .browser import MHAssetBrowserModel
 import omni
@@ -23,13 +24,12 @@ class MakeHumanExtension(omni.ext.IExt):
         # see https://github.com/mtw75/kit_customdata_view
         self._usd_context = omni.usd.get_context()
         self._selection = self._usd_context.get_selection()
+        self._human_selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         self._events = self._usd_context.get_stage_event_stream()
         self._stage_event_sub = self._events.create_subscription_to_pop(
             self._on_stage_event,
             name='human seletion changed',
             )
-
-        self.human = Human()
 
         # create a model to hold the selected prim path
         self._selected_primpath_model = ui.SimpleStringModel("-")
@@ -56,9 +56,11 @@ class MakeHumanExtension(omni.ext.IExt):
                 self._selected_primpath_model.set_value(path)
                 prim = stage.GetPrimAtPath(path)
                 prim_kind = prim.GetTypeName()
+                # If the selection is a human, push an event to the event stream with the prim as a payload
+                # This event will be picked up by the window and used to update the UI
                 if prim_kind == "Xform" and prim.GetCustomDataByKey("human"):
                     carb.log_warn("Human selected")
-                    self.human.set_prim(prim)
+                    self._events.push(self._human_selection_event, payload={"prim": prim})
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")
@@ -103,6 +105,11 @@ class MHWindow(ui.Window):
         self.deferred_dock_in(
             "Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
 
+        # Subscribe to human selection events
+        events = omni.usd.get_context().get_stage_event_stream()
+        selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
+        self._selection_sub = events.create_subscription_to_pop(selection_event, self._on_human_selected)
+
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
@@ -146,6 +153,20 @@ class MHWindow(ui.Window):
                     #     height=50,
                     #     clicked_fn=lambda: mh_usd.add_to_scene(True),
                     # )
+
+    def _on_human_selected(self, event):
+        """Callback for human selection events
+
+        Parameters
+        ----------
+        event : carb.events.Event
+            The event that was pushed to the event stream. Contains payload data with the selected prim
+        """
+        prim = event.payload["prim"]
+        # Update the list of applied proxies
+        # self.list_model.set_value(prim.GetCustomDataByKey("proxies"))
+        # Update the list of applied modifiers
+        self.param_panel.load_values(prim)
 
     def new_human(self):
         """Creates a new human in the scene and selects it"""
