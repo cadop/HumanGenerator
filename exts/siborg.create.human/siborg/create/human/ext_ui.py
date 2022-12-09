@@ -781,6 +781,10 @@ class ParamPanel(ui.Frame):
             The USD prim representing the human
         """
 
+        # Make the prim exists
+        if not human_prim.IsValid():
+            return
+
         # Get the data from the prim
         humandata = human_prim.GetCustomData()
 
