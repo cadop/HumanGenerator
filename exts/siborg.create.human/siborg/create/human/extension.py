@@ -106,6 +106,10 @@ class MHWindow(ui.Window):
             ),
         )
 
+        # Keep track of the human and human prim path
+        self._human = None
+        self._human_prim_path = None
+
         # Dock UI wherever the "Content" tab is found (bottom panel by default)
         self.deferred_dock_in(
             "Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
@@ -152,12 +156,12 @@ class MHWindow(ui.Window):
                         height=50,
                         clicked_fn=self.new_human,
                     )
-                    ## Updates current human in omniverse scene
-                    # ui.Button(
-                    #     "Update Meshes in Scene",
-                    #     height=50,
-                    #     clicked_fn=lambda: mh_usd.add_to_scene(True),
-                    # )
+                    # Updates current human in omniverse scene
+                    ui.Button(
+                        "Update Meshes in Scene",
+                        height=50,
+                        clicked_fn=lambda: self._human.update_in_scene(self._human_prim_path),
+                    )
 
     def _on_human_selected(self, event):
         """Callback for human selection events
@@ -180,9 +184,9 @@ class MHWindow(ui.Window):
 
     def new_human(self):
         """Creates a new human in the scene and selects it"""
-        human = Human()
-        prim_path = human.add_to_scene()
+        self._human = Human()
+        self._human_prim_path = self._human.add_to_scene()
         # Get selection.
         selection = omni.usd.get_context().get_selection()
         # Select the new human.
-        selection.set_selected_prim_paths([prim_path], True)
+        selection.set_selected_prim_paths([self._human_prim_path], True)
