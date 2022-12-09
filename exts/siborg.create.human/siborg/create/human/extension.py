@@ -185,8 +185,8 @@ class MHWindow(ui.Window):
         # Update the human prim path
         self._human_prim_path = event.payload["prim_path"]
 
-        # Update the list of applied proxies
-        # self.list_model.set_value(prim.GetCustomDataByKey("proxies"))
+        # Update the list of applied proxies stored in the list model
+        self.proxy_list.model.update()
         # Update the list of applied modifiers
         self.param_panel.load_values(prim)
 
