@@ -107,8 +107,8 @@ class MHWindow(ui.Window):
         )
 
         # Keep track of the human and human prim path
-        self._human = None
-        self._human_prim_path = None
+        self._human = Human()
+        self._human_prim_path = ""
 
         # Dock UI wherever the "Content" tab is found (bottom panel by default)
         self.deferred_dock_in(
@@ -170,13 +170,21 @@ class MHWindow(ui.Window):
         ----------
         event : carb.events.Event
             The event that was pushed to the event stream. Contains payload data with
-            the selected prim
+            the selected prim path
         """
 
         # Get the stage
         stage = omni.usd.get_context().get_stage()
+
         # Get the prim from the path in the event payload
         prim = stage.GetPrimAtPath(event.payload["prim_path"])
+
+        # Update the human in MHCaller
+        self._human.set_prim(prim)
+
+        # Update the human prim path
+        self._human_prim_path = event.payload["prim_path"]
+
         # Update the list of applied proxies
         # self.list_model.set_value(prim.GetCustomDataByKey("proxies"))
         # Update the list of applied modifiers
@@ -184,7 +192,10 @@ class MHWindow(ui.Window):
 
     def new_human(self):
         """Creates a new human in the scene and selects it"""
-        self._human = Human()
+        # Reset the human
+        MHCaller.reset_human()
+
+        # Create a new human
         self._human_prim_path = self._human.add_to_scene()
         # Get selection.
         selection = omni.usd.get_context().get_selection()
