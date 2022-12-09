@@ -280,6 +280,7 @@ class Human:
                     for name, path in proxies[type].items():
                         MHCaller.add_proxy(path, type)
         # TODO Proxy list is not updated in the UI
+        # TODO this is slow, and should be optimized
 
         # Update the human in MHCaller
         MHCaller.human.applyAllTargets()
