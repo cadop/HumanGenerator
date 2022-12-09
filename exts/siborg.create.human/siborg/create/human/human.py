@@ -264,5 +264,22 @@ class Human:
         for m, v in modifiers.items():
             MHCaller.human.getModifier(m).setValue(v, skipDependencies=False)
 
+        # Get the proxies from the prim
+        proxies = humandata.get("Proxies")
+
+        # Make sure the proxies are not empty
+        if proxies:
+            for type, path in proxies.items():
+                # If the proxy type is not "proxymeshes" or "clothes", add it
+                # as a proxy with the type as the type
+                if type != "proxymeshes" and type != "clothes":
+                    MHCaller.add_proxy(path, type)
+                else:
+                    # Add every proxy in the "clothes" or "proxymeshes" subdictionary
+                    # In this case, name is unused
+                    for name, path in proxies[type].items():
+                        MHCaller.add_proxy(path, type)
+        # TODO Proxy list is not updated in the UI
+
         # Update the human in MHCaller
         MHCaller.human.applyAllTargets()
