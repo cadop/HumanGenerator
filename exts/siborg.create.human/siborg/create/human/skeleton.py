@@ -16,7 +16,7 @@ class Bone:
         Human-readable bone name.
     """
 
-    def __init__(self, skel: Skeleton, name: str, parent: str, head: str, tail: str) -> None:
+    def __init__(self, skel: 'Skeleton', name: str, parent: str, head: str, tail: str) -> None:
         """Create a Bone instance
 
         Parameters
