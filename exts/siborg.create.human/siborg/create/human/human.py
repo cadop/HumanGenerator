@@ -387,7 +387,7 @@ class Human:
             Flat list of weights corresponding to joint indices
         """
         # The maximum number of weights a vertex might have
-        max_influences = mh_mesh.getVertexWeights()._nWeights
+        max_influences = mh_mesh.vertexWeights._nWeights
 
         # Named joints corresponding to vertices and weights ie.
         # {"joint",([indices],[weights])}
