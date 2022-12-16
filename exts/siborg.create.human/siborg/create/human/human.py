@@ -61,6 +61,9 @@ class Human:
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
 
+        # Add the skeleton to the scene
+        self.skeleton.add_to_stage(stage, prim_path)
+
         # Import makehuman objects into the scene
         self.import_meshes(prim_path, stage)
 
