@@ -63,7 +63,7 @@ class MakeHumanExtension(omni.ext.IExt):
                 prim_kind = prim.GetTypeName()
                 # If the selection is a human, push an event to the event stream with the prim as a payload
                 # This event will be picked up by the window and used to update the UI
-                if prim_kind == "Xform" and prim.GetCustomDataByKey("human"):
+                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
                     carb.log_warn("Human selected")
                     self._bus.push(self._human_selection_event, payload={"prim_path": path})
 
