@@ -150,29 +150,27 @@ class Skeleton:
         _bone._mh_bone = self._mh_skeleton.addBone(name, parent, head, tail)
         return _bone
 
-    def add_to_stage(self, stage: Usd.Stage, stage_root_path: str, new_root: bool = False):
+    def add_to_stage(self, stage: Usd.Stage, skel_root_path: str, new_root_bone: bool = False):
         """Adds the skeleton to the USD stage
 
         Parameters
         ----------
         stage : Usd.Stage
             Stage in which to create skeleton prims
-        stage_root_path : str
-            Path to the root prim in the stage
-        new_root : bool, optional
+        skelroot_path : str
+            Path to the human root prim in the stage
+        new_root_bone : bool, optional
             Whether or not to prepend a new root at the origin, by default False
         """
         root_bone = self.roots[0]
 
-        if new_root:
+        if new_root_bone:
             root_bone = self.prepend_root(root_bone)
 
         self.setup_skeleton(root_bone)
 
-        skel_root_path = stage_root_path + self.name
         skeleton_path = skel_root_path + "/Skeleton"
 
-        skelRoot = UsdSkel.Root.Define(stage, skel_root_path)
         usdSkel = UsdSkel.Skeleton.Define(stage, skeleton_path)
 
         # add joints to skeleton by path
