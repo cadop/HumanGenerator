@@ -120,7 +120,7 @@ class Skeleton:
         self._bind_transforms = []
 
         self.roots = _mh_skeleton.roots
-        self.joint_paths = _mh_skeleton.joint_paths
+        self.joint_paths = []
         self.joint_names = []
 
         self.name = name
