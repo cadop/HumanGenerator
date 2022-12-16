@@ -189,6 +189,8 @@ class Skeleton:
         # setup rest transforms in joint-local space
         usdSkel.CreateRestTransformsAttr(self._rel_transforms)
 
+        return usdSkel
+
     def prepend_root(self, oldRoot: Bone, newroot_name: str = "RootJoint", offset: List[float] = [0, 0, 0]) -> Bone:
         """Adds a new root bone to the head of a skeleton, ahead of the existing root bone.
 
