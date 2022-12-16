@@ -5,9 +5,6 @@ import omni.kit
 import omni.usd
 from pxr import Sdf, Usd, UsdGeom
 from .shared import sanitize
-from omni import ui
-import carb
-
 
 class Human:
     def __init__(self, name='human', **kwargs):
