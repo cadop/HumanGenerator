@@ -36,7 +36,10 @@ class Human:
     @property
     def mh_meshes(self):
         """List of meshes attached to the human. Fetched from the makehuman app"""
-        return MHCaller.meshes
+        
+        # Filter out vertices we aren't meant to see
+        mh_meshes = [m.clone(1, filterMaskedVerts=True) for m in MHCaller.meshes]
+        return mh_meshes
 
     def add_to_scene(self):
         """Adds the human to the scene. Creates a prim for the human with custom attributes
