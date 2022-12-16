@@ -175,20 +175,6 @@ class MHCaller:
             # Update the mesh
             mesh.update()
 
-    # TODO remove this function. We can convert from USD if we want to export
-    def store_obj(cls, filepath=None):
-        """Write obj file to disk using makehuman's built-in exporter
-
-        Parameters
-        ----------
-        filepath : str, optional
-            Path on disk to which to write the file. If none, uses cls.filepath
-        """
-        if filepath is None:
-            filepath = cls.filepath
-
-        wavefront.writeObjFile(filepath, cls.meshes)
-
     @classmethod
     def add_proxy(cls, proxypath : str, proxy_type  : str = None):
         """Load a proxy (hair, nails, clothes, etc.) and apply it to the human
