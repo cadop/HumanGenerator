@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 from .shared import sanitize
 from .mhcaller import skeleton as mhskel
+from .mhcaller import MHCaller
 
 
 class Bone:
@@ -115,7 +116,10 @@ class Skeleton:
         name : str, optional
             Name of the skeleton, by default "Skeleton"
         """
-        _mh_skeleton = mhskel.Skeleton(name)
+
+        # Set the skeleton to the makehuman default
+        
+        _mh_skeleton = MHCaller.human.getSkeleton()
         self._rel_transforms = []
         self._bind_transforms = []
 
@@ -162,6 +166,7 @@ class Skeleton:
         new_root_bone : bool, optional
             Whether or not to prepend a new root at the origin, by default False
         """
+
         root_bone = self.roots[0]
 
         if new_root_bone:
@@ -241,7 +246,7 @@ class Skeleton:
         relxform = relxform.transpose()
         # Convert type for USD and store
         relative_transform = Gf.Matrix4d(relxform.tolist())
-        self.rel_transforms.append(relative_transform)
+        self._rel_transforms.append(relative_transform)
 
         # Get matrix for joint transform at rest in global coordinate space. Move
         # to offset to match mesh transform in scene
@@ -258,7 +263,7 @@ class Skeleton:
         # Convert type for USD and store
         bind_transform = Gf.Matrix4d(bxform.tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
-        self.bind_transforms.append(bind_transform)
+        self._bind_transforms.append(bind_transform)
 
     def setup_skeleton(self, bone: Bone, offset: List[float] = [0, 0, 0]) -> None:
         """Traverse the imported skeleton and get the data for each bone for
@@ -284,7 +289,7 @@ class Skeleton:
         path_queue.append(name + "/")
 
         # joints are relative to the root, so we don't prepend a path for the root
-        self.process_bone(bone, "")
+        self._process_bone(bone, "")
 
         # Traverse skeleton (breadth-first) and store joint data
         while queue:
