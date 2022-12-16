@@ -248,15 +248,6 @@ class Skeleton:
         relative_transform = Gf.Matrix4d(relxform.tolist())
         self._rel_transforms.append(relative_transform)
 
-        # Get matrix for joint transform at rest in global coordinate space. Move
-        # to offset to match mesh transform in scene
-        gxform = bone.getRestMatrix(offsetVect=offset)
-        # Transpose the matrix as USD stores transforms in row-major format
-        gxform = gxform.transpose()
-        # Convert type for USD and store
-        global_transform = Gf.Matrix4d(gxform.tolist())
-        self.global_transforms.append(global_transform)
-
         # Get matrix which represents a joints transform in its binding position
         # for binding to a mesh. Move to offset to match mesh transform.
         bxform = bone.getBindMatrix(offsetVect=offset)
