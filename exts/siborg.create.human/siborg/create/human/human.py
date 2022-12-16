@@ -123,13 +123,9 @@ class Human:
             Usd Sdf paths to geometry prims in the scene
         """
 
-        # Get the objects of the human from mhcaller
-        objects = MHCaller.objects
-        meshes = [o.mesh for o in objects]
-
         usd_mesh_paths = []
 
-        for mesh in meshes:
+        for mesh in self.mh_meshes:
             # Number of vertices per face
             nPerFace = mesh.vertsPerFaceForExport
             # Lists to hold pruned lists of vertex and UV indices
