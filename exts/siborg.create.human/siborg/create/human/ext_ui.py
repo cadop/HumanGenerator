@@ -460,6 +460,8 @@ class DropListModel(ui.AbstractItemModel):
         """
         # Gather all proxies from the human object
         items = MHCaller.human.getProxies()
+        # Add the skeleton to the list
+        items.append(MHCaller.human.getSkeleton())
         # Populate the list with non-Nonetype items
         self.children = [DropListItem(i.name, item=i)
                          for i in items if i is not None]
