@@ -36,10 +36,7 @@ class Human:
     @property
     def mh_meshes(self):
         """List of meshes attached to the human. Fetched from the makehuman app"""
-        
-        # Filter out vertices we aren't meant to see
-        mh_meshes = [m.clone(1, filterMaskedVerts=True) for m in MHCaller.meshes]
-        return mh_meshes
+        return MHCaller.meshes
 
     def add_to_scene(self):
         """Adds the human to the scene. Creates a prim for the human with custom attributes
@@ -123,9 +120,13 @@ class Human:
             Usd Sdf paths to geometry prims in the scene
         """
 
+        # Get the objects of the human from mhcaller
+        objects = MHCaller.objects
+        meshes = [o.mesh for o in objects]
+
         usd_mesh_paths = []
 
-        for mesh in self.mh_meshes:
+        for mesh in meshes:
             # Number of vertices per face
             nPerFace = mesh.vertsPerFaceForExport
             # Lists to hold pruned lists of vertex and UV indices
@@ -412,7 +413,7 @@ class Human:
         # {"joint",([indices],[weights])}
         influence_joints = mh_mesh.vertexWeights.data
 
-        num_verts = mh_mesh.getVertexCount(excludeMaskedVerts=True)
+        num_verts = mh_mesh.getVertexCount(excludeMaskedVerts=False)
 
         # all skeleton joints in USD order
         binding_joints = joint_names
