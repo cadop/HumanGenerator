@@ -184,10 +184,10 @@ class Skeleton:
         attribute.Set(self.joint_paths)
 
         # Add bind transforms to skeleton
-        usdSkel.CreateBindTransformsAttr(self.bind_transforms)
+        usdSkel.CreateBindTransformsAttr(self._bind_transforms)
 
         # setup rest transforms in joint-local space
-        usdSkel.CreateRestTransformsAttr(self.rel_transforms)
+        usdSkel.CreateRestTransformsAttr(self._rel_transforms)
 
     def prepend_root(self, oldRoot: Bone, newroot_name: str = "RootJoint", offset: List[float] = [0, 0, 0]) -> Bone:
         """Adds a new root bone to the head of a skeleton, ahead of the existing root bone.
@@ -250,9 +250,12 @@ class Skeleton:
 
         # Get matrix which represents a joints transform in its binding position
         # for binding to a mesh. Move to offset to match mesh transform.
+        # getBindMatrix() returns a tuple of the bind matrix and the bindinv
+        # matrix. Since omniverse uses row-major format, we can just use the
+        # already transposed bind matrix.
         bxform = bone.getBindMatrix(offsetVect=offset)
         # Convert type for USD and store
-        bind_transform = Gf.Matrix4d(bxform.tolist())
+        bind_transform = Gf.Matrix4d(bxform[1].tolist())
         # bind_transform = Gf.Matrix4d().SetIdentity() TODO remove
         self._bind_transforms.append(bind_transform)
 
