@@ -72,6 +72,28 @@ class Human:
         # Add the skeleton to the scene
         self.usd_skel= self.skeleton.add_to_stage(stage, prim_path)
 
+        # Generate bone weights for all meshes up front so they can be reused for all
+
+        rawWeights = MHCaller.human.getVertexWeights(
+            MHCaller.human.getSkeleton()
+        )  # Basemesh weights
+        for mesh in self.mh_meshes:
+            if mesh.object.proxy:
+                # Transfer weights to proxy
+                parentWeights = mesh.object.proxy.getVertexWeights(
+                    rawWeights, MHCaller.human.getSkeleton()
+                )
+            else:
+                parentWeights = rawWeights
+            # Transfer weights to face/vert masked and/or subdivided mesh
+            weights = mesh.getVertexWeights(parentWeights)
+
+            # Attach these vertexWeights to the mesh to pass them around the
+            # exporter easier, the cloned mesh is discarded afterwards, anyway
+            
+            # if this is the same person, just skip updating weights
+            mesh.vertexWeights = weights
+
         # Import makehuman objects into the scene
         mesh_paths = self.import_meshes(prim_path, stage)
 
