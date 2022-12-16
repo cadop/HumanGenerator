@@ -41,7 +41,7 @@ class Bone:
         self.headJoint = head
         self.tailJoint = tail
 
-    def getRelativeMatrix(self, offset: List[float] = [0, 0, 0]) -> np.NDArray:
+    def getRelativeMatrix(self, offset: List[float] = [0, 0, 0]) -> np.ndarray:
         """_summary_
 
         Parameters
@@ -51,12 +51,12 @@ class Bone:
 
         Returns
         -------
-        np.NDArray
+        np.ndarray
             _description_
         """
         return self._mh_bone.getRelativeMatrix(offset)
 
-    def getRestMatrix(self, offset: List[float] = [0, 0, 0]) -> np.NDArray:
+    def getRestMatrix(self, offset: List[float] = [0, 0, 0]) -> np.ndarray:
         """_summary_
 
         Parameters
@@ -66,12 +66,12 @@ class Bone:
 
         Returns
         -------
-        np.NDArray
+        np.ndarray
             _description_
         """
         return self._mh_bone.getRestMatrix(offset)
 
-    def getBindMatrix(self, offset: List[float] = [0, 0, 0]) -> np.NDArray:
+    def getBindMatrix(self, offset: List[float] = [0, 0, 0]) -> np.ndarray:
         """_summary_
 
         Parameters
@@ -81,7 +81,7 @@ class Bone:
 
         Returns
         -------
-        np.NDArray
+        np.ndarray
             _description_
         """
         return self._mh_bone.getBindMatrix(offset)[1]
