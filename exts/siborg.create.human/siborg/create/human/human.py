@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 from .mhcaller import MHCaller
 import numpy as np
 import omni.kit
@@ -6,6 +6,9 @@ import omni.usd
 from pxr import Sdf, Usd, UsdGeom, UsdSkel
 from .shared import sanitize
 from .skeleton import Skeleton
+from module3d import Object3D
+from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
+
 
 class Human:
     def __init__(self, name='human', **kwargs):
@@ -29,6 +32,11 @@ class Human:
     def objects(self):
         """List of objects attached to the human. Fetched from the makehuman app"""
         return MHCaller.objects
+
+    @property
+    def mh_meshes(self):
+        """List of meshes attached to the human. Fetched from the makehuman app"""
+        return MHCaller.meshes
 
     def add_to_scene(self):
         """Adds the human to the scene. Creates a prim for the human with custom attributes
@@ -62,10 +70,18 @@ class Human:
         self.write_properties(prim_path, stage)
 
         # Add the skeleton to the scene
-        self.skeleton.add_to_stage(stage, prim_path)
+        self.usd_skel= self.skeleton.add_to_stage(stage, prim_path)
 
         # Import makehuman objects into the scene
-        self.import_meshes(prim_path, stage)
+        mesh_paths = self.import_meshes(prim_path, stage)
+
+        # Create bindings between meshes and the skeleton. Returns a list of
+        # bindings the length of the number of meshes
+        bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
+
+        # Setup weights for corresponding mh_meshes (which hold the data) and
+        # bindings (which link USD_meshes to the skeleton)
+        self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
 
         return prim_path
 
@@ -290,3 +306,179 @@ class Human:
 
         # Update the human in MHCaller
         MHCaller.human.applyAllTargets()
+
+    def setup_weights(self, mh_meshes: List['Object3D'], bindings: List[UsdSkel.BindingAPI], joint_names: List[str], joint_paths: List[str]):
+        """Apply weights to USD meshes using data from makehuman. USD meshes,
+        bindings and skeleton must already be in the active scene
+
+        Parameters
+        ----------
+        mh_meshes : list of `Object3D`
+            Makehuman meshes which store weight data
+        bindings : list of `UsdSkel.BindingAPI`
+            USD bindings between meshes and skeleton
+        joint_names : list of str
+            Unique, plaintext names of all joints in the skeleton in USD
+            (breadth-first) order.
+        joint_paths : list of str
+            List of the full usd path to each joint corresponding to the skeleton to bind to
+        """
+
+
+        # Iterate through corresponding meshes and bindings
+        for mh_mesh, binding in zip(mh_meshes, bindings):
+
+            # Calculate vertex weights
+            indices, weights = self.calculate_influences(mh_mesh, joint_names)
+            # Type conversion to native ints and floats from numpy
+            indices = list(map(int, indices))
+            weights = list(map(float, weights))
+            # Type conversion to USD
+            indices = Vt.IntArray(indices)
+            weights = Vt.FloatArray(weights)
+
+            # The number of weights to apply to each vertex, taken directly from
+            # MakeHuman data
+            elementSize = int(mh_mesh.vertexWeights._nWeights)
+            # weight_data = list(mh_mesh.vertexWeights.data) TODO remove
+
+            # We might not need to normalize. Makehuman weights are automatically
+            # normalized when loaded, see:
+            # http://www.makehumancommunity.org/wiki/Technical_notes_on_MakeHuman
+            # TODO Determine if this can be removed
+            UsdSkel.NormalizeWeights(weights, elementSize)
+            UsdSkel.SortInfluences(indices, weights, elementSize)
+
+            # Assign indices to binding
+            indices_attribute = binding.CreateJointIndicesPrimvar(
+                constant=False, elementSize=elementSize
+            )
+
+            joint_attr = binding.GetPrim().GetAttribute('skel:joints')
+            joint_attr.Set(joint_paths)
+
+            indices_attribute.Set(indices)
+
+
+            # Assign weights to binding
+            weights_attribute = binding.CreateJointWeightsPrimvar(
+                constant=False, elementSize=elementSize
+            )
+
+            weights_attribute.Set(weights)
+
+    def calculate_influences(self, mh_mesh: Object3D, joint_names: List[str]):
+        """Build arrays of joint indices and corresponding weights for each vertex.
+        Joints are in USD (breadth-first) order.
+
+        Parameters
+        ----------
+        mh_mesh : Object3D
+            Makehuman-format mesh. Contains weight and vertex data.
+        joint_names : list of str
+            Unique, plaintext names of all joints in the skeleton in USD
+            (breadth-first) order.
+
+        Returns
+        -------
+        indices : list of int
+            Flat list of joint indices for each vertex
+        weights : list of float
+            Flat list of weights corresponding to joint indices
+        """
+        # The maximum number of weights a vertex might have
+        max_influences = mh_mesh.getVertexWeights()._nWeights
+
+        # Named joints corresponding to vertices and weights ie.
+        # {"joint",([indices],[weights])}
+        influence_joints = mh_mesh.vertexWeights.data
+
+        num_verts = mh_mesh.getVertexCount(excludeMaskedVerts=True)
+
+        # all skeleton joints in USD order
+        binding_joints = joint_names
+
+        # Corresponding arrays of joint indices and weights of length num_verts.
+        # Allots the maximum number of weights for every vertex, and pads any
+        # remaining weights with 0's, per USD spec, see:
+        # https://graphics.pixar.com/usd/dev/api/_usd_skel__schemas.html#UsdSkel_BindingAPI
+        # "If a point has fewer influences than are needed for other points, the
+        # unused array elements of that point should be filled with 0, both for
+        # joint indices and for weights."
+
+        indices = np.zeros((num_verts, max_influences))
+        weights = np.zeros((num_verts, max_influences))
+
+        # Keep track of the number of joint influences on each vertex
+        influence_counts = np.zeros(num_verts, dtype=int)
+
+        for joint, joint_data in influence_joints.items():
+            # get the index of the joint in our USD-ordered list of all joints
+            joint_index = binding_joints.index(joint)
+            for vert_index, weight in zip(*joint_data):
+
+                # Use influence_count to keep from overwriting existing influences
+                influence_count = influence_counts[vert_index]
+
+                # Add the joint index to our vertex array
+                indices[vert_index][influence_count] = joint_index
+                # Add the weight to the same vertex
+                weights[vert_index][influence_count] = weight
+
+                # Add to the influence count for this vertex
+                influence_counts[vert_index] += 1
+
+        # Check for any unweighted verts (this is a test routine)
+        # for i, d in enumerate(indices): if np.all((d == 0)): print(i)
+
+        # Flatten arrays to one dimensional lists
+        indices = indices.flatten()
+        weights = weights.flatten()
+
+        return indices, weights
+
+    def setup_bindings(self, paths: List[Sdf.Path], stage: Usd.Stage, skeleton: UsdSkel.Skeleton):
+        """Setup bindings between meshes in the USD scene and the skeleton
+
+        Parameters
+        ----------
+        paths : List of Sdf.Path
+            USD Sdf paths to each mesh prim
+        stage : Usd.Stage
+            The USD stage where the prims can be found
+        skeleton : UsdSkel.Skeleton
+            The USD skeleton to apply bindings to
+
+        Returns
+        -------
+        array of: UsdSkel.BindingAPI
+            Array of bindings between each mesh and the skeleton, in "path" order
+        """
+        bindings = []
+
+        # TODO rename "mesh" to "path"
+        for mesh in paths:
+            # Get the prim in the stage
+            prim = stage.GetPrimAtPath(mesh)
+
+            attrs = prim.GetAttribute('primvars:skel:jointWeights')
+            # Check if joint weights have already been applied
+            if attrs.IsValid():
+                prim_path = prim.GetPath()
+                sdf_path = Sdf.Path(prim_path)
+                binding = UsdSkel.BindingAPI.Get(stage, sdf_path)
+
+                # relationships = prim.GetRelationships()
+                # 'material:binding' , 'proxyPrim', 'skel:animationSource','skel:blendShapeTargets','skel:skeleton'
+                # get_binding.GetSkeletonRel()
+
+            else:
+                # Create a binding applied to the prim
+                binding = UsdSkel.BindingAPI.Apply(prim)
+                # Create a relationship between the binding and the skeleton
+                binding.CreateSkeletonRel().SetTargets([skeleton.GetPath()])
+
+            # Add the binding to the list to return
+            bindings.append(binding)
+
+        return bindings
