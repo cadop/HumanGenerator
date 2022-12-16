@@ -111,14 +111,12 @@ class MHCaller:
             mh.getSysDataPath("rigs/default.mhskel"),
             cls.human.meshData,
         )
-        # cmu_skel = skeleton.load(data_path("rigs/cmu_mb.mhskel"), cls.human.meshData)
-        # Build joint weights on our chosen skeleton, derived from the base
-        # skeleton
-        # cmu_skel.autoBuildWeightReferences(cls.base_skel)
 
+        # Set the base skeleton
         cls.human.setBaseSkeleton(cls.base_skel)
-        # Actually add the skeleton
-        # cls.human.setSkeleton(cls.base_skel)
+        # Actually add the skeleton as the rig. We can replace this with a different
+        # skeleton later
+        cls.human.setSkeleton(cls.base_skel)
         cls.human.applyAllTargets()
 
     @classproperty
@@ -333,6 +331,9 @@ class MHCaller:
         # Set the skeleton and update the human
         cls.human.setSkeleton(skel)
         cls.human.applyAllTargets()
+
+        # Return the skeleton object
+        return skel
 
     @classmethod
     def guess_proxy_type(cls, path : str):
