@@ -324,6 +324,9 @@ class Human:
             List of the full usd path to each joint corresponding to the skeleton to bind to
         """
 
+        # TODO Create weights only once per mesh per skeleton, and reuse them
+        # instead of recalculating them every time
+
          # Generate bone weights for all meshes up front so they can be reused for all
         rawWeights = MHCaller.human.getVertexWeights(
             MHCaller.human.getSkeleton()
