@@ -3,8 +3,9 @@ from .mhcaller import MHCaller
 import numpy as np
 import omni.kit
 import omni.usd
-from pxr import Sdf, Usd, UsdGeom
+from pxr import Sdf, Usd, UsdGeom, UsdSkel
 from .shared import sanitize
+from .skeleton import Skeleton
 
 class Human:
     def __init__(self, name='human', **kwargs):
@@ -50,7 +51,9 @@ class Human:
         # Create a path for the next available prim
         prim_path = omni.usd.get_stage_next_free_path(stage, root_path + "/" + self.name, False)
 
-        UsdGeom.Xform.Define(stage, prim_path)
+        # Create a prim for the human
+        # Prim should be a SkelRoot so we can rig the human with a skeleton later
+        UsdSkel.Root.Define(stage, prim_path)
 
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
