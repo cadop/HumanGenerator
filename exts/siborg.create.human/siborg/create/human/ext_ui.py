@@ -648,7 +648,7 @@ class ParamPanel(ui.Frame):
             Param
                 Parameter data object holding all the modifier data needed to build UI elements
             """
-            print(m.name)
+            # print(m.name)
             # Guess a suitable title from the modifier name
             tlabel = m.name.split("-")
             if "|" in tlabel[len(tlabel) - 1]:
