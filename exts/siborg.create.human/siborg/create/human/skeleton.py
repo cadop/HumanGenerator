@@ -2,7 +2,7 @@ from pxr import Usd, Gf, UsdSkel
 from typing import List
 import numpy as np
 from .shared import sanitize
-from .mh_wrapper import skeleton as mhskel
+from .mhcaller import skeleton as mhskel
 
 
 class Bone:
