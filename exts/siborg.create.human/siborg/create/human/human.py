@@ -19,6 +19,9 @@ class Human:
 
         self.name = name
 
+        # Create a skeleton object for the human
+        self.skeleton = Skeleton()
+
         # Set the human in makehuman to default values
         MHCaller.reset_human()
 
