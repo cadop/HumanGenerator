@@ -2,9 +2,12 @@ import omni.ui as ui
 from typing import List, TypeVar, Union
 from dataclasses import dataclass
 from . import styles
-from .mhcaller import MHCaller, modifier_image
+from .mhcaller import MHCaller
 from pxr import Usd
-
+import os
+import inspect
+import makehuman
+import targets
 
 class SliderEntry:
     """Custom UI element that encapsulates a labeled slider and field
@@ -804,3 +807,26 @@ class ParamPanel(ui.Frame):
         super().destroy()
         for model in self.models:
             model.destroy()
+
+def modifier_image(name : str):
+    """Guess the path to a modifier's corresponding image on disk based on the name
+    of the modifier. Useful for building UI for list of modifiers.
+
+    Parameters
+    ----------
+    name : str
+        Name of the modifier
+
+    Returns
+    -------
+    str
+        The path to the image on disk
+    """
+    if name is None:
+        # If no modifier name is provided, we can't guess the file name
+        return None
+    name = name.lower()
+    # Return the modifier path based on the modifier name
+    # TODO determine if images can be loaded from the Makehuman module stored in
+    # site-packages so we don't have to include the data twice
+    return os.path.join(os.path.dirname(inspect.getfile(makehuman)),targets.getTargets().images.get(name, name))
