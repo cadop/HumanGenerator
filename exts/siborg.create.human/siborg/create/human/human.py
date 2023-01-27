@@ -97,7 +97,13 @@ class Human:
     def update_in_scene(self, prim_path: str):
         """Updates the human in the scene. Writes the properties of the human to the
         human prim and imports the human and proxy meshes. This is called when the
-        human is updated"""
+        human is updated
+        
+        Parameters
+        ----------
+        prim_path : str
+            Path to the human prim (prim type is SkelRoot)
+        """
 
         # Get the current stage
         stage = omni.usd.get_context().get_stage()
@@ -105,8 +111,20 @@ class Human:
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
 
+        # Update the skeleton values and insert it into the stage
+        self.usd_skel = self.skeleton.update_in_scene(stage, prim_path)
+
         # Import makehuman objects into the scene
-        self.import_meshes(prim_path, stage)
+        mesh_paths = self.import_meshes(prim_path, stage)
+
+        # Create bindings between meshes and the skeleton. Returns a list of
+        # bindings the length of the number of meshes
+        bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
+
+        # Setup weights for corresponding mh_meshes (which hold the data) and
+        # bindings (which link USD_meshes to the skeleton)
+        self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
+
 
     def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: Tuple[float, float, float] = (0, 0, 0)):
         """Imports the meshes of the human into the scene. This is called when the human is
