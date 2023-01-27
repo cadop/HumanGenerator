@@ -290,7 +290,7 @@ class Skeleton:
         path_queue.append(name + "/")
 
         # joints are relative to the root, so we don't prepend a path for the root
-        self._process_bone(bone, "")
+        self._process_bone(bone, "", offset=offset)
 
         # Traverse skeleton (breadth-first) and store joint data
         while queue:
