@@ -159,7 +159,7 @@ class MHWindow(ui.Window):
                     )
                     # Updates current human in omniverse scene
                     ui.Button(
-                        "Update Meshes in Scene",
+                        "Update Selected Human",
                         height=50,
                         clicked_fn=lambda: self._human.update_in_scene(self._human_prim_path),
                     )
