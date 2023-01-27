@@ -8,7 +8,7 @@ from .shared import sanitize
 from .skeleton import Skeleton
 from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
-
+import carb
 
 class Human:
     def __init__(self, name='human', **kwargs):
@@ -117,34 +117,51 @@ class Human:
             Path to the human prim (prim type is SkelRoot)
         """
 
-        # Get the current stage
-        stage = omni.usd.get_context().get_stage()
+        usd_context = omni.usd.get_context()
+        selection = usd_context.get_selection()
+        selected_prim_paths = selection.get_selected_prim_paths()
+        stage = usd_context.get_stage()
 
-        # Write the properties of the human to the prim
-        self.write_properties(prim_path, stage)
+        if selected_prim_paths and stage:
+            # Get the path of the selected prim
+            if len(selected_prim_paths) == 1:
+                path = selected_prim_paths[0]
+                print(path)
+                prim = stage.GetPrimAtPath(path)
+                prim_kind = prim.GetTypeName()
+                # Check if the prim is a SkelRoot and a human
+                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                    # Write the properties of the human to the prim
+                    self.write_properties(prim_path, stage)
 
-        # Get the objects of the human from mhcaller
-        objects = MHCaller.objects
+                    # Get the objects of the human from mhcaller
+                    objects = MHCaller.objects
 
-        # Get the human object from the list of objects
-        human = objects[0]
+                    # Get the human object from the list of objects
+                    human = objects[0]
 
-        # Determine the offset for the human from the ground
-        offset = -1 * human.getJointPosition("ground") * self.scale
+                    # Determine the offset for the human from the ground
+                    offset = -1 * human.getJointPosition("ground") * self.scale
 
-        # Import makehuman objects into the scene
-        mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
+                    # Import makehuman objects into the scene
+                    mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
 
-        # Update the skeleton values and insert it into the stage
-        self.usd_skel = self.skeleton.update_in_scene(stage, prim_path, offset = offset)
+                    # Update the skeleton values and insert it into the stage
+                    self.usd_skel = self.skeleton.update_in_scene(stage, prim_path, offset = offset)
 
-        # Create bindings between meshes and the skeleton. Returns a list of
-        # bindings the length of the number of meshes
-        bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
+                    # Create bindings between meshes and the skeleton. Returns a list of
+                    # bindings the length of the number of meshes
+                    bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
 
-        # Setup weights for corresponding mh_meshes (which hold the data) and
-        # bindings (which link USD_meshes to the skeleton)
-        self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
+                    # Setup weights for corresponding mh_meshes (which hold the data) and
+                    # bindings (which link USD_meshes to the skeleton)
+                    self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
+                else:
+                    carb.log_warn("The selected prim must be a human!")
+            elif len(selected_prim_paths) > 1:
+                carb.log_warn("Please select only one prim")
+        else:
+            carb.log_warn("Please select a prim")
 
     def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: List[float] = [0, 0, 0]):
         """Imports the meshes of the human into the scene. This is called when the human is
