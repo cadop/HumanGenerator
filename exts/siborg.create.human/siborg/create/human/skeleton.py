@@ -121,7 +121,7 @@ class Skeleton:
         """
 
         # Set the skeleton to the makehuman default and scale it
-        _mh_skeleton = MHCaller.human.getSkeleton().scale(scale)
+        _mh_skeleton = MHCaller.human.getSkeleton().scaled(scale)
         
         self._rel_transforms = []
         self._bind_transforms = []
