@@ -28,7 +28,7 @@ class MakeHumanExtension(omni.ext.IExt):
         
         # subscribe to stage events
         self._events = self._usd_context.get_stage_event_stream()
-        self._stage_event_sub = self._events.create_subscription_to_pop(
+        self._stage_event_sub = self._events.create_subscription_to_push(
             self._on_stage_event,
             name='human seletion changed',
             )
@@ -117,7 +117,7 @@ class MHWindow(ui.Window):
         # Subscribe to human selection events on the message bus
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
-        self._selection_sub = bus.create_subscription_to_pop_by_type(selection_event, self._on_human_selected)
+        self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
 
         self.frame.set_build_fn(self._build_ui)
 
