@@ -81,11 +81,20 @@ class Human:
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
 
-        # Add the skeleton to the scene
-        self.usd_skel= self.skeleton.add_to_stage(stage, prim_path)
+        # Get the objects of the human from mhcaller
+        objects = MHCaller.objects
+
+        # Get the human object from the list of objects
+        human = objects[0]
+
+        # Determine the offset for the human from the ground
+        offset = -1 * human.getJointPosition("ground") * self.scale
 
         # Import makehuman objects into the scene
-        mesh_paths = self.import_meshes(prim_path, stage)
+        mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
+
+        # Add the skeleton to the scene
+        self.usd_skel= self.skeleton.add_to_stage(stage, prim_path, offset = offset)
 
         # Create bindings between meshes and the skeleton. Returns a list of
         # bindings the length of the number of meshes
@@ -114,11 +123,11 @@ class Human:
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
 
-        # Update the skeleton values and insert it into the stage
-        self.usd_skel = self.skeleton.update_in_scene(stage, prim_path)
-
         # Import makehuman objects into the scene
         mesh_paths = self.import_meshes(prim_path, stage)
+
+        # Update the skeleton values and insert it into the stage
+        self.usd_skel = self.skeleton.update_in_scene(stage, prim_path, offset = offset)
 
         # Create bindings between meshes and the skeleton. Returns a list of
         # bindings the length of the number of meshes
@@ -128,8 +137,7 @@ class Human:
         # bindings (which link USD_meshes to the skeleton)
         self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
 
-
-    def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: Tuple[float, float, float] = (0, 0, 0)):
+    def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: List[float] = [0, 0, 0]):
         """Imports the meshes of the human into the scene. This is called when the human is
         added to the scene, and when the human is updated. This function creates mesh prims
         for both the human and its proxies, and attaches them to the human prim. If a mesh already
@@ -141,8 +149,8 @@ class Human:
             Path to the human prim
         stage : Usd.Stage
             Stage to write to
-        offset : Tuple[float, float, float]
-            Offset to apply to the human and proxies. Defaults to (0, 0, 0)
+        offset : List[float], optional
+            Offset to move the mesh relative to the prim origin, by default [0, 0, 0]
 
         Returns
         -------
@@ -152,12 +160,6 @@ class Human:
 
         # Get the objects of the human from mhcaller
         objects = MHCaller.objects
-
-        # Get the human object from the list of objects
-        human = objects[0]
-
-        # Determine the offset for the human from the ground
-        offset = -1 * human.getJointPosition("ground") * self.scale
 
         # Get the meshes of the human and its proxies
         meshes = [o.mesh for o in objects]
