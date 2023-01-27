@@ -301,8 +301,20 @@ class Skeleton:
 
                     self._process_bone(neighbor, path, offset)
 
-    def update(self):
+    def update_in_scene(self, stage: Usd.Stage, skel_root_path: str):
         """Resets the skeleton values in the stage, updates the skeleton from makehuman.
+        
+        Parameters
+        ----------
+        stage : Usd.Stage
+            The stage in which to update the skeleton
+        skel_root_path : str
+            The path to the skeleton root in the stage
+
+        Returns
+        -------
+        UsdSkel.Skeleton
+            The updated skeleton in USD
         """
         # Get the skeleton from makehuman
         _mh_skeleton = MHCaller.human.getSkeleton()
@@ -315,3 +327,6 @@ class Skeleton:
 
         # Get the root bone(s) of the skeleton
         self.roots = _mh_skeleton.roots
+
+        # Overwrite the skeleton in the stage with the new skeleton
+        return self.add_to_stage(stage, skel_root_path)
