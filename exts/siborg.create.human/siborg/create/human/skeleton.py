@@ -120,8 +120,10 @@ class Skeleton:
             Name of the skeleton, by default "Skeleton"
         """
 
+        self.scale = scale
+
         # Set the skeleton to the makehuman default and scale it
-        _mh_skeleton = MHCaller.human.getSkeleton().scaled(scale)
+        _mh_skeleton = MHCaller.human.getSkeleton().scaled(self.scale)
         
         self._rel_transforms = []
         self._bind_transforms = []
@@ -324,7 +326,7 @@ class Skeleton:
             The updated skeleton in USD
         """
         # Get the skeleton from makehuman
-        _mh_skeleton = MHCaller.human.getSkeleton()
+        _mh_skeleton = MHCaller.human.getSkeleton().scaled(self.scale)
 
         # Clear out any existing data
         self._rel_transforms = []
