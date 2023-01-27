@@ -72,6 +72,7 @@ class MakeHumanExtension(omni.ext.IExt):
         self._window.destroy()
         self._window = None
         # unsubscribe from stage events
+        self._stage_event_sub.unsubscribe()
         self._stage_event_sub = None
 
 
@@ -202,3 +203,8 @@ class MHWindow(ui.Window):
         selection = omni.usd.get_context().get_selection()
         # Select the new human.
         selection.set_selected_prim_paths([self._human_prim_path], True)
+
+    def __destroy__(self):
+        """Called when the window is destroyed. Unsuscribes from human selection events"""
+        self._selection_sub.unsubscribe()
+        self._selection_sub = None
