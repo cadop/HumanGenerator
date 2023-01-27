@@ -300,3 +300,29 @@ class Skeleton:
                     path_queue.append(path + name + "/")
 
                     self._process_bone(neighbor, path, offset)
+
+    def update_in_scene(self, stage: Usd.Stage, skel_root_path: str):
+        """Resets the skeleton values in the stage, updates the skeleton from makehuman, and finally adds the updated
+        skeleton to the stage.
+        
+        Parameters
+        ----------
+        stage : Usd.Stage
+            The stage in which to update the skeleton
+        skel_root_path : str
+            The path to the skeleton root in the stage
+        """
+        # Get the skeleton from makehuman
+        _mh_skeleton = MHCaller.human.getSkeleton()
+
+        # Clear out any existing data
+        self._rel_transforms = []
+        self._bind_transforms = []
+        self.joint_paths = []
+        self.joint_names = []
+
+        # Get the root bone(s) of the skeleton
+        self.roots = _mh_skeleton.roots
+
+        # Add the skeleton to the stage
+        self.add_to_stage(stage, skel_root_path)
