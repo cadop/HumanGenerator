@@ -192,8 +192,9 @@ class MHWindow(ui.Window):
 
     def new_human(self):
         """Creates a new human in the scene and selects it"""
-        # Create a new human
-        self._human = Human()
+        
+        # Reset the human class
+        self._human.reset()
 
         # Create a new human
         self._human_prim_path = self._human.add_to_scene()

@@ -28,6 +28,15 @@ class Human:
         # Set the human in makehuman to default values
         MHCaller.reset_human()
 
+    def reset(self):
+        """Resets the human to default values"""
+
+        # Reset the skeleton
+        self.skeleton = Skeleton()
+
+        # Reset the human in makehuman
+        MHCaller.reset_human()
+
     @property
     def objects(self):
         """List of objects attached to the human. Fetched from the makehuman app"""
