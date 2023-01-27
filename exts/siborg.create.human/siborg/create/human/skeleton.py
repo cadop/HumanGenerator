@@ -301,7 +301,7 @@ class Skeleton:
 
                     self._process_bone(neighbor, path, offset)
 
-    def update_in_scene(self):
+    def update(self):
         """Resets the skeleton values in the stage, updates the skeleton from makehuman.
         """
         # Get the skeleton from makehuman
