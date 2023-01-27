@@ -205,7 +205,7 @@ class MHWindow(ui.Window):
         selection.set_selected_prim_paths([self._human_prim_path], True)
 
     def destroy(self):
-        super().destroy()
         """Called when the window is destroyed. Unsuscribes from human selection events"""
         self._selection_sub.unsubscribe()
         self._selection_sub = None
+        super().destroy()
