@@ -1,5 +1,5 @@
 import omni.ui as ui
-from typing import List, TypeVar, Union
+from typing import List, TypeVar, Union, Callable
 from dataclasses import dataclass
 from . import styles
 from .mhcaller import MHCaller
@@ -136,13 +136,15 @@ class SliderEntryPanelModel:
         List of parameter objects
     toggle : ui.SimpleBoolModel
         Tracks whether or not the human should update immediately when changes are made
+    instant_update : Callable
+        A function to call when instant update is toggled
     float_models : list of `ui.SimpleFloatModel`
         List of models to track SliderEntry values
     subscriptions : list of `Subscription`
         List of event subscriptions triggered by editing a SliderEntry
     """
 
-    def __init__(self, params: List[Param], toggle: ui.SimpleBoolModel = None):
+    def __init__(self, params: List[Param], toggle: ui.SimpleBoolModel = None, instant_update: Callable = None):
         """Constructs an instance of SliderEntryPanelModel and instantiates models
         to hold parameter data for individual SliderEntries
 
@@ -153,10 +155,14 @@ class SliderEntryPanelModel:
             a SliderEntry widget
         toggle : ui.SimpleBoolModel, optional
             Tracks whether or not the human should update immediately when changes are made, by default None
+        instant_update : Callable
+            A function to call when instant update is toggled
         """
+
         self.params = []
         """Param objects corresponding to each SliderEntry widget"""
         self.toggle = toggle
+        self.instant_update = instant_update
         self.float_models = []
         """Models corresponding to each SliderEntry widget. Each model
         tracks the corresponding widget's value"""
@@ -220,8 +226,7 @@ class SliderEntryPanelModel:
         param.fn(m.get_value_as_float())
         # If instant update is toggled on, add the changes to the stage instantly
         if self.toggle.get_value_as_bool():
-            # TODO make changes to human immediately
-            pass
+            self.instant_update()
 
     def destroy(self):
         """Destroys the instance of SliderEntryPanelModel. Deletes event
@@ -611,7 +616,7 @@ class ParamPanel(ui.Frame):
         Models for each group of parameter sliders
     """
 
-    def __init__(self, model: ParamPanelModel, **kwargs):
+    def __init__(self, model: ParamPanelModel, instant_update : Callable = None, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include
         a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for
         different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly.
@@ -619,14 +624,18 @@ class ParamPanel(ui.Frame):
 
         Parameters
         ----------
-        toggle : ui.SimpleBoolModel
-            Model to track whether changes should be instant
+        model: ParamPanelModel
+            Stores data for the panel. Contains a toggle model to track whether changes should be instant
+        instant_update : Callable
+            Function to call when a parameter is changed (if instant update is toggle on)
         """
 
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
         self.model = model
         self.toggle = model.toggle
+        # If no instant update function is passed, use a dummy function and do nothing
+        self.instant_update = instant_update if instant_update else lambda *args: None
         self.models = model.models
         self.set_build_fn(self._build_widget)
 
@@ -721,7 +730,7 @@ class ParamPanel(ui.Frame):
                 Param("Proportions", "macrodetails-proportions/BodyProportions", human.setBodyProportions),
             )
             # Create a model for storing macro parameter data
-            macro_model = SliderEntryPanelModel(macro_params, self.toggle)
+            macro_model = SliderEntryPanelModel(macro_params, self.toggle,  self.instant_update)
 
             # Separate set of race parameters to also be included in the Macros group
             # TODO make race parameters automatically normalize in UI
@@ -731,7 +740,7 @@ class ParamPanel(ui.Frame):
                 Param("Caucasian", "macrodetails/Caucasian", human.setCaucasian),
             )
             # Create a model for storing race parameter data
-            race_model = SliderEntryPanelModel(race_params, self.toggle)
+            race_model = SliderEntryPanelModel(race_params, self.toggle, self.instant_update)
 
             self.models.append(macro_model)
             self.models.append(race_model)
@@ -766,7 +775,7 @@ class ParamPanel(ui.Frame):
                     with ui.CollapsableFrame(group.capitalize(), style=styles.frame_style, collapsed=True):
                         # Model to hold panel parameters
                         model = SliderEntryPanelModel(
-                            group_params(group), self.toggle)
+                            group_params(group), self.toggle,self.instant_update)
                         self.models.append(model)
                         # Create panel of slider entries for modifier group
                         SliderEntryPanel(model)

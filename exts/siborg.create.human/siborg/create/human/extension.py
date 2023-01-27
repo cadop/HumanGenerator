@@ -142,7 +142,7 @@ class MHWindow(ui.Window):
                     with ui.Placer(offset_x=self.frame.computed_content_width/4, draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=5, name="splitter")
                     with ui.HStack():
-                        self.param_panel = ParamPanel(self.param_model)
+                        self.param_panel = ParamPanel(self.param_model, lambda: self._human.update_in_scene(self._human_prim_path))
                         ui.Spacer(width=spacer_width)
                 with ui.VStack():
                     self.proxy_list = DropList(
