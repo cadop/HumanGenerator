@@ -108,18 +108,21 @@ class Skeleton:
         used for skinning / weighting.
     """
 
-    def __init__(self, name="Skeleton") -> None:
+    def __init__(self, scale: float, name="Skeleton") -> None:
         """Create a skeleton instance
 
         Parameters
         ----------
+        scale : float
+            Scale factor to apply to the skeleton
+            
         name : str, optional
             Name of the skeleton, by default "Skeleton"
         """
 
-        # Set the skeleton to the makehuman default
+        # Set the skeleton to the makehuman default and scale it
+        _mh_skeleton = MHCaller.human.getSkeleton().scale(scale)
         
-        _mh_skeleton = MHCaller.human.getSkeleton()
         self._rel_transforms = []
         self._bind_transforms = []
 
@@ -154,7 +157,7 @@ class Skeleton:
         _bone._mh_bone = self._mh_skeleton.addBone(name, parent, head, tail)
         return _bone
 
-    def add_to_stage(self, stage: Usd.Stage, skel_root_path: str, new_root_bone: bool = False):
+    def add_to_stage(self, stage: Usd.Stage, skel_root_path: str, offset: List[float] = [0, 0, 0], new_root_bone: bool = False):
         """Adds the skeleton to the USD stage
 
         Parameters
@@ -163,6 +166,8 @@ class Skeleton:
             Stage in which to create skeleton prims
         skelroot_path : str
             Path to the human root prim in the stage
+        offset : List[float], optional
+            Geometric translation to apply, by default [0, 0, 0]
         new_root_bone : bool, optional
             Whether or not to prepend a new root at the origin, by default False
         """
@@ -172,7 +177,7 @@ class Skeleton:
         if new_root_bone:
             root_bone = self.prepend_root(root_bone)
 
-        self.setup_skeleton(root_bone)
+        self.setup_skeleton(root_bone, offset=self.offset)
 
         skeleton_path = skel_root_path + "/Skeleton"
 
@@ -301,7 +306,7 @@ class Skeleton:
 
                     self._process_bone(neighbor, path, offset)
 
-    def update_in_scene(self, stage: Usd.Stage, skel_root_path: str):
+    def update_in_scene(self, stage: Usd.Stage, skel_root_path: str, offset: List[float] = [0, 0, 0]):
         """Resets the skeleton values in the stage, updates the skeleton from makehuman.
         
         Parameters
@@ -310,6 +315,8 @@ class Skeleton:
             The stage in which to update the skeleton
         skel_root_path : str
             The path to the skeleton root in the stage
+        offset : List[float], optional
+            Geometric translation to apply, by default [0, 0, 0]
 
         Returns
         -------
@@ -329,4 +336,4 @@ class Skeleton:
         self.roots = _mh_skeleton.roots
 
         # Overwrite the skeleton in the stage with the new skeleton
-        return self.add_to_stage(stage, skel_root_path)
+        return self.add_to_stage(stage, skel_root_path, offset)

@@ -22,8 +22,11 @@ class Human:
 
         self.name = name
 
+        # Provide a scale factor (Omniverse provided humans are 10 times larger than makehuman)
+        self.scale = 10
+
         # Create a skeleton object for the human
-        self.skeleton = Skeleton()
+        self.skeleton = Skeleton(self.scale)
 
         # Set the human in makehuman to default values
         MHCaller.reset_human()
@@ -149,7 +152,18 @@ class Human:
 
         # Get the objects of the human from mhcaller
         objects = MHCaller.objects
+
+        # Get the human object from the list of objects
+        human = objects[0]
+
+        # Determine the offset for the human from the ground
+        offset = -1 * human.getJointPosition("ground") * self.scale
+
+        # Get the meshes of the human and its proxies
         meshes = [o.mesh for o in objects]
+
+        # Scale the meshes
+        meshes = [m.clone(self.scale) for m in meshes]
 
         usd_mesh_paths = []
 
