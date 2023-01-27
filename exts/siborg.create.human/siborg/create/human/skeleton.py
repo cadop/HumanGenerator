@@ -177,7 +177,7 @@ class Skeleton:
         if new_root_bone:
             root_bone = self.prepend_root(root_bone)
 
-        self.setup_skeleton(root_bone, offset=self.offset)
+        self.setup_skeleton(root_bone, offset=offset)
 
         skeleton_path = skel_root_path + "/Skeleton"
 
