@@ -123,8 +123,17 @@ class Human:
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
 
+        # Get the objects of the human from mhcaller
+        objects = MHCaller.objects
+
+        # Get the human object from the list of objects
+        human = objects[0]
+
+        # Determine the offset for the human from the ground
+        offset = -1 * human.getJointPosition("ground") * self.scale
+
         # Import makehuman objects into the scene
-        mesh_paths = self.import_meshes(prim_path, stage)
+        mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
 
         # Update the skeleton values and insert it into the stage
         self.usd_skel = self.skeleton.update_in_scene(stage, prim_path, offset = offset)
