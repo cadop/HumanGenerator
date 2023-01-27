@@ -35,7 +35,7 @@ class Human:
         """Resets the human to default values"""
 
         # Reset the skeleton
-        self.skeleton = Skeleton()
+        self.skeleton = Skeleton(self.scale)
 
         # Reset the human in makehuman
         MHCaller.reset_human()
