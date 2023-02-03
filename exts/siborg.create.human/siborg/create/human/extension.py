@@ -4,8 +4,7 @@ import carb
 import carb.events
 import omni
 
-from .window import MHWindow
-
+from .window import MHWindow, WINDOW_TITLE
 
 class MakeHumanExtension(omni.ext.IExt):
     # ext_id is current extension id. It can be used with extension manager to query additional information, like where
@@ -34,7 +33,7 @@ class MakeHumanExtension(omni.ext.IExt):
 
         # create a window for the extension
         print("[siborg.create.human] HumanGeneratorExtension startup")
-        self._window = MHWindow("Human Generator")
+        self._window = MHWindow(WINDOW_TITLE)
 
     def _on_stage_event(self, event):
         if event.type == int(omni.usd.StageEventType.SELECTION_CHANGED):

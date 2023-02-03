@@ -3,10 +3,11 @@ from .browser import MHAssetBrowserModel, AssetBrowserFrame
 from .human import Human
 from .styles import window_style
 import omni.ui as ui
+import omni.kit.ui
 import omni
 import carb
 
-
+WINDOW_TITLE = "Human Generator"
 class MHWindow(ui.Window):
     """
     Main UI window. Contains all UI widgets. Extends omni.ui.Window.
