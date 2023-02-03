@@ -31,9 +31,25 @@ class MakeHumanExtension(omni.ext.IExt):
         # create a model to hold the selected prim path
         self._selected_primpath_model = ui.SimpleStringModel("-")
 
+        # Create a path for menu item to open the window
+        self._menu_path = f"Window/{WINDOW_TITLE}"
+
         # create a window for the extension
         print("[siborg.create.human] HumanGeneratorExtension startup")
-        self._window = MHWindow(WINDOW_TITLE)
+        self._window = MHWindow(WINDOW_TITLE, self._menu_path)
+        self._menu = omni.kit.ui.get_editor_menu().add_item(self._menu_path, self._on_menu_click, True)
+
+
+    def _on_menu_click(self, menu, toggled):
+        """Handles showing and hiding the window from the 'Windows' menu."""
+        if toggled:
+            if self._window is None:
+                self._window = MHWindow(self._menu_path, WINDOW_TITLE, self._menu_path)
+            else:
+                self._window.show()
+        else:
+            if self._window is not None:
+                self._window.hide()
 
     def _on_stage_event(self, event):
         if event.type == int(omni.usd.StageEventType.SELECTION_CHANGED):
@@ -60,8 +76,10 @@ class MakeHumanExtension(omni.ext.IExt):
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")
+        omni.kit.ui.get_editor_menu().remove_item(self._menu_path)
         self._window.destroy()
         self._window = None
         # unsubscribe from stage events
         self._stage_event_sub.unsubscribe()
         self._stage_event_sub = None
+

@@ -21,9 +21,19 @@ class MHWindow(ui.Window):
         A browser for MakeHuman assets, including clothing, hair, and skeleton rigs.
     """
 
-    def __init__(self, *args, **kwargs):
-        """Constructs an instance of MHWindow"""
-        super().__init__(*args, **kwargs)
+    def __init__(self, title, menu_path):
+        """Constructs an instance of MHWindow
+        
+        Parameters
+        ----------
+        menu_path : str
+            The path to the menu item that opens the window
+        """
+
+        super().__init__(title)
+
+        self._menu_path = menu_path
+
         # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
         # Holds the state of the proxy list
@@ -39,6 +49,7 @@ class MHWindow(ui.Window):
             ),
         )
 
+
         # Keep track of the human and human prim path
         self._human = Human()
         self._human_prim_path = ""
@@ -51,6 +62,9 @@ class MHWindow(ui.Window):
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
+
+        # Run when visibility changes
+        self.set_visibility_changed_fn(self._on_visibility_changed)
 
         self.frame.set_build_fn(self._build_ui)
 
@@ -141,3 +155,17 @@ class MHWindow(ui.Window):
         self._selection_sub.unsubscribe()
         self._selection_sub = None
         super().destroy()
+
+    def on_shutdown(self):
+        """Called when the extension is shutting down"""
+        self._win=None
+
+    def _on_visibility_changed(self, visible):
+        omni.kit.ui.get_editor_menu().set_value(self._menu_path, visible)
+
+    def show(self):
+        self.visible = True
+        self.focus()
+        
+    def hide(self):
+        self.visible = False
