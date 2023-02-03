@@ -34,11 +34,13 @@ class Human:
     def reset(self):
         """Resets the human to default values"""
 
+        # Reset the human in makehuman
+        MHCaller.reset_human()
+
         # Reset the skeleton
         self.skeleton = Skeleton(self.scale)
 
-        # Reset the human in makehuman
-        MHCaller.reset_human()
+
 
     @property
     def objects(self):
