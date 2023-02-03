@@ -19,8 +19,6 @@ class MakeHumanExtension(omni.ext.IExt):
     def on_startup(self, ext_id):
 
         # subscribe to stage events
-        # TODO start listening to stage events only when the window is open,
-        # that way the UI can update based on the current selection
         # see https://github.com/mtw75/kit_customdata_view
         self._usd_context = omni.usd.get_context()
         self._selection = self._usd_context.get_selection()
@@ -54,7 +52,6 @@ class MakeHumanExtension(omni.ext.IExt):
         print(f"== selection changed with {len(selection)} items")
 
         if selection and stage:
-            # TODO reject multiple selection
             if len(selection) > 0:
                 path = selection[-1]
                 print(path)

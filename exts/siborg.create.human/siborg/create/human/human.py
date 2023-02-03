@@ -370,8 +370,6 @@ class Human:
                     # In this case, name is unused
                     for name, path in proxies[type].items():
                         MHCaller.add_proxy(path, type)
-        # TODO Proxy list is not updated in the UI
-        # TODO this is slow, and should be optimized
 
         # Update the human in MHCaller
         MHCaller.human.applyAllTargets()
@@ -392,9 +390,6 @@ class Human:
         joint_paths : list of str
             List of the full usd path to each joint corresponding to the skeleton to bind to
         """
-
-        # TODO Create weights only once per mesh per skeleton, and reuse them
-        # instead of recalculating them every time
 
          # Generate bone weights for all meshes up front so they can be reused for all
         rawWeights = MHCaller.human.getVertexWeights(
@@ -437,7 +432,7 @@ class Human:
             # We might not need to normalize. Makehuman weights are automatically
             # normalized when loaded, see:
             # http://www.makehumancommunity.org/wiki/Technical_notes_on_MakeHuman
-            # TODO Determine if this can be removed
+
             UsdSkel.NormalizeWeights(weights, elementSize)
             UsdSkel.SortInfluences(indices, weights, elementSize)
 
