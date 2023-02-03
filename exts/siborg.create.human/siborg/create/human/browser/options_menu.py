@@ -40,7 +40,7 @@ class FolderOptionsMenu(OptionsMenu):
 
     async def _download(self):
         # Makehuman system assets
-        url = "https://download.tuxfamily.org/makehuman/asset_packs/makehuman_system_assets/makehuman_system_assets.zip"
+        url = "http://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip"
         # Smaller zip for testing
         # url = "https://download.tuxfamily.org/makehuman/asset_packs/shirts03/shirts03_ccby.zip"
         dest_url = data_path("")
