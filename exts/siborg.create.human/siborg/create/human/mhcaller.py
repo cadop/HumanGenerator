@@ -88,10 +88,9 @@ class MHCaller:
         cls.human.resetMeshValues()
         # Restore eyes
         # cls.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
-        # Remove skeleton
-        # cls.human.skeleton = None
-        # HACK Set the age to itcls to force an update of targets
-        cls.human.setAge(cls.human.getAge())
+        # Reset skeleton to base skeleton
+        cls.human.setSkeleton(cls.base_skel)
+        cls.human.applyAllTargets()
 
     @classmethod
     def init_human(cls):
