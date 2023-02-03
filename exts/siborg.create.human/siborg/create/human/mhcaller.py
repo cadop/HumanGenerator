@@ -88,8 +88,8 @@ class MHCaller:
         cls.human.resetMeshValues()
         # Restore eyes
         # cls.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
-        # Reset skeleton to base skeleton
-        cls.human.setSkeleton(cls.base_skel)
+        # Reset skeleton to the game skeleton
+        cls.human.setSkeleton(cls.game_skel)
         # HACK Set the age to itcls to force an update of targets, otherwise humans
         # are created with the MH base mesh, see:
         # http://static.makehumancommunity.org/makehuman/docs/professional_mesh_topology.html
@@ -115,11 +115,20 @@ class MHCaller:
             cls.human.meshData,
         )
 
+        # Load the game developer skeleton
+        # The root of this skeleton is at the origin which is better for animation
+        # retargeting
+        cls.game_skel = skeleton.load(data_path("rigs/game_engine.mhskel"), cls.human.meshData)
+        # Build joint weights on our chosen skeleton, derived from the base
+        # skeleton
+        cls.game_skel.autoBuildWeightReferences(cls.base_skel)
+
         # Set the base skeleton
         cls.human.setBaseSkeleton(cls.base_skel)
-        # Actually add the skeleton as the rig. We can replace this with a different
-        # skeleton later
-        cls.human.setSkeleton(cls.base_skel)
+
+        # Set the game skeleton
+        cls.human.setSkeleton(cls.game_skel)
+
         cls.human.applyAllTargets()
 
     @classproperty
