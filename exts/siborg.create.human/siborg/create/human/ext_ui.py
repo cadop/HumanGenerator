@@ -76,23 +76,25 @@ class SliderEntry:
     def _build_widget(self):
         """Construct the UI elements"""
         with ui.HStack(height=0, style=styles.sliderentry_style):
-            ui.Label(
-                self.label,
-                height=15,
-                alignment=ui.Alignment.RIGHT,
-                name="label_param",
-            )
             # If an image is available, display it
             if self.image:
-                ui.Image(self.image)
-            # create a floatdrag (can be used as a slider or an entry field) to
-            # input parameter values
-            self.drag = ui.FloatDrag(model=self.model, step=self.step)
-            # Limit drag values to within min and max if provided
-            if self.min is not None:
-                self.drag.min = self.min
-            if self.max is not None:
-                self.drag.max = self.max
+                ui.Image(self.image, height=50)
+            # Stack the label and slider on top of each other
+            with ui.VStack(spacing = 5):
+                ui.Label(
+                    self.label,
+                    height=15,
+                    alignment=ui.Alignment.CENTER,
+                    name="label_param",
+                )
+                # create a floatdrag (can be used as a slider or an entry field) to
+                # input parameter values
+                self.drag = ui.FloatDrag(model=self.model, step=self.step)
+                # Limit drag values to within min and max if provided
+                if self.min is not None:
+                    self.drag.min = self.min
+                if self.max is not None:
+                    self.drag.max = self.max
 
 
 @dataclass
@@ -266,7 +268,7 @@ class SliderEntryPanel:
         # Layer widgets on top of a rectangle to create a group frame
         with ui.ZStack(style=styles.panel_style, height=0):
             ui.Rectangle(name="group_rect")
-            with ui.VStack(name="contents"):
+            with ui.VStack(name="contents", spacing = 8):
                 # If the panel has a label, show it
                 if self.label:
                     ui.Label(self.label, height=0)
