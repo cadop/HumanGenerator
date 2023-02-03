@@ -19,10 +19,13 @@ tools/*
 link_app.bat
 link_app.sh
 
+/venv/
+
 *.target
 
 exts/siborg.create.human/data/*
 !exts/siborg.create.human/data/rigs/
 !exts/siborg.create.human/data/*.png
 
-/venv/
+# Deprecated files
+*.old
