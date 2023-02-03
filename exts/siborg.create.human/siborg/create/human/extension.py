@@ -1,15 +1,10 @@
 import omni.ext
 import omni.ui as ui
-from .mhcaller import MHCaller
-from .browser import AssetBrowserFrame
-from .ext_ui import DropListModel, DropList, ParamPanelModel, ParamPanel
 import carb
 import carb.events
-from .styles import window_style
-from .browser import MHAssetBrowserModel
 import omni
-from .human import Human
-from pxr import Usd
+
+from .window import MHWindow
 
 
 class MakeHumanExtension(omni.ext.IExt):
