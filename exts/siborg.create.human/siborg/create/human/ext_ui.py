@@ -78,7 +78,7 @@ class SliderEntry:
         with ui.HStack(height=0, style=styles.sliderentry_style):
             # If an image is available, display it
             if self.image:
-                ui.Image(self.image, height=50)
+                ui.Image(self.image, height=50, style={"border_radius": 5})
             # Stack the label and slider on top of each other
             with ui.VStack(spacing = 5):
                 ui.Label(
