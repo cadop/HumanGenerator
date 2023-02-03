@@ -210,7 +210,6 @@ class MHCaller:
         mesh2.update()
 
         # Set the object to be subdivided if the human is subdivided
-        # TODO is this needed?
         obj.setSubdivided(cls.human.isSubdivided())
 
 
@@ -280,7 +279,6 @@ class MHCaller:
         item : Union[Skeleton,Proxy]
             Makehuman skeleton or proxy to remove from the human
         """
-        # TODO handle removing skeletons
         if isinstance(item, proxy.Proxy):
             cls.remove_proxy(item)
         else:
