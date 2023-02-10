@@ -3,33 +3,6 @@ from module3D import Object3D
 from pxr import Usd, UsdGeom, UsdShade, Sdf
 
 
-
-def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
-    """Fetches materials from Makehuman meshes and applies them to their corresponding
-    Usd mesh prims in the stage.
-
-    Parameters
-    ----------
-    mh_meshes : List[Object3D]
-        Makehuman meshes. Contain references to textures on disk.
-    meshes : List[Sdf.Path]
-        Paths to Usd meshes in the stage
-    root : str
-        The root path under which to create new prims
-    stage : Usd.Stage
-        Usd stage in which to create materials, and which contains the meshes
-        to which to apply materials
-    """
-    for mh_mesh, mesh in zip(mh_meshes, meshes):
-        # Get a texture path and name from the makehuman mesh
-        texture, name = get_mesh_texture(mh_mesh)
-        if texture:
-            # If we can get a texture from the makehuman mesh, create a material
-            # from it and bind it to the corresponding USD mesh in the stage
-            material = create_material(texture, name, root, stage)
-            bind_material(mesh, material, stage)
-
-
 def get_mesh_texture(mh_mesh: Object3D):
     """Gets mesh diffuse texture from a Makehuman mesh object
 

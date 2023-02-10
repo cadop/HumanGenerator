@@ -9,7 +9,7 @@ from .skeleton import Skeleton
 from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import carb
-
+from .materials import 
 class Human:
     def __init__(self, name='human', **kwargs):
         """Constructs an instance of Human.
@@ -105,6 +105,14 @@ class Human:
         # Setup weights for corresponding mh_meshes (which hold the data) and
         # bindings (which link USD_meshes to the skeleton)
         self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
+
+        setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
+
+        # Explicitly setup material for human skin
+        texture_path = data_path("textures/skin.png")
+        skin = create_material(texture_path, "Skin", rootPath, stage)
+        # Bind the skin material to the first prim in the list (the human)
+        bind_material(usd_mesh_paths[0], skin, stage)
 
         return prim_path
 
@@ -571,3 +579,28 @@ class Human:
             bindings.append(binding)
 
         return bindings
+    
+    def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
+        """Fetches materials from Makehuman meshes and applies them to their corresponding
+        Usd mesh prims in the stage.
+
+        Parameters
+        ----------
+        mh_meshes : List[Object3D]
+            Makehuman meshes. Contain references to textures on disk.
+        meshes : List[Sdf.Path]
+            Paths to Usd meshes in the stage
+        root : str
+            The root path under which to create new prims
+        stage : Usd.Stage
+            Usd stage in which to create materials, and which contains the meshes
+            to which to apply materials
+        """
+        for mh_mesh, mesh in zip(mh_meshes, meshes):
+            # Get a texture path and name from the makehuman mesh
+            texture, name = get_mesh_texture(mh_mesh)
+            if texture:
+                # If we can get a texture from the makehuman mesh, create a material
+                # from it and bind it to the corresponding USD mesh in the stage
+                material = create_material(texture, name, root, stage)
+                bind_material(mesh, material, stage)
