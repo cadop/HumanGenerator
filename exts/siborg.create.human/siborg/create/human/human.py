@@ -113,7 +113,7 @@ class Human:
         texture_path = data_path("textures/skin.png")
         skin = create_material(texture_path, "Skin", root_path, stage)
         # Bind the skin material to the first prim in the list (the human)
-        bind_material(self.mesh_paths[0], skin, stage)
+        bind_material(mesh_paths[0], skin, stage)
 
         return prim_path
 
