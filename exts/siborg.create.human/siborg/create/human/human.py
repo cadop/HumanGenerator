@@ -110,7 +110,7 @@ class Human:
         self.setup_materials(self.mh_meshes, mesh_paths, root_path + "/Looks", stage)
 
         # Explicitly setup material for human skin
-        texture_path = data_path("textures\skin.png")
+        texture_path = data_path("skins/textures/skin.png")
         skin = create_material(texture_path, "Skin", root_path, stage)
         # Bind the skin material to the first prim in the list (the human)
         bind_material(mesh_paths[0], skin, stage)
