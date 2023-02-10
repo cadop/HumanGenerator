@@ -25,8 +25,15 @@ link_app.sh
 
 # Track some desired data files
 exts/siborg.create.human/data/*
+
 !exts/siborg.create.human/data/rigs/
 !exts/siborg.create.human/data/*.png
+!exts/siborg.create.human/data/skins/
+
+exts/siborg.create.human/data/skins/*
+!exts/siborg.create.human/data/skins/textures/
+
+exts/siborg.create.human/data/skins/textures/*
 !exts/siborg.create.human/data/skins/textures/skin.png
 
 # Deprecated files
