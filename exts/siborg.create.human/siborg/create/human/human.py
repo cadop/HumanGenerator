@@ -142,6 +142,12 @@ class Human:
                 prim_kind = prim.GetTypeName()
                 # Check if the prim is a SkelRoot and a human
                 if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                    # Get default prim.
+                    default_prim = stage.GetDefaultPrim()
+                    if default_prim.IsValid():
+                        # Set the rootpath under the stage's default prim, if the default prim is valid
+                        root_path = default_prim.GetPath().pathString
+                        
                     # Write the properties of the human to the prim
                     self.write_properties(prim_path, stage)
 
@@ -167,6 +173,14 @@ class Human:
                     # Setup weights for corresponding mh_meshes (which hold the data) and
                     # bindings (which link USD_meshes to the skeleton)
                     self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
+
+                    self.setup_materials(self.mh_meshes, mesh_paths, root_path, stage)
+
+                    # Explicitly setup material for human skin
+                    texture_path = data_path("skins/textures/skin.png")
+                    skin = create_material(texture_path, "Skin", root_path, stage)
+                    # Bind the skin material to the first prim in the list (the human)
+                    bind_material(mesh_paths[0], skin, stage)
                 else:
                     carb.log_warn("The selected prim must be a human!")
             elif len(selected_prim_paths) > 1:
