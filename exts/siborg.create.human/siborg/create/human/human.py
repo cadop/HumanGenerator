@@ -9,6 +9,7 @@ from .skeleton import Skeleton
 from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import carb
+
 from .materials import get_mesh_texture, create_material, bind_material
 class Human:
     def __init__(self, name='human', **kwargs):
@@ -580,14 +581,12 @@ class Human:
 
         return bindings
     
-    def setup_materials(mh_meshes: List[Object3D], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
+    def setup_materials(self, meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
         """Fetches materials from Makehuman meshes and applies them to their corresponding
         Usd mesh prims in the stage.
 
         Parameters
         ----------
-        mh_meshes : List[Object3D]
-            Makehuman meshes. Contain references to textures on disk.
         meshes : List[Sdf.Path]
             Paths to Usd meshes in the stage
         root : str
@@ -596,7 +595,7 @@ class Human:
             Usd stage in which to create materials, and which contains the meshes
             to which to apply materials
         """
-        for mh_mesh, mesh in zip(mh_meshes, meshes):
+        for mh_mesh, mesh in zip(self.mh_meshes, meshes):
             # Get a texture path and name from the makehuman mesh
             texture, name = get_mesh_texture(mh_mesh)
             if texture:
