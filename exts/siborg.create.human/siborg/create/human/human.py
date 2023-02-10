@@ -4,7 +4,7 @@ import numpy as np
 import omni.kit
 import omni.usd
 from pxr import Sdf, Usd, UsdGeom, UsdSkel
-from .shared import sanitize
+from .shared import sanitize, data_path
 from .skeleton import Skeleton
 from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
