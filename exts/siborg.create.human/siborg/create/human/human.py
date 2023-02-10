@@ -107,13 +107,13 @@ class Human:
         # bindings (which link USD_meshes to the skeleton)
         self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
 
-        self.setup_materials(self.mh_meshes, mesh_paths, rootPath, stage)
+        self.setup_materials(self.mh_meshes, mesh_paths, root_path + "/Looks", stage)
 
         # Explicitly setup material for human skin
         texture_path = data_path("textures/skin.png")
-        skin = create_material(texture_path, "Skin", rootPath, stage)
+        skin = create_material(texture_path, "Skin", root_path, stage)
         # Bind the skin material to the first prim in the list (the human)
-        bind_material(usd_mesh_paths[0], skin, stage)
+        bind_material(self.mesh_paths[0], skin, stage)
 
         return prim_path
 
