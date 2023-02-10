@@ -375,15 +375,18 @@ class Human:
         # Get the data from the prim
         humandata = usd_prim.GetCustomData()
 
-        # Get the modifiers from the prim
+        # Get the list of modifiers from the prim
         modifiers = humandata.get("Modifiers")
         for m, v in modifiers.items():
             MHCaller.human.getModifier(m).setValue(v, skipDependencies=False)
 
-        # Get the proxies from the prim
+        # Get the list of proxies from the prim
         proxies = humandata.get("Proxies")
 
-        # Make sure the proxies are not empty
+        # Clear the makehuman proxies
+        MHCaller.clear_proxies()
+
+        # Make sure the proxy list stored in the prim is not empty
         if proxies:
             for type, path in proxies.items():
                 # If the proxy type is not "proxymeshes" or "clothes", add it
