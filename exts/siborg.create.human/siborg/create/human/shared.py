@@ -1,4 +1,6 @@
 from pathlib import Path
+import os
+
 # Shared methods that are useful to several modules
 
 
@@ -16,7 +18,7 @@ def data_path(path):
         Absolute path
     """
     # Uses an absolute path, and then works its way up the folder directory to find the data folder
-    data = str(Path(__file__).parents[3]) + "/data/" + path
+    data = os.path.join(str(Path(__file__).parents[3]), "data", path)
     return data
 
 
