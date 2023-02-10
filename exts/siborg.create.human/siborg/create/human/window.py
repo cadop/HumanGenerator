@@ -103,6 +103,7 @@ class MHWindow(ui.Window):
                         height=50,
                         clicked_fn=self.new_human,
                     )
+                    ui.Button("Reset Selected Human", height=50, clicked_fn=lambda: self._human.reset())
                     # Updates current human in omniverse scene
                     ui.Button(
                         "Update Selected Human",
