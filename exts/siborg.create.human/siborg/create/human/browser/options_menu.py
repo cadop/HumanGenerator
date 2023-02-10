@@ -52,4 +52,4 @@ class FolderOptionsMenu(OptionsMenu):
         if collection_item:
             folder = collection_item.folder
             folder._timeout = 10
-            self._browser_widget.model.start_traverse(folder)
+            asyncio.ensure_future(folder.start_traverse())
