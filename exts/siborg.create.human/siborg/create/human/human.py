@@ -9,7 +9,7 @@ from .skeleton import Skeleton
 from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import carb
-from .materials import 
+from .materials import get_mesh_texture, create_material, bind_material
 class Human:
     def __init__(self, name='human', **kwargs):
         """Constructs an instance of Human.
