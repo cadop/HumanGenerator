@@ -1,5 +1,5 @@
 from typing import List
-from module3D import Object3D
+from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdShade, Sdf
 
 
