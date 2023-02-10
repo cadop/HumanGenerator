@@ -107,7 +107,7 @@ class Human:
         # bindings (which link USD_meshes to the skeleton)
         self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
 
-        self.setup_materials(self.mh_meshes, mesh_paths, root_path + "/Looks", stage)
+        self.setup_materials(self.mh_meshes, mesh_paths, root_path, stage)
 
         # Explicitly setup material for human skin
         texture_path = data_path("skins/textures/skin.png")
