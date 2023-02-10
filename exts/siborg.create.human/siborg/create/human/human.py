@@ -107,7 +107,7 @@ class Human:
         # bindings (which link USD_meshes to the skeleton)
         self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
 
-        setup_materials(mh_meshes, usd_mesh_paths, rootPath, stage)
+        self.setup_materials(self.mh_meshes, usd_mesh_paths, rootPath, stage)
 
         # Explicitly setup material for human skin
         texture_path = data_path("textures/skin.png")
@@ -581,12 +581,14 @@ class Human:
 
         return bindings
     
-    def setup_materials(self, meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
+    def setup_materials(self, mh_meshes: List['Object3D'], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
         """Fetches materials from Makehuman meshes and applies them to their corresponding
         Usd mesh prims in the stage.
 
         Parameters
         ----------
+        mh_meshes : List['Object3D']
+            List of makehuman meshes
         meshes : List[Sdf.Path]
             Paths to Usd meshes in the stage
         root : str
