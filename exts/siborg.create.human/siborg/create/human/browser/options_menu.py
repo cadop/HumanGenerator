@@ -50,5 +50,6 @@ class FolderOptionsMenu(OptionsMenu):
     def refresh_collection(self):
         collection_item: FolderCollectionItem = self._browser_widget.collection_selection
         if collection_item:
-            collection_item.folder._timeout = 10
-            collection_item.folder.start_traverse()
+            folder = collection_item.folder
+            folder._timeout = 10
+            self._browser_widget.model.start_traverse(folder)
