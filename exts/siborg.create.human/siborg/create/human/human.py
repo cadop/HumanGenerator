@@ -4,12 +4,13 @@ import numpy as np
 import omni.kit
 import omni.usd
 from pxr import Sdf, Usd, UsdGeom, UsdSkel
-from .shared import sanitize
+from .shared import sanitize, data_path
 from .skeleton import Skeleton
 from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import carb
 
+from .materials import get_mesh_texture, create_material, bind_material
 class Human:
     def __init__(self, name='human', **kwargs):
         """Constructs an instance of Human.
@@ -106,6 +107,14 @@ class Human:
         # bindings (which link USD_meshes to the skeleton)
         self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
 
+        self.setup_materials(self.mh_meshes, mesh_paths, root_path, stage)
+
+        # Explicitly setup material for human skin
+        texture_path = data_path("skins/textures/skin.png")
+        skin = create_material(texture_path, "Skin", root_path, stage)
+        # Bind the skin material to the first prim in the list (the human)
+        bind_material(mesh_paths[0], skin, stage)
+
         return prim_path
 
     def update_in_scene(self, prim_path: str):
@@ -133,6 +142,12 @@ class Human:
                 prim_kind = prim.GetTypeName()
                 # Check if the prim is a SkelRoot and a human
                 if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                    # Get default prim.
+                    default_prim = stage.GetDefaultPrim()
+                    if default_prim.IsValid():
+                        # Set the rootpath under the stage's default prim, if the default prim is valid
+                        root_path = default_prim.GetPath().pathString
+                        
                     # Write the properties of the human to the prim
                     self.write_properties(prim_path, stage)
 
@@ -158,6 +173,14 @@ class Human:
                     # Setup weights for corresponding mh_meshes (which hold the data) and
                     # bindings (which link USD_meshes to the skeleton)
                     self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
+
+                    self.setup_materials(self.mh_meshes, mesh_paths, root_path, stage)
+
+                    # Explicitly setup material for human skin
+                    texture_path = data_path("skins/textures/skin.png")
+                    skin = create_material(texture_path, "Skin", root_path, stage)
+                    # Bind the skin material to the first prim in the list (the human)
+                    bind_material(mesh_paths[0], skin, stage)
                 else:
                     carb.log_warn("The selected prim must be a human!")
             elif len(selected_prim_paths) > 1:
@@ -571,3 +594,28 @@ class Human:
             bindings.append(binding)
 
         return bindings
+    
+    def setup_materials(self, mh_meshes: List['Object3D'], meshes: List[Sdf.Path], root: str, stage: Usd.Stage):
+        """Fetches materials from Makehuman meshes and applies them to their corresponding
+        Usd mesh prims in the stage.
+
+        Parameters
+        ----------
+        mh_meshes : List['Object3D']
+            List of makehuman meshes
+        meshes : List[Sdf.Path]
+            Paths to Usd meshes in the stage
+        root : str
+            The root path under which to create new prims
+        stage : Usd.Stage
+            Usd stage in which to create materials, and which contains the meshes
+            to which to apply materials
+        """
+        for mh_mesh, mesh in zip(self.mh_meshes, meshes):
+            # Get a texture path and name from the makehuman mesh
+            texture, name = get_mesh_texture(mh_mesh)
+            if texture:
+                # If we can get a texture from the makehuman mesh, create a material
+                # from it and bind it to the corresponding USD mesh in the stage
+                material = create_material(texture, name, root, stage)
+                bind_material(mesh, material, stage)

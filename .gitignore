@@ -23,9 +23,11 @@ link_app.sh
 
 *.target
 
+# Track some desired data files
 exts/siborg.create.human/data/*
 !exts/siborg.create.human/data/rigs/
 !exts/siborg.create.human/data/*.png
+!exts/siborg.create.human/data/skins/textures/skin.png
 
 # Deprecated files
 *.old
