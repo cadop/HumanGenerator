@@ -825,6 +825,11 @@ class ParamPanel(ui.Frame):
                 if param.full_name in modifiers:
                     param.value.set_value(modifiers[param.full_name])
 
+    def update_models(self):
+        """Update all models"""
+        for model in self.models:
+            model.apply_changes()
+
     def destroy(self):
         """Destroys the ParamPanel instance as well as the models attached to each group of parameters
         """
