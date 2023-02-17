@@ -222,12 +222,24 @@ class SliderEntryPanelModel:
         if getval() > param.max:
             m.set_value(param.max)
 
+        # Add the parameter to the list of changed parameters so we can apply the function later
+        self.changed_params.append(param)
+
         # If instant update is toggled on, add the changes to the stage instantly
         if self.toggle.get_value_as_bool():
             # Run the function given by the parameter using the value from the widget
             param.fn(m.get_value_as_float())
             # Run the instant update function
             self.instant_update()
+
+    def apply_changes(self):
+        """Apply the changes made to the parameters. Runs the function associated with each
+        parameter using the value from the widget
+        """
+        for param in self.changed_params:
+            param.fn(param.value.get_value_as_float())
+        # Clear the list of changed parameters
+        self.changed_params = []
 
     def destroy(self):
         """Destroys the instance of SliderEntryPanelModel. Deletes event
@@ -600,7 +612,7 @@ class ParamPanelModel(ui.AbstractItemModel):
         self.toggle = toggle
 
         # Reference to models for each modifier/parameter. The models store modifier
-        # data for reference in the UI
+        # data for reference in the UI, and track the values of the sliders
         self.models = []
 
 

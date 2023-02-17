@@ -88,7 +88,7 @@ class MHWindow(ui.Window):
                     with ui.Placer(offset_x=self.frame.computed_content_width/4, draggable=True, drag_axis=ui.Axis.X):
                         ui.Rectangle(width=5, name="splitter")
                     with ui.HStack():
-                        self.param_panel = ParamPanel(self.param_model, lambda: self._human.update_in_scene(self._human_prim_path))
+                        self.param_panel = ParamPanel(self.param_model, lambda: self.update_human())
                         ui.Spacer(width=spacer_width)
                 with ui.VStack():
                     self.proxy_list = DropList(
@@ -107,7 +107,7 @@ class MHWindow(ui.Window):
                     ui.Button(
                         "Update Selected Human",
                         height=50,
-                        clicked_fn=lambda: self._human.update_in_scene(self._human_prim_path),
+                        clicked_fn=lambda: self.update_human,
                     )
 
     def _on_human_selected(self, event):
@@ -149,6 +149,14 @@ class MHWindow(ui.Window):
         selection = omni.usd.get_context().get_selection()
         # Select the new human.
         selection.set_selected_prim_paths([self._human_prim_path], True)
+
+    def update_human(self):
+        """Updates the current human in the scene"""
+        # Apply any changed parameters to the human
+        self.param_panel.apply_changes()
+
+        # Update the human in the scene
+        self._human.update_in_scene(self._human_prim_path)
 
     def destroy(self):
         """Called when the window is destroyed. Unsuscribes from human selection events"""
