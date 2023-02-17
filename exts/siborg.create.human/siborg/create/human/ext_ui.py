@@ -194,7 +194,7 @@ class SliderEntryPanelModel:
         # Subscribe to changes in parameter editing
         self.subscriptions.append(
             param.value.subscribe_end_edit_fn(
-                lambda m: self._sanitize_and_run(param, param.value))
+                lambda m: self._sanitize_and_run(param))
         )
 
     def reset(self):
@@ -203,19 +203,17 @@ class SliderEntryPanelModel:
         for param in self.params:
             param.set_value(param.default)
 
-    def _sanitize_and_run(self, param: Param, float_model: ui.SimpleFloatModel):
-        """Make sure that values are within an acceptable range and then run the
-        assigned function
+    def _sanitize_and_run(self, param: Param):
+        """Make sure that values are within an acceptable range and then add the parameter to the
+        list of changed parameters
 
         Parameters
         ----------
         param : Param
             Parameter object which contains acceptable value bounds and
             references the function to run
-        float_model : ui.SimpleFloatModel
-            Model which stores the value from the widget
         """
-        m = float_model
+        m = param.value
         # Get the value from the slider model
         getval = m.get_value_as_float
         # Set the value to the min or max if it goes under or over respectively
@@ -223,10 +221,12 @@ class SliderEntryPanelModel:
             m.set_value(param.min)
         if getval() > param.max:
             m.set_value(param.max)
-        # Run the function given by the parameter using the value from the widget
-        # param.fn(m.get_value_as_float())
+
         # If instant update is toggled on, add the changes to the stage instantly
         if self.toggle.get_value_as_bool():
+            # Run the function given by the parameter using the value from the widget
+            param.fn(m.get_value_as_float())
+            # Run the instant update function
             self.instant_update()
 
     def destroy(self):
