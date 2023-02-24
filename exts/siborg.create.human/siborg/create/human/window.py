@@ -36,8 +36,6 @@ class MHWindow(ui.Window):
 
         # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
-        # Holds the state of the proxy list
-        self.list_model = DropListModel()
         # Holds the state of the parameter list
         self.param_model = ParamPanelModel(self.toggle_model)
         # Keep track of the human
@@ -81,30 +79,22 @@ class MHWindow(ui.Window):
                         # can be triggered when new assets are added
                         self.browser = AssetBrowserFrame(self.browser_model)
                         ui.Spacer(width=spacer_width)
-                with ui.ZStack(width=0):
-                    # Draggable splitter
-                    with ui.Placer(offset_x=self.frame.computed_content_width/4, draggable=True, drag_axis=ui.Axis.X):
-                        ui.Rectangle(width=5, name="splitter")
-                    with ui.HStack():
+                with ui.HStack():
+                    with ui.VStack():
                         self.param_panel = ParamPanel(self.param_model, lambda: self.update_human())
-                        ui.Spacer(width=spacer_width)
-                with ui.VStack():
-                    self.proxy_list = DropList(
-                        "Currently Applied Assets", self.list_model)
-                    with ui.HStack(height=0):
-                        # Toggle whether changes should propagate instantly
-                        ui.Label("Update Instantly")
-                        ui.CheckBox(self.toggle_model)
+                        with ui.HStack(height=0):
+                            # Toggle whether changes should propagate instantly
+                            ui.Label("Update Instantly")
+                            ui.CheckBox(self.toggle_model)
+                with ui.VStack(width = 100):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
                         "New Human",
-                        height=50,
                         clicked_fn=self.new_human,
                     )
                     # Updates current human in omniverse scene
                     ui.Button(
-                        "Update Selected Human",
-                        height=50,
+                        "Update Human",
                         clicked_fn=lambda: self.update_human(),
                     )
 
