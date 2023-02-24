@@ -50,7 +50,10 @@ class Human:
     @property
     def prim_path(self):
         """Path to the human prim"""
-        return self.prim.GetPath().pathString
+        if self.prim:
+            return self.prim.GetPath().pathString
+        else:
+            return None
 
     @property
     def objects(self):
