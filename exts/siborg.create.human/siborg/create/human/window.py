@@ -117,8 +117,6 @@ class MHWindow(ui.Window):
         # Update the human in MHCaller
         self._human.set_prim(prim)
 
-        # Update the list of applied proxies stored in the list model
-        self.proxy_list.model.update()
         # Update the list of applied modifiers
         self.param_panel.load_values(prim)
 
