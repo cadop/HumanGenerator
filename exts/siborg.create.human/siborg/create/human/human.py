@@ -366,23 +366,28 @@ class Human:
             # the format is "group/modifer:value"
             prim.SetCustomDataByKey("Modifiers:" + m.fullName, m.getValue())
 
+
+        # NOTE We are not currently using proxies in the USD export. Proxy data is stored
+        # in their respective mesh prims, so that deleting proxy prims will also remove the
+        # proxies. The following code is left here for reference.
+
         # Get the proxies of the human in mhcaller
-        proxies = MHCaller.proxies
+        # proxies = MHCaller.proxies
 
-        for p in proxies:
-            # Add the proxy to the prim as custom data by key under "Proxies".
-            # Proxy type should be "proxymeshes" if type cannot be determined from the
-            # proxy.type property.
-            type = p.type if p.type else "proxymeshes"
+        # for p in proxies:
+        #     # Add the proxy to the prim as custom data by key under "Proxies".
+        #     # Proxy type should be "proxymeshes" if type cannot be determined from the
+        #     # proxy.type property.
+        #     type = p.type if p.type else "proxymeshes"
 
-            # Only "proxymeshes" and "clothes" should be subdictionaries of "Proxies"
-            if type == "clothes" or type == "proxymeshes":
-                prim.SetCustomDataByKey("Proxies:" + type + ":" + p.name, p.file)
+        #     # Only "proxymeshes" and "clothes" should be subdictionaries of "Proxies"
+        #     if type == "clothes" or type == "proxymeshes":
+        #         prim.SetCustomDataByKey("Proxies:" + type + ":" + p.name, p.file)
 
-            # Other proxy types should be added as a key to the prim with their
-            # type as the key and the path as the value
-            else:
-                prim.SetCustomDataByKey("Proxies:" + type, p.file)
+        #     # Other proxy types should be added as a key to the prim with their
+        #     # type as the key and the path as the value
+        #     else:
+        #         prim.SetCustomDataByKey("Proxies:" + type, p.file)
 
     def set_prim(self, usd_prim : Usd.Prim):
         """Updates the human based on the given prim's attributes
