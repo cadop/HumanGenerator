@@ -276,9 +276,12 @@ class Human:
 
                 meshGeom = UsdGeom.Mesh(prim)
 
-            # If it doesn't exist, make it. This will run the first time a human is created
+            # If it doesn't exist, make it. This will run the first time a human is created and
+            # whenever a new proxy is added
             else:
                 meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+
+                prim = meshGeom.GetPrim()
 
                 # Set vertices. This is a list of tuples for ALL vertices in an unassociated
                 # cloud. Faces are built based on indices of this list.
@@ -310,6 +313,14 @@ class Human:
 
                 meshGeom.CreateNormalsAttr(mesh.getNormals())
                 meshGeom.SetNormalsInterpolation("vertex")
+
+                # If the mesh is a proxy, write the proxy path to the mesh prim
+                if mesh.object.proxy:
+                    p = mesh.object.proxy
+                    type = p.type if p.type else "proxymeshes"
+                    prim.SetCustomDataByKey("Proxy_path:", p.file)
+                    prim.SetCustomDataByKey("Proxy_type:", type)
+                    prim.SetCustomDataByKey("Proxy_name:", p.name)
 
             # Set vertex uvs. UVs are represented as a list of tuples, each of which is a 2D
             # coordinate. UV's are used to map textures to the surface of 3D geometry
