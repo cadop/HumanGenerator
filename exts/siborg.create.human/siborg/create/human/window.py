@@ -40,19 +40,17 @@ class MHWindow(ui.Window):
         self.list_model = DropListModel()
         # Holds the state of the parameter list
         self.param_model = ParamPanelModel(self.toggle_model)
+        # Keep track of the human
+        self._human = Human()
+
         # A model to hold browser data
         self.browser_model = MHAssetBrowserModel(
-            self.list_model,
+            self._human,
             filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
             timeout=carb.settings.get_settings().get(
                 "/exts/siborg.create.human.browser.asset/data/timeout"
             ),
         )
-
-
-        # Keep track of the human and human prim path
-        self._human = Human()
-        self._human_prim_path = ""
 
         # Dock UI wherever the "Content" tab is found (bottom panel by default)
         self.deferred_dock_in(

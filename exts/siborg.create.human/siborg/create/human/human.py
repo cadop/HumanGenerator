@@ -22,6 +22,9 @@ class Human:
         """
 
         self.name = name
+        
+        # Reference to the usd prim for the skelroot representing the human in the stage
+        self.prim = None
 
         # Provide a scale factor (Omniverse provided humans are 10 times larger than makehuman)
         self.scale = 10
@@ -372,8 +375,10 @@ class Human:
         usd_prim : Usd.Prim
             Prim from which to update the human model."""
 
+        self.prim = usd_prim
+
         # Get the data from the prim
-        humandata = usd_prim.GetCustomData()
+        humandata = self.prim.GetCustomData()
 
         # Get the list of modifiers from the prim
         modifiers = humandata.get("Modifiers")
@@ -622,3 +627,23 @@ class Human:
                 # from it and bind it to the corresponding USD mesh in the stage
                 material = create_material(texture, name, root, stage)
                 bind_material(mesh, material, stage)
+
+    def add_item(self, path: str):
+        """Add a new asset to the human. Propagates changes to the Makehuman app
+        and then upates the stage with the new asset. If the asset is a proxy,
+        targets will not be applied. If the asset is a skeleton, targets must
+        be applied.
+
+        Parameters
+        ----------
+        path : str
+            Path to an asset on disk
+        """
+
+        # Check if human has a prim
+        if self.prim:
+            # Add an item through the MakeHuman instance and update the widget view
+            MHCaller.add_item(path)
+            self.update_in_scene(self.prim.GetPath().pathString)
+        else:
+            carb.log_warn("No prim selected")

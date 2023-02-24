@@ -5,6 +5,7 @@ import omni.kit.app
 from omni.kit.browser.core import get_legacy_viewport_interface
 from omni.kit.browser.folder.core import FolderDetailDelegate
 from .model import MHAssetBrowserModel, AssetDetailItem
+from ..mhcaller import MHCaller
 
 import asyncio
 from pathlib import Path
@@ -37,6 +38,9 @@ class AssetDetailDelegate(FolderDetailDelegate):
         super().__init__(model=model)
         # Reference to the browser asset model
         self.model = model
+
+        # Reference to the human
+        self._human = model.human
         self._settings = carb.settings.get_settings()
         # The context menu that opens on right_click
         self._context_menu: Optional[ui.Menu] = None
@@ -104,12 +108,12 @@ class AssetDetailDelegate(FolderDetailDelegate):
         return item.url
 
     def on_double_click(self, item: FileDetailItem):
-        """Method to execute when an asset is doubleclicked. Adds an item to
-        to the list widget that shows currently applied assets
+        """Method to execute when an asset is doubleclicked. Adds the asset to the
+        human.
 
         Parameters
         ----------
         item : FileDetailItem
             The item that has been doubleclicked
         """
-        self.model.list_model.add_child(item.url)
+        self._human.add_item(item.url)

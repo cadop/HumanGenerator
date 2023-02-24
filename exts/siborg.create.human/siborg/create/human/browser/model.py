@@ -12,6 +12,7 @@ from omni.kit.browser.folder.core import (
     BrowserFile,
 )
 from siborg.create.human.shared import data_path
+from ..human import Human
 
 
 class AssetDetailItem(FileDetailItem):
@@ -39,15 +40,17 @@ class MHAssetBrowserModel(FolderBrowserModel):
         The widget in which to reflect changes when assets are added to the human
     """
 
-    def __init__(self, list_model: DropListModel, *args, **kwargs):
+    def __init__(self, human: Human, *args, **kwargs):
         """Constructs an instance of MHAssetBrowserModel
 
         Parameters
         ----------
-        list_model : DropListModel
-            The list in which to reflect changes when assets are added
+        human : Human
+            The human to which to add assets
         """
-        self.list_model = list_model
+
+        self.human = human
+
         super().__init__(
             *args,
             show_category_subfolders=True,
