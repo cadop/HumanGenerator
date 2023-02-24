@@ -1,6 +1,6 @@
 import omni.ui as ui
 from typing import List, TypeVar, Union, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from . import styles
 from .mhcaller import MHCaller
 from pxr import Usd
@@ -18,7 +18,7 @@ class SliderEntry:
     model : ui.SimpleFloatModel
         Model to publish changes to
     fn : object
-        Function to run when changes are made
+        Function to run when updating the human after changes are made
     image: str
         Path on disk to an image to display
     step : float
@@ -117,6 +117,8 @@ class Param:
         The maximum allowed value of the parameter. By default 1
     default: float
         The default value of the parameter. By default 0.5
+    value : ui.SimpleFloatModel
+        The model to track the current value of the parameter. By default None
     """
 
     name: str
@@ -126,6 +128,7 @@ class Param:
     min: float = 0
     max: float = 1
     default: float = 0.5
+    value: ui.SimpleFloatModel = None
 
 
 class SliderEntryPanelModel:
@@ -135,13 +138,11 @@ class SliderEntryPanelModel:
     Attributes
     ----------
     params : list of `Param`
-        List of parameter objects
+        List of parameter objects. Each contains a float model to track the current value
     toggle : ui.SimpleBoolModel
         Tracks whether or not the human should update immediately when changes are made
     instant_update : Callable
         A function to call when instant update is toggled
-    float_models : list of `ui.SimpleFloatModel`
-        List of models to track SliderEntry values
     subscriptions : list of `Subscription`
         List of event subscriptions triggered by editing a SliderEntry
     """
@@ -154,7 +155,7 @@ class SliderEntryPanelModel:
         ----------
         params : list of `Param`
             A list of parameter objects, each of which contains the data to create
-            a SliderEntry widget
+            a SliderEntry widget and a model to track the current value
         toggle : ui.SimpleBoolModel, optional
             Tracks whether or not the human should update immediately when changes are made, by default None
         instant_update : Callable
@@ -163,60 +164,56 @@ class SliderEntryPanelModel:
 
         self.params = []
         """Param objects corresponding to each SliderEntry widget"""
+        self.changed_params = []
+        """Params o SliderEntry widgets that have been changed"""
+
         self.toggle = toggle
         self.instant_update = instant_update
-        self.float_models = []
-        """Models corresponding to each SliderEntry widget. Each model
-        tracks the corresponding widget's value"""
+
         self.subscriptions = []
         """List of event subscriptions triggered by editing a SliderEntry"""
         for p in params:
             self.add_param(p)
 
     def add_param(self, param: Param):
-        """Adds a parameter to the SliderEntryPanelModel. Creates a SimpleFloatModel
-        initialized with the default parameter value, and subscribes the model to
-        editing changes, as well as triggering the parameter function when edits
-        are made.
+        """Adds a parameter to the SliderEntryPanelModel. Subscribes to the parameter's model
+        to check for editing changes
 
         Parameters
         ----------
         param : Param
-            The Parameter object from which to create the model and subscription
+            The Parameter object from which to create the subscription
         """
+
+        # Create a model to track the current value of the parameter. Set the value to the default
+        param.value = ui.SimpleFloatModel(param.default)
+
         # Add the parameter to the list of parameters
         self.params.append(param)
-        # Simple float model to store parameter value
-        float_model = ui.SimpleFloatModel()
-        # Set the float model value to the default value of the parameter
-        float_model.set_value(param.default)
+
         # Subscribe to changes in parameter editing
         self.subscriptions.append(
-            float_model.subscribe_end_edit_fn(
-                lambda m: self._sanitize_and_run(param, float_model))
+            param.value.subscribe_end_edit_fn(
+                lambda m: self._sanitize_and_run(param))
         )
-        # Add model to list of models
-        self.float_models.append(float_model)
 
     def reset(self):
         """Resets the values of each floatmodel to parameter default for UI reset
         """
-        for model, param in zip(self.float_models, self.params):
-            model.set_value(param.default)
+        for param in self.params:
+            param.set_value(param.default)
 
-    def _sanitize_and_run(self, param: Param, float_model: ui.SimpleFloatModel):
-        """Make sure that values are within an acceptable range and then run the
-        assigned function
+    def _sanitize_and_run(self, param: Param):
+        """Make sure that values are within an acceptable range and then add the parameter to the
+        list of changed parameters
 
         Parameters
         ----------
         param : Param
             Parameter object which contains acceptable value bounds and
             references the function to run
-        float_model : ui.SimpleFloatModel
-            Model which stores the value from the widget
         """
-        m = float_model
+        m = param.value
         # Get the value from the slider model
         getval = m.get_value_as_float
         # Set the value to the min or max if it goes under or over respectively
@@ -224,11 +221,25 @@ class SliderEntryPanelModel:
             m.set_value(param.min)
         if getval() > param.max:
             m.set_value(param.max)
-        # Run the function given by the parameter using the value from the widget
-        param.fn(m.get_value_as_float())
+
+        # Add the parameter to the list of changed parameters so we can apply the function later
+        self.changed_params.append(param)
+
         # If instant update is toggled on, add the changes to the stage instantly
         if self.toggle.get_value_as_bool():
+            # Run the function given by the parameter using the value from the widget
+            param.fn(m.get_value_as_float())
+            # Run the instant update function
             self.instant_update()
+
+    def apply_changes(self):
+        """Apply the changes made to the parameters. Runs the function associated with each
+        parameter using the value from the widget
+        """
+        for param in self.changed_params:
+            param.fn(param.value.get_value_as_float())
+        # Clear the list of changed parameters
+        self.changed_params = []
 
     def destroy(self):
         """Destroys the instance of SliderEntryPanelModel. Deletes event
@@ -272,11 +283,11 @@ class SliderEntryPanel:
                 # If the panel has a label, show it
                 if self.label:
                     ui.Label(self.label, height=0)
-                # Create a slider entry for each parameter and corresponding float model
-                for param, float_model in zip(self.model.params, self.model.float_models):
+                # Create a slider entry for each parameter
+                for param in self.model.params:
                     SliderEntry(
                         param.name,
-                        float_model,
+                        param.value,
                         param.fn,
                         image=param.image,
                         min=param.min,
@@ -601,7 +612,7 @@ class ParamPanelModel(ui.AbstractItemModel):
         self.toggle = toggle
 
         # Reference to models for each modifier/parameter. The models store modifier
-        # data for reference in the UI
+        # data for reference in the UI, and track the values of the sliders
         self.models = []
 
 
@@ -810,9 +821,14 @@ class ParamPanel(ui.Frame):
 
         # Set any changed values in the models
         for SliderEntryPanelModel in self.models:
-            for param, float_model in zip(SliderEntryPanelModel.params, SliderEntryPanelModel.float_models):
+            for param in SliderEntryPanelModel.params:
                 if param.full_name in modifiers:
-                    float_model.set_value(modifiers[param.full_name])
+                    param.value.set_value(modifiers[param.full_name])
+
+    def update_models(self):
+        """Update all models"""
+        for model in self.models:
+            model.apply_changes()
 
     def destroy(self):
         """Destroys the ParamPanel instance as well as the models attached to each group of parameters

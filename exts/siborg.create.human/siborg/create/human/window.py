@@ -36,23 +36,19 @@ class MHWindow(ui.Window):
 
         # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
-        # Holds the state of the proxy list
-        self.list_model = DropListModel()
         # Holds the state of the parameter list
         self.param_model = ParamPanelModel(self.toggle_model)
+        # Keep track of the human
+        self._human = Human()
+
         # A model to hold browser data
         self.browser_model = MHAssetBrowserModel(
-            self.list_model,
+            self._human,
             filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
             timeout=carb.settings.get_settings().get(
                 "/exts/siborg.create.human.browser.asset/data/timeout"
             ),
         )
-
-
-        # Keep track of the human and human prim path
-        self._human = Human()
-        self._human_prim_path = ""
 
         # Dock UI wherever the "Content" tab is found (bottom panel by default)
         self.deferred_dock_in(
@@ -83,31 +79,23 @@ class MHWindow(ui.Window):
                         # can be triggered when new assets are added
                         self.browser = AssetBrowserFrame(self.browser_model)
                         ui.Spacer(width=spacer_width)
-                with ui.ZStack(width=0):
-                    # Draggable splitter
-                    with ui.Placer(offset_x=self.frame.computed_content_width/4, draggable=True, drag_axis=ui.Axis.X):
-                        ui.Rectangle(width=5, name="splitter")
-                    with ui.HStack():
-                        self.param_panel = ParamPanel(self.param_model, lambda: self._human.update_in_scene(self._human_prim_path))
-                        ui.Spacer(width=spacer_width)
-                with ui.VStack():
-                    self.proxy_list = DropList(
-                        "Currently Applied Assets", self.list_model)
-                    with ui.HStack(height=0):
-                        # Toggle whether changes should propagate instantly
-                        ui.Label("Update Instantly")
-                        ui.CheckBox(self.toggle_model)
+                with ui.HStack():
+                    with ui.VStack():
+                        self.param_panel = ParamPanel(self.param_model, lambda: self.update_human())
+                        with ui.HStack(height=0):
+                            # Toggle whether changes should propagate instantly
+                            ui.Label("Update Instantly")
+                            ui.CheckBox(self.toggle_model)
+                with ui.VStack(width = 100):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
                         "New Human",
-                        height=50,
                         clicked_fn=self.new_human,
                     )
                     # Updates current human in omniverse scene
                     ui.Button(
-                        "Update Selected Human",
-                        height=50,
-                        clicked_fn=lambda: self._human.update_in_scene(self._human_prim_path),
+                        "Update Human",
+                        clicked_fn=lambda: self.update_human(),
                     )
 
     def _on_human_selected(self, event):
@@ -129,11 +117,6 @@ class MHWindow(ui.Window):
         # Update the human in MHCaller
         self._human.set_prim(prim)
 
-        # Update the human prim path
-        self._human_prim_path = event.payload["prim_path"]
-
-        # Update the list of applied proxies stored in the list model
-        self.proxy_list.model.update()
         # Update the list of applied modifiers
         self.param_panel.load_values(prim)
 
@@ -144,11 +127,20 @@ class MHWindow(ui.Window):
         self._human.reset()
 
         # Create a new human
-        self._human_prim_path = self._human.add_to_scene()
+        self._human.prim = self._human.add_to_scene()
+
         # Get selection.
         selection = omni.usd.get_context().get_selection()
         # Select the new human.
-        selection.set_selected_prim_paths([self._human_prim_path], True)
+        selection.set_selected_prim_paths([self._human.prim_path], True)
+
+    def update_human(self):
+        """Updates the current human in the scene"""
+        # Apply any changed parameters to the human
+        self.param_panel.update_models()
+
+        # Update the human in the scene
+        self._human.update_in_scene(self._human.prim_path)
 
     def destroy(self):
         """Called when the window is destroyed. Unsuscribes from human selection events"""

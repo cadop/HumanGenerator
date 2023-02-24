@@ -279,6 +279,12 @@ class MHCaller:
             # Body proxies (musculature, etc)
             cls.human.setProxy(None)
 
+    @classmethod
+    def clear_proxies(cls):
+        """Removes all proxies from the human"""
+        for pxy in cls.proxies:
+            cls.remove_proxy(pxy)
+
     Skeleton = TypeVar("Skeleton")
 
     @classmethod

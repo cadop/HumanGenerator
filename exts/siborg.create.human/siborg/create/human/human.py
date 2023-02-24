@@ -22,6 +22,9 @@ class Human:
         """
 
         self.name = name
+        
+        # Reference to the usd prim for the skelroot representing the human in the stage
+        self.prim = None
 
         # Provide a scale factor (Omniverse provided humans are 10 times larger than makehuman)
         self.scale = 10
@@ -38,10 +41,19 @@ class Human:
         # Reset the human in makehuman
         MHCaller.reset_human()
 
+        # Reset the prim
+        self.prim = None
+
         # Reset the skeleton
         self.skeleton = Skeleton(self.scale)
 
-
+    @property
+    def prim_path(self):
+        """Path to the human prim"""
+        if self.prim:
+            return self.prim.GetPath().pathString
+        else:
+            return None
 
     @property
     def objects(self):
@@ -79,7 +91,7 @@ class Human:
 
         # Create a prim for the human
         # Prim should be a SkelRoot so we can rig the human with a skeleton later
-        UsdSkel.Root.Define(stage, prim_path)
+        self.prim = UsdSkel.Root.Define(stage, prim_path)
 
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
@@ -115,7 +127,7 @@ class Human:
         # Bind the skin material to the first prim in the list (the human)
         bind_material(mesh_paths[0], skin, stage)
 
-        return prim_path
+        return self.prim
 
     def update_in_scene(self, prim_path: str):
         """Updates the human in the scene. Writes the properties of the human to the
@@ -267,9 +279,26 @@ class Human:
 
                 meshGeom = UsdGeom.Mesh(prim)
 
-            # If it doesn't exist, make it. This will run the first time a human is created
+            # If it doesn't exist, make it. This will run the first time a human is created and
+            # whenever a new proxy is added
             else:
+                # First determine if the mesh is a proxy
+                p = mesh.object.proxy
+                if p:
+                    #  Determine if the mesh is a clothes proxy or a proxymesh. If not, then
+                    #  an existing proxy of this type already exists, and we must overwrite it
+                    type = p.type if p.type else "proxymeshes"
+                    if not (type == "clothes" or type == "proxymeshes"):
+                        for child in self.prim.GetChildren():
+                            child_type = child.GetCustomDataByKey("Proxy_type:")
+                            if child_type == type:
+                                # If the child prim has the same type as the proxy, delete it
+                                omni.kit.commands.execute("DeletePrims", paths=[child.GetPath()])
+                                break
+
                 meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
+
+                prim = meshGeom.GetPrim()
 
                 # Set vertices. This is a list of tuples for ALL vertices in an unassociated
                 # cloud. Faces are built based on indices of this list.
@@ -301,6 +330,14 @@ class Human:
 
                 meshGeom.CreateNormalsAttr(mesh.getNormals())
                 meshGeom.SetNormalsInterpolation("vertex")
+
+                # If the mesh is a proxy, write the proxy path to the mesh prim
+                if mesh.object.proxy:
+                    p = mesh.object.proxy
+                    type = p.type if p.type else "proxymeshes"
+                    prim.SetCustomDataByKey("Proxy_path:", p.file)
+                    prim.SetCustomDataByKey("Proxy_type:", type)
+                    prim.SetCustomDataByKey("Proxy_name:", p.name)
 
             # Set vertex uvs. UVs are represented as a list of tuples, each of which is a 2D
             # coordinate. UV's are used to map textures to the surface of 3D geometry
@@ -346,25 +383,30 @@ class Human:
             # the format is "group/modifer:value"
             prim.SetCustomDataByKey("Modifiers:" + m.fullName, m.getValue())
 
+
+        # NOTE We are not currently using proxies in the USD export. Proxy data is stored
+        # in their respective mesh prims, so that deleting proxy prims will also remove the
+        # proxies. The following code is left here for reference.
+
         # Get the proxies of the human in mhcaller
-        proxies = MHCaller.proxies
+        # proxies = MHCaller.proxies
 
-        for p in proxies:
-            # Add the proxy to the prim as custom data by key under "Proxies".
-            # Proxy type should be "proxymeshes" if type cannot be determined from the
-            # proxy.type property.
-            type = p.type if p.type else "proxymeshes"
+        # for p in proxies:
+        #     # Add the proxy to the prim as custom data by key under "Proxies".
+        #     # Proxy type should be "proxymeshes" if type cannot be determined from the
+        #     # proxy.type property.
+        #     type = p.type if p.type else "proxymeshes"
 
-            # Only "proxymeshes" and "clothes" should be subdictionaries of "Proxies"
-            if type == "clothes" or type == "proxymeshes":
-                prim.SetCustomDataByKey("Proxies:" + type + ":" + p.name, p.file)
+        #     # Only "proxymeshes" and "clothes" should be subdictionaries of "Proxies"
+        #     if type == "clothes" or type == "proxymeshes":
+        #         prim.SetCustomDataByKey("Proxies:" + type + ":" + p.name, p.file)
 
-            # Other proxy types should be added as a key to the prim with their
-            # type as the key and the path as the value
-            else:
-                prim.SetCustomDataByKey("Proxies:" + type, p.file)
+        #     # Other proxy types should be added as a key to the prim with their
+        #     # type as the key and the path as the value
+        #     else:
+        #         prim.SetCustomDataByKey("Proxies:" + type, p.file)
 
-    def set_prim(self, usd_prim):
+    def set_prim(self, usd_prim : Usd.Prim):
         """Updates the human based on the given prim's attributes
 
         Parameters
@@ -372,29 +414,32 @@ class Human:
         usd_prim : Usd.Prim
             Prim from which to update the human model."""
 
-        # Get the data from the prim
-        humandata = usd_prim.GetCustomData()
+        self.prim = usd_prim
 
-        # Get the modifiers from the prim
+        # Get the data from the prim
+        humandata = self.prim.GetCustomData()
+
+        # Get the list of modifiers from the prim
         modifiers = humandata.get("Modifiers")
         for m, v in modifiers.items():
             MHCaller.human.getModifier(m).setValue(v, skipDependencies=False)
 
-        # Get the proxies from the prim
-        proxies = humandata.get("Proxies")
+        # Gather proxies from the prim children
+        proxies = []
+        for child in self.prim.GetChildren():
+            if child.GetTypeName() == "Mesh" and child.GetCustomDataByKey("Proxy_path:"):
+                proxies.append(child)
 
-        # Make sure the proxies are not empty
+        # Clear the makehuman proxies
+        MHCaller.clear_proxies()
+
+        # # Make sure the proxy list is not empty
         if proxies:
-            for type, path in proxies.items():
-                # If the proxy type is not "proxymeshes" or "clothes", add it
-                # as a proxy with the type as the type
-                if type != "proxymeshes" and type != "clothes":
-                    MHCaller.add_proxy(path, type)
-                else:
-                    # Add every proxy in the "clothes" or "proxymeshes" subdictionary
-                    # In this case, name is unused
-                    for name, path in proxies[type].items():
-                        MHCaller.add_proxy(path, type)
+            for p in proxies:
+                type = p.GetCustomDataByKey("Proxy_type:")
+                path = p.GetCustomDataByKey("Proxy_path:")
+                # name = p.GetCustomDataByKey("Proxy_name:")
+                MHCaller.add_proxy(path, type)
 
         # Update the human in MHCaller
         MHCaller.human.applyAllTargets()
@@ -619,3 +664,23 @@ class Human:
                 # from it and bind it to the corresponding USD mesh in the stage
                 material = create_material(texture, name, root, stage)
                 bind_material(mesh, material, stage)
+
+    def add_item(self, path: str):
+        """Add a new asset to the human. Propagates changes to the Makehuman app
+        and then upates the stage with the new asset. If the asset is a proxy,
+        targets will not be applied. If the asset is a skeleton, targets must
+        be applied.
+
+        Parameters
+        ----------
+        path : str
+            Path to an asset on disk
+        """
+
+        # Check if human has a prim
+        if self.prim:
+            # Add an item through the MakeHuman instance and update the widget view
+            MHCaller.add_item(path)
+            self.update_in_scene(self.prim.GetPath().pathString)
+        else:
+            carb.log_warn("No prim selected")
