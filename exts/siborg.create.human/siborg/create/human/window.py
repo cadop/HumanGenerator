@@ -127,9 +127,6 @@ class MHWindow(ui.Window):
         # Update the human in MHCaller
         self._human.set_prim(prim)
 
-        # Update the human prim path
-        self._human_prim_path = event.payload["prim_path"]
-
         # Update the list of applied proxies stored in the list model
         self.proxy_list.model.update()
         # Update the list of applied modifiers
@@ -142,11 +139,12 @@ class MHWindow(ui.Window):
         self._human.reset()
 
         # Create a new human
-        self._human_prim_path = self._human.add_to_scene()
+        self._human.prim = self._human.add_to_scene()
+
         # Get selection.
         selection = omni.usd.get_context().get_selection()
         # Select the new human.
-        selection.set_selected_prim_paths([self._human_prim_path], True)
+        selection.set_selected_prim_paths([self._human.prim_path], True)
 
     def update_human(self):
         """Updates the current human in the scene"""
@@ -154,7 +152,7 @@ class MHWindow(ui.Window):
         self.param_panel.update_models()
 
         # Update the human in the scene
-        self._human.update_in_scene(self._human_prim_path)
+        self._human.update_in_scene(self._human.prim_path)
 
     def destroy(self):
         """Called when the window is destroyed. Unsuscribes from human selection events"""

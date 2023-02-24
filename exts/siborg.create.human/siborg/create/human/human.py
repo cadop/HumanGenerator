@@ -41,10 +41,16 @@ class Human:
         # Reset the human in makehuman
         MHCaller.reset_human()
 
+        # Reset the prim
+        self.prim = None
+
         # Reset the skeleton
         self.skeleton = Skeleton(self.scale)
 
-
+    @property
+    def prim_path(self):
+        """Path to the human prim"""
+        return self.prim.GetPath().pathString
 
     @property
     def objects(self):
@@ -82,7 +88,7 @@ class Human:
 
         # Create a prim for the human
         # Prim should be a SkelRoot so we can rig the human with a skeleton later
-        UsdSkel.Root.Define(stage, prim_path)
+        self.prim = UsdSkel.Root.Define(stage, prim_path)
 
         # Write the properties of the human to the prim
         self.write_properties(prim_path, stage)
@@ -118,7 +124,7 @@ class Human:
         # Bind the skin material to the first prim in the list (the human)
         bind_material(mesh_paths[0], skin, stage)
 
-        return prim_path
+        return self.prim
 
     def update_in_scene(self, prim_path: str):
         """Updates the human in the scene. Writes the properties of the human to the
@@ -367,7 +373,7 @@ class Human:
             else:
                 prim.SetCustomDataByKey("Proxies:" + type, p.file)
 
-    def set_prim(self, usd_prim):
+    def set_prim(self, usd_prim : Usd.Prim):
         """Updates the human based on the given prim's attributes
 
         Parameters
