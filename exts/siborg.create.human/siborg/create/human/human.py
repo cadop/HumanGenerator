@@ -282,6 +282,20 @@ class Human:
             # If it doesn't exist, make it. This will run the first time a human is created and
             # whenever a new proxy is added
             else:
+                # First determine if the mesh is a proxy
+                p = mesh.object.proxy
+                if p:
+                    #  Determine if the mesh is a clothes proxy or a proxymesh. If not, then
+                    #  an existing proxy of this type already exists, and we must overwrite it
+                    type = p.type if p.type else "proxymeshes"
+                    if not (type == "clothes" or type == "proxymeshes"):
+                        for child in self.prim.GetChildren():
+                            child_type = child.GetCustomDataByKey("Proxy_type")
+                            if child_type == type:
+                                # If the child prim has the same type as the proxy, delete it
+                                omni.kit.commands.execute("DeletePrims", paths=[child.GetPath()])
+                                break
+
                 meshGeom = UsdGeom.Mesh.Define(stage, usd_mesh_path)
 
                 prim = meshGeom.GetPrim()
