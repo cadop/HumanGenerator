@@ -290,7 +290,7 @@ class Human:
                     type = p.type if p.type else "proxymeshes"
                     if not (type == "clothes" or type == "proxymeshes"):
                         for child in self.prim.GetChildren():
-                            child_type = child.GetCustomDataByKey("Proxy_type")
+                            child_type = child.GetCustomDataByKey("Proxy_type:")
                             if child_type == type:
                                 # If the child prim has the same type as the proxy, delete it
                                 omni.kit.commands.execute("DeletePrims", paths=[child.GetPath()])
