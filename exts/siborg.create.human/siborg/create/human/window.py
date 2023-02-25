@@ -62,17 +62,17 @@ class MHWindow(ui.Window):
         # Run when visibility changes
         self.set_visibility_changed_fn(self._on_visibility_changed)
 
-        self._build_ui()
+        self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
-        spacer_width = 5
+        spacer_width = 3
         with self.frame:
             # Widgets are built starting on the left
             with ui.HStack(style=window_style):
                 with ui.ZStack(width=0):
                     # Draggable splitter
                     with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
-                        ui.Rectangle(width=5, name="splitter")
+                        ui.Rectangle(width=spacer_width, name="splitter")
                     with ui.HStack():
                         # Left-most panel is a browser for MakeHuman assets. It includes
                         # a reference to the list of applied proxies so that an update
@@ -142,10 +142,15 @@ class MHWindow(ui.Window):
         # Update the human in the scene
         self._human.update_in_scene(self._human.prim_path)
 
+    def destroy(self):
+        """Called when the window is destroyed. Unsuscribes from human selection events"""
+        self._selection_sub.unsubscribe()
+        self._selection_sub = None
+        super().destroy()
+
     def on_shutdown(self):
         """Called when the extension is shutting down"""
         self._win=None
-        self._selection_sub = None
 
     def _on_visibility_changed(self, visible):
         omni.kit.ui.get_editor_menu().set_value(self._menu_path, visible)
