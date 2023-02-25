@@ -62,7 +62,7 @@ class MHWindow(ui.Window):
         # Run when visibility changes
         self.set_visibility_changed_fn(self._on_visibility_changed)
 
-        self.frame.set_build_fn(self._build_ui)
+        self._build_ui()
 
     def _build_ui(self):
         spacer_width = 5
@@ -142,15 +142,10 @@ class MHWindow(ui.Window):
         # Update the human in the scene
         self._human.update_in_scene(self._human.prim_path)
 
-    def destroy(self):
-        """Called when the window is destroyed. Unsuscribes from human selection events"""
-        self._selection_sub.unsubscribe()
-        self._selection_sub = None
-        super().destroy()
-
     def on_shutdown(self):
         """Called when the extension is shutting down"""
         self._win=None
+        self._selection_sub = None
 
     def _on_visibility_changed(self, visible):
         omni.kit.ui.get_editor_menu().set_value(self._menu_path, visible)

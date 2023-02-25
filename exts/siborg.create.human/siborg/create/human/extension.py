@@ -36,7 +36,7 @@ class MakeHumanExtension(omni.ext.IExt):
 
         # create a window for the extension
         print("[siborg.create.human] HumanGeneratorExtension startup")
-        self._window = MHWindow(WINDOW_TITLE, self._menu_path)
+        self._window = None
         self._menu = omni.kit.ui.get_editor_menu().add_item(self._menu_path, self._on_menu_click, True)
 
 
@@ -44,7 +44,7 @@ class MakeHumanExtension(omni.ext.IExt):
         """Handles showing and hiding the window from the 'Windows' menu."""
         if toggled:
             if self._window is None:
-                self._window = MHWindow(self._menu_path, WINDOW_TITLE, self._menu_path)
+                self._window = MHWindow(WINDOW_TITLE, self._menu_path)
             else:
                 self._window.show()
         else:
@@ -76,10 +76,10 @@ class MakeHumanExtension(omni.ext.IExt):
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")
-        omni.kit.ui.get_editor_menu().remove_item(self._menu_path)
-        self._window.destroy()
-        self._window = None
+        omni.kit.ui.get_editor_menu().remove_item(self._menu)
+        if self._window is not None:
+            self._window.destroy()
+            self._window = None
         # unsubscribe from stage events
-        self._stage_event_sub.unsubscribe()
         self._stage_event_sub = None
 
