@@ -134,11 +134,6 @@ class MHCaller:
         # Set the game skeleton
         cls.human.setSkeleton(cls.game_skel)
 
-        # Put the human in tpose
-        cls.set_tpose()
-
-        cls.human.applyAllTargets()
-
     @classproperty
     def objects(cls):
         """List of objects attached to the human.
