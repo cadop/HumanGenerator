@@ -92,6 +92,9 @@ class MHCaller:
         # cls.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         # Reset skeleton to the game skeleton
         cls.human.setSkeleton(cls.game_skel)
+        # Reset the human to tpose
+        cls.set_tpose()
+
         # HACK Set the age to itcls to force an update of targets, otherwise humans
         # are created with the MH base mesh, see:
         # http://static.makehumancommunity.org/makehuman/docs/professional_mesh_topology.html
@@ -130,6 +133,9 @@ class MHCaller:
 
         # Set the game skeleton
         cls.human.setSkeleton(cls.game_skel)
+
+        # Put the human in tpose
+        cls.set_tpose()
 
         cls.human.applyAllTargets()
 
