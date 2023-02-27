@@ -190,8 +190,9 @@ class MHCaller:
         for obj in cls.human.getObjects()[1:]:
             mesh = obj.getSeedMesh()
             pxy = obj.getProxy()
-            # Update the proxy
-            pxy.update(mesh, False)
+            # Update the proxy and fit to posed human
+            # args are (mesh, fit_to_posed = false) by default
+            pxy.update(mesh, True)
             # Update the mesh
             mesh.update()
 
