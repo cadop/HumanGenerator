@@ -370,7 +370,7 @@ class MHCaller:
     def set_tpose(cls):
         """Sets the human to the T-Pose"""
         # Load the T-Pose BVH file
-        filepath = data_path('poses/tpose.bvh')
+        filepath = data_path('poses\\tpose.bvh')
         bvh_file = bvh.load(filepath, convertFromZUp="auto")
         # Create an animation track from the BVH file
         anim = bvh_file.createAnimationTrack(cls.human.getBaseSkeleton())
