@@ -10,6 +10,8 @@ from pathlib import Path
 makehuman.set_sys_path()
 
 import human
+import animation
+import bvh
 import files3d
 import mh
 from core import G
@@ -356,6 +358,23 @@ class MHCaller:
             if type in path:
                 return type
         return None
+    
+    
+    @classmethod
+    def set_tpose(cls):
+        """Sets the human to the T-Pose"""
+        # Load the T-Pose BVH file
+        filepath = data_path('poses/tpose.bvh')
+        bvh_file = bvh.load(filepath, convertFromZUp="auto")
+        # Create an animation track from the BVH file
+        anim = bvh_file.createAnimationTrack(cls.human.getBaseSkeleton())
+        # Add the animation to the human
+        cls.human.addAnimation(anim)
+        # Set the active animation to the T-Pose
+        cls.human.setActiveAnimation(anim.name)
+        # Refresh the human pose
+        cls.human.refreshPose()
+        return
 
 # Create an instance of MHCaller when imported
 MHCaller()
