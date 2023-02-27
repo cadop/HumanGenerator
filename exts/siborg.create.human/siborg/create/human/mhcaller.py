@@ -10,6 +10,8 @@ from pathlib import Path
 makehuman.set_sys_path()
 
 import human
+import animation
+import bvh
 import files3d
 import mh
 from core import G
@@ -90,6 +92,9 @@ class MHCaller:
         # cls.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         # Reset skeleton to the game skeleton
         cls.human.setSkeleton(cls.game_skel)
+        # Reset the human to tpose
+        cls.set_tpose()
+
         # HACK Set the age to itcls to force an update of targets, otherwise humans
         # are created with the MH base mesh, see:
         # http://static.makehumancommunity.org/makehuman/docs/professional_mesh_topology.html
@@ -128,8 +133,6 @@ class MHCaller:
 
         # Set the game skeleton
         cls.human.setSkeleton(cls.game_skel)
-
-        cls.human.applyAllTargets()
 
     @classproperty
     def objects(cls):
@@ -182,8 +185,9 @@ class MHCaller:
         for obj in cls.human.getObjects()[1:]:
             mesh = obj.getSeedMesh()
             pxy = obj.getProxy()
-            # Update the proxy
-            pxy.update(mesh, False)
+            # Update the proxy and fit to posed human
+            # args are (mesh, fit_to_posed = false) by default
+            pxy.update(mesh, True)
             # Update the mesh
             mesh.update()
 
@@ -356,6 +360,23 @@ class MHCaller:
             if type in path:
                 return type
         return None
+    
+    
+    @classmethod
+    def set_tpose(cls):
+        """Sets the human to the T-Pose"""
+        # Load the T-Pose BVH file
+        filepath = data_path('poses\\tpose.bvh')
+        bvh_file = bvh.load(filepath, convertFromZUp="auto")
+        # Create an animation track from the BVH file
+        anim = bvh_file.createAnimationTrack(cls.human.getBaseSkeleton())
+        # Add the animation to the human
+        cls.human.addAnimation(anim)
+        # Set the active animation to the T-Pose
+        cls.human.setActiveAnimation(anim.name)
+        # Refresh the human pose
+        cls.human.refreshPose()
+        return
 
 # Create an instance of MHCaller when imported
 MHCaller()
