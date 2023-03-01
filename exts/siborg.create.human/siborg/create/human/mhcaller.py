@@ -88,6 +88,9 @@ class MHCaller:
         reset so that the new name can be created when adding to the Usd stage.
         """
         cls.human.resetMeshValues()
+
+        # Subdivide the human mesh. This also means that any proxies added to the human are subdivided
+        cls.human.setSubdivided(True)
         # Restore eyes
         # cls.add_proxy(data_path("eyes/high-poly/high-poly.mhpxy"), "eyes")
         # Reset skeleton to the game skeleton
