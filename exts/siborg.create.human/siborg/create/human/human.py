@@ -41,8 +41,11 @@ class Human:
         # Reset the human in makehuman
         MHCaller.reset_human()
 
-        # Reset the prim
-        self.prim = None
+        # Delete any child prims corresponding to proxies
+        if self.prim:
+            # Get the children of the human prim and delete them all at once
+            proxy_prims = [child.GetPath() for child in self.prim.GetChildren() if child.GetCustomDataByKey("Proxy_path:")]
+            omni.kit.commands.execute("DeletePrims", paths=proxy_prims)
 
         # Reset the skeleton
         self.skeleton = Skeleton(self.scale)

@@ -1,6 +1,7 @@
 from .ext_ui import DropListModel, DropList, ParamPanelModel, ParamPanel
 from .browser import MHAssetBrowserModel, AssetBrowserFrame
 from .human import Human
+from .mhcaller import MHCaller
 from .styles import window_style
 import omni.ui as ui
 import omni.kit.ui
@@ -84,8 +85,7 @@ class MHWindow(ui.Window):
                         self.param_panel = ParamPanel(self.param_model, lambda: self.update_human())
                         with ui.HStack(height=0):
                             # Toggle whether changes should propagate instantly
-                            ui.Label("Update Instantly")
-                            ui.CheckBox(self.toggle_model)
+                            ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
                 with ui.VStack(width = 100):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
@@ -97,6 +97,12 @@ class MHWindow(ui.Window):
                         "Update Human",
                         clicked_fn=lambda: self.update_human(),
                     )
+                    # Resets modifiers and assets on selected human
+                    ui.Button(
+                        "Reset Human",
+                        clicked_fn=self.reset_human,
+                    )
+
 
     def _on_human_selected(self, event):
         """Callback for human selection events
@@ -141,6 +147,14 @@ class MHWindow(ui.Window):
 
         # Update the human in the scene
         self._human.update_in_scene(self._human.prim_path)
+
+    def reset_human(self):
+        """Resets the current human in the scene"""
+        # Reset the human
+        self._human.reset()
+
+        # Update the human in the scene and reset parameter widgets
+        self.update_human()
 
     def destroy(self):
         """Called when the window is destroyed. Unsuscribes from human selection events"""
