@@ -31,6 +31,13 @@ exts/siborg.create.human/data/*
 !exts/siborg.create.human/data/*.png
 !exts/siborg.create.human/data/skins/
 
+!exts/siborg.create.human/data/clothes/
+exts/siborg.create.human/data/clothes/*
+
+!exts/siborg.create.human/data/clothes/omni_casual/
+!exts/siborg.create.human/data/clothes/siborg_casual/
+!exts/siborg.create.human/data/clothes/nvidia_casual/
+
 exts/siborg.create.human/data/skins/*
 !exts/siborg.create.human/data/skins/textures/
 
