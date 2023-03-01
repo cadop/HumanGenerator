@@ -78,7 +78,7 @@ class SliderEntry:
         with ui.HStack(height=0, style=styles.sliderentry_style):
             # If an image is available, display it
             if self.image:
-                ui.Image(self.image, height=50, style={"border_radius": 5})
+                ui.Image(self.image, height=75, style={"border_radius": 5})
             # Stack the label and slider on top of each other
             with ui.VStack(spacing = 5):
                 ui.Label(
@@ -759,7 +759,7 @@ class ParamPanel(ui.Frame):
             self.models.append(race_model)
 
             # Create category widget for macros
-            with ui.CollapsableFrame("Macros", style=styles.frame_style, height=0):
+            with ui.CollapsableFrame("Macros", style=styles.frame_style, height=0, collapsed=True):
                 with ui.VStack():
                     # Create panels for macros and race
                     self.panels = (
