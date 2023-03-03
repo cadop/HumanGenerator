@@ -36,19 +36,20 @@ class Human:
         MHCaller.reset_human()
 
     def reset(self):
-        """Resets the human to default values"""
+        """Resets the human in makehuman and adds a new skeleton to the human"""
 
         # Reset the human in makehuman
         MHCaller.reset_human()
+        # Re-add the skeleton to the human
+        self.skeleton = Skeleton(self.scale)
 
+    def delete_proxies(self):
+        """Deletes the prims corresponding to proxies attached to the human"""
         # Delete any child prims corresponding to proxies
         if self.prim:
             # Get the children of the human prim and delete them all at once
             proxy_prims = [child.GetPath() for child in self.prim.GetChildren() if child.GetCustomDataByKey("Proxy_path:")]
             omni.kit.commands.execute("DeletePrims", paths=proxy_prims)
-
-        # Reset the skeleton
-        self.skeleton = Skeleton(self.scale)
 
     @property
     def prim_path(self):

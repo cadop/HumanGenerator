@@ -153,6 +153,9 @@ class MHWindow(ui.Window):
         # Reset the human
         self._human.reset()
 
+        # Delete the proxy prims
+        self._human.delete_proxies()
+
         # Update the human in the scene and reset parameter widgets
         self.update_human()
 
