@@ -98,12 +98,6 @@ class MHCaller:
         # Reset the human to tpose
         cls.set_tpose()
 
-        # HACK Set the age to itcls to force an update of targets, otherwise humans
-        # are created with the MH base mesh, see:
-        # http://static.makehumancommunity.org/makehuman/docs/professional_mesh_topology.html
-        cls.human.setAge(cls.human.getAge())
-        cls.human.applyAllTargets()
-
     @classmethod
     def init_human(cls):
         """Initialize the human and set some required files from disk. This
