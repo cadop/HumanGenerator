@@ -688,7 +688,7 @@ class ParamPanel(ui.Frame):
             # Store modifier info in dataclass for building UI elements
             return Param(
                 label,
-                m.name,
+                m.fullName,
                 m.updateValue,
                 image=image,
                 min=m.getMin(),
