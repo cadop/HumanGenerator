@@ -222,13 +222,16 @@ class SliderEntryPanelModel:
         if getval() > param.max:
             m.set_value(param.max)
 
-        # Add the parameter to the list of changed parameters so we can apply the function later
+        # Check if the parameter is already in the list of changed parameters. If so, remove it.
+        # Then, add the parameter to the list of changed parameters
+        if param in self.changed_params:
+            self.changed_params.remove(param)
         self.changed_params.append(param)
 
         # If instant update is toggled on, add the changes to the stage instantly
         if self.toggle.get_value_as_bool():
-            # Run the function given by the parameter using the value from the widget
-            param.fn(m.get_value_as_float())
+            # Apply the changes
+            self.apply_changes()
             # Run the instant update function
             self.instant_update()
 

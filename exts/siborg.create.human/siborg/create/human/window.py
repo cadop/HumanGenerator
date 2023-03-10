@@ -142,8 +142,11 @@ class MHWindow(ui.Window):
 
     def update_human(self):
         """Updates the current human in the scene"""
-        # Apply any changed parameters to the human
+        # Collect changed values from the parameter panel
         self.param_panel.update_models()
+
+        # Apply MakeHuman targets
+        MHCaller.human.applyAllTargets()
 
         # Update the human in the scene
         self._human.update_in_scene(self._human.prim_path)
