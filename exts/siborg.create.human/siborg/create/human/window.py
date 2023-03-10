@@ -82,7 +82,7 @@ class MHWindow(ui.Window):
                         ui.Spacer(width=spacer_width)
                 with ui.HStack():
                     with ui.VStack():
-                        self.param_panel = ParamPanel(self.param_model, lambda: self.update_human())
+                        self.param_panel = ParamPanel(self.param_model,self.update_human)
                         with ui.HStack(height=0):
                             # Toggle whether changes should propagate instantly
                             ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
@@ -95,7 +95,7 @@ class MHWindow(ui.Window):
                     # Updates current human in omniverse scene
                     ui.Button(
                         "Update Human",
-                        clicked_fn=lambda: self.update_human(),
+                        clicked_fn=self.update_human,
                     )
                     # Resets modifiers and assets on selected human
                     ui.Button(
