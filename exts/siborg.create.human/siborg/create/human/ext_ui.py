@@ -201,7 +201,7 @@ class SliderEntryPanelModel:
         """Resets the values of each floatmodel to parameter default for UI reset
         """
         for param in self.params:
-            param.set_value(param.default)
+            param.value.set_value(param.default)
 
     def _sanitize_and_run(self, param: Param):
         """Make sure that values are within an acceptable range and then add the parameter to the
@@ -813,6 +813,9 @@ class ParamPanel(ui.Frame):
         # Make the prim exists
         if not human_prim.IsValid():
             return
+        
+        # Reset the UI to defaults
+        self.reset()
 
         # Get the data from the prim
         humandata = human_prim.GetCustomData()
