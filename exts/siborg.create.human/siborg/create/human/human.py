@@ -9,6 +9,7 @@ from .skeleton import Skeleton
 from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import carb
+import os
 
 from .materials import get_mesh_texture, create_material, bind_material
 class Human:
@@ -354,6 +355,11 @@ class Human:
 
             # # Subdivision is set to none. The mesh is as imported and not further refined
             meshGeom.CreateSubdivisionSchemeAttr().Set("none")
+
+            # Add sample blendshape
+            # self.add_blendshape(meshGeom, data_path("targets/stomach/stomach-pregnant-incr.target"))
+
+
 
         # ConvertPath strings to USD Sdf paths. TODO change to map() for performance
         paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
@@ -710,3 +716,38 @@ class Human:
             # xformOpOrder is also updated.
             xformAPI = UsdGeom.XformCommonAPI(prim)
             xformAPI.SetScale(Gf.Vec3f(sV))
+    def add_blendshape(self, mesh : UsdGeom.Mesh, target: str):
+        """Create a USD blendshape from a Makehuman .target file and bind it to
+        any mesh prims of the human.
+        
+        Parameters
+        ----------
+        mesh : UsdGeom.Mesh
+            The mesh to which to apply the blendshape
+        target : str
+            Path to a .target file representing the blendshape/target
+        """
+
+        # Get the name of the target
+        name = os.path.basename(target).split('.')[0]
+
+        # Sanitize the name for USD
+        name = sanitize(name)
+
+        # Get the current usd context and stage
+        usd_context = omni.usd.get_context()
+        stage = usd_context.get_stage()
+
+        # Get the prim from the mesh
+        prim = mesh.GetPrim()
+
+        # Get the path to the prim
+        prim_path = prim.GetPath().pathString
+
+        # Get the path to the blendshape
+        blendshape_path = prim_path + "/" + name
+
+        # Create a blendshape prim
+        blendshape = UsdSkel.BlendShape.Define(stage, blendshape_path)
+
+        return blendshape
