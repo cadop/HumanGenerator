@@ -183,9 +183,18 @@ class Human:
                     # Update the skeleton values and insert it into the stage
                     self.usd_skel = self.skeleton.update_in_scene(stage, prim_path, offset = offset)
 
+                    # Get the meshGeom for the human
+                    meshGeom = stage.GetPrimAtPath(mesh_paths[0]).GetPrim()
+                    # Add sample blendshape
+                    blend = self.add_blendshape(meshGeom, data_path("targets/stomach/stomach-pregnant-incr.target"))
+
                     # Create bindings between meshes and the skeleton. Returns a list of
                     # bindings the length of the number of meshes
                     bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
+
+                    # Get the binding for the human and add the blendshape to it
+                    human_binding = bindings[0]
+                    self.add_blendshape_binding(human_binding,blend)
 
                     # Setup weights for corresponding mh_meshes (which hold the data) and
                     # bindings (which link USD_meshes to the skeleton)
@@ -356,9 +365,6 @@ class Human:
 
             # # Subdivision is set to none. The mesh is as imported and not further refined
             meshGeom.CreateSubdivisionSchemeAttr().Set("none")
-
-            # Add sample blendshape
-            # self.add_blendshape(meshGeom, data_path("targets/stomach/stomach-pregnant-incr.target"))
 
 
 
@@ -696,16 +702,52 @@ class Human:
             carb.log_warn("No prim selected")
 
     def add_blendshape(self, mesh : UsdGeom.Mesh, target: str):
-        """Create a USD blendshape from a Makehuman .target file and bind it to
-        any mesh prims of the human.
+        """Create a USD blendshape from a Makehuman .target file
         
         Parameters
         ----------
         mesh : UsdGeom.Mesh
-            The mesh to which to apply the blendshape
+            The mesh under which to create the blendshape
         target : str
             Path to a .target file representing the blendshape/target
         """
+
+        # Check if the file exists
+        if not os.path.exists(target):
+            carb.log_warn("Target file does not exist")
+            return
+        
+
+        # Open and parse the target file
+        with open(target, 'r') as f:
+            lines = f.readlines()
+
+            length = len(lines)
+            # Create an empty numpy array to hold the vertex indices
+            indices = np.empty(length)
+            # Create an empty numpy array to hold the vertex offsets
+            offsets = np.empty((length, 3))
+
+
+            # Iterate through the lines and get the vertex index and offset
+            linenum = 0
+            for line in lines:
+                # Make sure the line is not a comment
+                if not line.startswith('#'):
+                    # The first value is the index, the next 3 are the offset
+                    index, x, y, z = line.split()
+                    # Add the index and weight to the lists
+                    indices[linenum] = int(index)
+                    offsets[linenum] = [float(x), float(y), float(z)]
+                    linenum += 1
+
+        # Trim the numpy arrays to the actual length
+        indices = indices[:linenum]
+        offsets = offsets[:linenum]
+
+        # Convert the numpy arrays to Vt arrays
+        indices = Vt.IntArray.FromNumpy(indices)
+        offsets = Vt.Vec3fArray.FromNumpy(offsets)
 
         # Get the name of the target
         name = os.path.basename(target).split('.')[0]
@@ -729,4 +771,20 @@ class Human:
         # Create a blendshape prim
         blendshape = UsdSkel.BlendShape.Define(stage, blendshape_path)
 
+        # Create blendshape attributes
+        blendshape.CreateOffsetsAttr(offsets)
+        blendshape.CreatePointIndicesAttr(indices)
+
         return blendshape
+
+    def add_blendshape_binding(self, binding: UsdSkel.BindingAPI, blendshape: UsdSkel.BlendShape):
+        """Create a binding between a blendshape and a mesh
+
+        Parameters
+        ----------
+        binding : UsdSkel.BindingAPI
+            The binding between a mesh and a skeleton
+        blendshape : UsdSkel.BlendShape
+            The blendshape to bind to the mesh
+        """
+        binding.CreateBlendShapeTargetsRel().SetTargets([blendshape.GetPath()])
