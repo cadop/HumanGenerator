@@ -102,7 +102,6 @@ class MHCaller:
         # are created with the MH base mesh, see:
         # http://static.makehumancommunity.org/makehuman/docs/professional_mesh_topology.html
         cls.human.setAge(cls.human.getAge())
-        cls.human.applyAllTargets()
 
     @classmethod
     def init_human(cls):

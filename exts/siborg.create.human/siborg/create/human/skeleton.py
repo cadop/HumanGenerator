@@ -108,22 +108,17 @@ class Skeleton:
         used for skinning / weighting.
     """
 
-    def __init__(self, scale: float, name="Skeleton") -> None:
+    def __init__(self, name="Skeleton") -> None:
         """Create a skeleton instance
 
         Parameters
-        ----------
-        scale : float
-            Scale factor to apply to the skeleton
-            
+        ----------            
         name : str, optional
             Name of the skeleton, by default "Skeleton"
         """
 
-        self.scale = scale
-
-        # Set the skeleton to the makehuman default and scale it
-        _mh_skeleton = MHCaller.human.getSkeleton().scaled(self.scale)
+        # Set the skeleton to the makehuman default
+        _mh_skeleton = MHCaller.human.getSkeleton()
         
         self._rel_transforms = []
         self._bind_transforms = []
@@ -326,7 +321,7 @@ class Skeleton:
             The updated skeleton in USD
         """
         # Get the skeleton from makehuman
-        _mh_skeleton = MHCaller.human.getSkeleton().scaled(self.scale)
+        _mh_skeleton = MHCaller.human.getSkeleton()
 
         # Clear out any existing data
         self._rel_transforms = []

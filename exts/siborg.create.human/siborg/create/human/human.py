@@ -107,7 +107,7 @@ class Human:
         human = objects[0]
 
         # Determine the offset for the human from the ground
-        offset = -1 * human.getJointPosition("ground") * self.scale
+        offset = -1 * human.getJointPosition("ground")
 
         # Import makehuman objects into the scene
         mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
@@ -130,6 +130,8 @@ class Human:
         skin = create_material(texture_path, "Skin", root_path, stage)
         # Bind the skin material to the first prim in the list (the human)
         bind_material(mesh_paths[0], skin, stage)
+
+        Human._set_scale(self.prim.GetPrim(), self.scale)
 
         return self.prim
 
@@ -174,7 +176,7 @@ class Human:
                     human = objects[0]
 
                     # Determine the offset for the human from the ground
-                    offset = -1 * human.getJointPosition("ground") * self.scale
+                    offset = -1 * human.getJointPosition("ground")
 
                     # Import makehuman objects into the scene
                     mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
@@ -230,9 +232,6 @@ class Human:
 
         # Get the meshes of the human and its proxies
         meshes = [o.mesh for o in objects]
-
-        # Scale the meshes
-        meshes = [m.clone(self.scale) for m in meshes]
 
         usd_mesh_paths = []
 
@@ -688,3 +687,26 @@ class Human:
             self.update_in_scene(self.prim.GetPath().pathString)
         else:
             carb.log_warn("No prim selected")
+
+    @staticmethod
+    def _set_scale(prim : Usd.Prim, scale : float):
+        """Set scale of a prim.
+        
+        Parameters
+        ----------
+        prim : Usd.Prim
+            The prim to scale.
+        scale : float
+            The scale to apply."""
+
+        if prim == None:
+            return
+        # Uniform scale.
+        sV = Gf.Vec3f(scale, scale, scale)
+        scale = prim.GetAttribute("xformOp:scale").Get()
+        if scale != None:
+            prim.GetAttribute("xformOp:scale").Set(Gf.Vec3f(sV))
+        else:
+            # xformOpOrder is also updated.
+            xformAPI = UsdGeom.XformCommonAPI(prim)
+            xformAPI.SetScale(Gf.Vec3f(sV))

@@ -10,8 +10,6 @@ class AssetBrowserFrame:
     ----------
     mhcaller : MHCaller
         Wrapper object for Makehuman functions
-    list_widget : DropList
-        The widget in which to reflect changes when assets are added
     """
 
     def __init__(self, model: MHAssetBrowserModel, **kwargs):

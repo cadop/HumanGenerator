@@ -1,4 +1,4 @@
-from .ext_ui import DropListModel, DropList, ParamPanelModel, ParamPanel
+from .ext_ui import ParamPanelModel, ParamPanel
 from .browser import MHAssetBrowserModel, AssetBrowserFrame
 from .human import Human
 from .mhcaller import MHCaller
@@ -82,7 +82,7 @@ class MHWindow(ui.Window):
                         ui.Spacer(width=spacer_width)
                 with ui.HStack():
                     with ui.VStack():
-                        self.param_panel = ParamPanel(self.param_model, lambda: self.update_human())
+                        self.param_panel = ParamPanel(self.param_model,self.update_human)
                         with ui.HStack(height=0):
                             # Toggle whether changes should propagate instantly
                             ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
@@ -95,7 +95,7 @@ class MHWindow(ui.Window):
                     # Updates current human in omniverse scene
                     ui.Button(
                         "Update Human",
-                        clicked_fn=lambda: self.update_human(),
+                        clicked_fn=self.update_human,
                     )
                     # Resets modifiers and assets on selected human
                     ui.Button(
@@ -142,8 +142,11 @@ class MHWindow(ui.Window):
 
     def update_human(self):
         """Updates the current human in the scene"""
-        # Apply any changed parameters to the human
+        # Collect changed values from the parameter panel
         self.param_panel.update_models()
+
+        # Apply MakeHuman targets
+        MHCaller.human.applyAllTargets()
 
         # Update the human in the scene
         self._human.update_in_scene(self._human.prim_path)
