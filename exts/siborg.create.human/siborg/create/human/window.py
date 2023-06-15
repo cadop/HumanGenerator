@@ -55,10 +55,10 @@ class MHWindow(ui.Window):
         self.deferred_dock_in(
             "Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
 
-        # Subscribe to human selection events on the message bus
+        # Subscribe to selection events on the message bus
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
-        selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
-        self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
+        selection_event = carb.events.type(int(omni.usd.StageEventType.SELECTION_CHANGED))
+        self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_selection_changed)
 
         # Run when visibility changes
         self.set_visibility_changed_fn(self._on_visibility_changed)
@@ -111,7 +111,7 @@ class MHWindow(ui.Window):
                     )
 
 
-    def _on_human_selected(self, event):
+    def _on_selection_changed(self, event):
         """Callback for human selection events
 
         Parameters
