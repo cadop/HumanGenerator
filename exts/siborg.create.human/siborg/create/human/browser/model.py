@@ -3,7 +3,6 @@ from typing import List, Union
 import carb.settings
 import omni.kit.commands
 from siborg.create.human.mhcaller import MHCaller
-from siborg.create.human.ext_ui import DropList, DropListModel
 import omni.usd
 from omni.kit.browser.core import DetailItem
 from omni.kit.browser.folder.core import (
@@ -34,10 +33,6 @@ class AssetDetailItem(FileDetailItem):
 
 class MHAssetBrowserModel(FolderBrowserModel):
     """Represents Makehuman asset browser model
-    Attributes
-    ----------
-    list_widget : DropList
-        The widget in which to reflect changes when assets are added to the human
     """
 
     def __init__(self, human: Human, *args, **kwargs):

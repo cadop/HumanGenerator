@@ -1,4 +1,4 @@
-from .ext_ui import DropListModel, DropList, ParamPanelModel, ParamPanel
+from .ext_ui import ParamPanelModel, ParamPanel
 from .browser import MHAssetBrowserModel, AssetBrowserFrame
 from .human import Human
 from .mhcaller import MHCaller
