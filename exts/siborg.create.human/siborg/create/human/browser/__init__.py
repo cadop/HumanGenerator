@@ -2,6 +2,7 @@ from omni.kit.browser.folder.core import FolderBrowserWidget
 from .delegate import AssetDetailDelegate
 from .model import MHAssetBrowserModel
 from .options_menu import FolderOptionsMenu
+import omni.ui as ui
 
 
 class AssetBrowserFrame:
@@ -32,6 +33,10 @@ class AssetBrowserFrame:
         # Drop down menu to hold options
         self._options_menu = FolderOptionsMenu()
 
-        # Build the actual widget
-        self._widget = FolderBrowserWidget(
-            self.model, detail_delegate=self._delegate, options_menu=self._options_menu)
+        with ui.VStack():
+            self._widget = FolderBrowserWidget(
+                self.model, detail_delegate=self._delegate, options_menu=self._options_menu)
+            ui.Separator(height=2)
+            # Progress bar to show download progress (initially hidden)
+            self._progress_bar = ui.ProgressBar(height=20, visible=False)
+            self._options_menu.bind_progress_bar(self._progress_bar)
