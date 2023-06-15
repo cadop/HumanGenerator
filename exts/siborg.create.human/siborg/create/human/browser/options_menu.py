@@ -4,6 +4,7 @@ import carb
 import asyncio
 from ..shared import data_path
 from .downloader import Downloader
+import omni.ui as ui
 
 
 class FolderOptionsMenu(OptionsMenu):
@@ -13,7 +14,9 @@ class FolderOptionsMenu(OptionsMenu):
 
     def __init__(self):
         super().__init__()
-        self.downloader = Downloader(self.log_fn, )
+        # Progress bar widget to show download progress
+        self._progress_bar : ui.ProgressBar = None
+        self.downloader = Downloader(self.progress_fn,)
         self._download_menu_desc = OptionMenuDescription(
             "Download Assets",
             clicked_fn=self._on_download_assets,
@@ -25,8 +28,10 @@ class FolderOptionsMenu(OptionsMenu):
     def destroy(self) -> None:
         super().destroy()
 
-    def log_fn(self, proportion: float):
+    def progress_fn(self, proportion: float):
         carb.log_info(f"Download is {int(proportion * 100)}% done")
+        if self._progress_bar:
+            self._progress_bar.model.set_value(proportion)
 
     def _get_menu_item_text(self) -> str:
         # Show download state if download starts
@@ -34,9 +39,19 @@ class FolderOptionsMenu(OptionsMenu):
             return "Download In Progress"
         return "Download Assets"
 
+    def bind_progress_bar(self, progress_bar):
+        self._progress_bar = progress_bar
+
     def _on_download_assets(self):
+        # Show progress bar
+        if self._progress_bar:
+            self._progress_bar.visible = True
         loop = asyncio.get_event_loop()
         asyncio.run_coroutine_threadsafe(self._download(), loop)
+
+    def _hide_progress_bar(self):
+        if self._progress_bar:
+            self._progress_bar.visible = False
 
     async def _download(self):
         # Makehuman system assets
@@ -46,6 +61,8 @@ class FolderOptionsMenu(OptionsMenu):
         dest_url = data_path("")
         await self.downloader.download(url, dest_url)
         self.refresh_collection()
+        # Hide progress bar
+        self._hide_progress_bar()
 
     def refresh_collection(self):
         collection_item: FolderCollectionItem = self._browser_widget.collection_selection
