@@ -1,4 +1,4 @@
-from .ext_ui import ParamPanelModel, ParamPanel
+from .ext_ui import ParamPanelModel, ParamPanel, NoSelectionNotification
 from .browser import MHAssetBrowserModel, AssetBrowserFrame
 from .human import Human
 from .mhcaller import MHCaller
@@ -70,22 +70,27 @@ class MHWindow(ui.Window):
         with self.frame:
             # Widgets are built starting on the left
             with ui.HStack(style=window_style):
-                with ui.ZStack(width=0):
-                    # Draggable splitter
-                    with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
-                        ui.Rectangle(width=spacer_width, name="splitter")
+                # Widget to show if no human is selected
+                self.no_selection_notification = NoSelectionNotification()
+
+                self.property_panel = ui.HStack(visible=False)
+                with self.property_panel:
+                    with ui.ZStack(width=0):
+                        # Draggable splitter
+                        with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
+                            ui.Rectangle(width=spacer_width, name="splitter")
+                        with ui.HStack():
+                            # Left-most panel is a browser for MakeHuman assets. It includes
+                            # a reference to the list of applied proxies so that an update
+                            # can be triggered when new assets are added
+                            self.browser = AssetBrowserFrame(self.browser_model)
+                            ui.Spacer(width=spacer_width)
                     with ui.HStack():
-                        # Left-most panel is a browser for MakeHuman assets. It includes
-                        # a reference to the list of applied proxies so that an update
-                        # can be triggered when new assets are added
-                        self.browser = AssetBrowserFrame(self.browser_model)
-                        ui.Spacer(width=spacer_width)
-                with ui.HStack():
-                    with ui.VStack():
-                        self.param_panel = ParamPanel(self.param_model,self.update_human)
-                        with ui.HStack(height=0):
-                            # Toggle whether changes should propagate instantly
-                            ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
+                        with ui.VStack():
+                            self.param_panel = ParamPanel(self.param_model,self.update_human)
+                            with ui.HStack(height=0):
+                                # Toggle whether changes should propagate instantly
+                                ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
                 with ui.VStack(width = 100):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
@@ -93,14 +98,16 @@ class MHWindow(ui.Window):
                         clicked_fn=self.new_human,
                     )
                     # Updates current human in omniverse scene
-                    ui.Button(
+                    self.update_button = ui.Button(
                         "Update Human",
                         clicked_fn=self.update_human,
+                        enabled=False,
                     )
                     # Resets modifiers and assets on selected human
-                    ui.Button(
+                    self.reset_button = ui.Button(
                         "Reset Human",
                         clicked_fn=self.reset_human,
+                        enabled=False,
                     )
 
 
@@ -113,6 +120,16 @@ class MHWindow(ui.Window):
             The event that was pushed to the event stream. Contains payload data with
             the selected prim path
         """
+
+        # Show the property panel
+        self.property_panel.visible = True
+
+        # Hide the no selection notification
+        self.no_selection_notification.visible = False
+
+        # Activate the update and reset buttons
+        self.update_button.enabled = True
+        self.reset_button.enabled = True
 
         # Get the stage
         stage = omni.usd.get_context().get_stage()
