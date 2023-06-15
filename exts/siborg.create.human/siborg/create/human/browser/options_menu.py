@@ -38,6 +38,13 @@ class FolderOptionsMenu(OptionsMenu):
         loop = asyncio.get_event_loop()
         asyncio.run_coroutine_threadsafe(self._download(), loop)
 
+    def _is_remove_collection_enabled(self) -> None:
+        '''Don't allow removing the default collection'''
+        if self._browser_widget is not None:
+            return self._browser_widget.collection_index >= 1
+        else:
+            return False
+
     async def _download(self):
         # Makehuman system assets
         url = "http://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip"
