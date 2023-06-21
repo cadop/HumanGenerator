@@ -79,8 +79,6 @@ class FolderOptionsMenu(OptionsMenu):
         dest_url = data_path("")
         await self.downloader.download(url, dest_url)
         self.refresh_collection()
-        # Hide progress bar
-        self._hide_progress_bar()
 
     def refresh_collection(self):
         collection_item: FolderCollectionItem = self._browser_widget.collection_selection
