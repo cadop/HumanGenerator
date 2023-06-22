@@ -2,7 +2,7 @@ from .ext_ui import ParamPanelModel, ParamPanel, NoSelectionNotification
 from .browser import MHAssetBrowserModel, AssetBrowserFrame
 from .human import Human
 from .mhcaller import MHCaller
-from .styles import window_style
+from .styles import window_style, button_style
 import omni.ui as ui
 import omni.kit.ui
 import omni
@@ -91,7 +91,7 @@ class MHWindow(ui.Window):
                             with ui.HStack(height=0):
                                 # Toggle whether changes should propagate instantly
                                 ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
-                with ui.VStack(width = 100):
+                with ui.VStack(width = 100, style=button_style):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
                         "New Human",
