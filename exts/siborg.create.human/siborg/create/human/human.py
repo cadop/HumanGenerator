@@ -723,6 +723,7 @@ class Human:
             # xformOpOrder is also updated.
             xformAPI = UsdGeom.XformCommonAPI(prim)
             xformAPI.SetScale(Gf.Vec3f(sV))
+
     def add_blendshape(self, mesh : UsdGeom.Mesh, target: str):
         """Create a USD blendshape from a Makehuman .target file
         
