@@ -189,20 +189,11 @@ class Human:
                     # Get the meshGeom for the human
                     meshGeom = stage.GetPrimAtPath(mesh_paths[0]).GetPrim()
                     # Add sample blendshape
-                    blend = self.add_blendshape(meshGeom, data_path("targets/stomach/stomach-pregnant-incr.target"))
-
-                    # Get the meshGeom for the human
-                    meshGeom = stage.GetPrimAtPath(mesh_paths[0]).GetPrim()
-                    # Add sample blendshape
-                    blend = self.add_blendshape(meshGeom, data_path("targets/stomach/stomach-pregnant-incr.target"))
+                    blend = self.add_blendshape(meshGeom, "C:/Users/jhg29/Documents/GitHub/mpfb2/src/mpfb/data/targets/nose/nose-scale-depth-incr.target/nose-scale-depth-incr.target")
 
                     # Create bindings between meshes and the skeleton. Returns a list of
                     # bindings the length of the number of meshes
                     bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
-
-                    # Get the binding for the human and add the blendshape to it
-                    human_binding = bindings[0]
-                    self.add_blendshape_binding(human_binding,blend)
 
                     # Get the binding for the human and add the blendshape to it
                     human_binding = bindings[0]
