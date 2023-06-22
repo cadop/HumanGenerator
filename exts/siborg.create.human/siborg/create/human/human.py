@@ -10,6 +10,7 @@ from module3d import Object3D
 from pxr import Usd, UsdGeom, UsdPhysics, UsdShade, Sdf, Gf, Tf, UsdSkel, Vt
 import carb
 import os
+import os
 
 from .materials import get_mesh_texture, create_material, bind_material
 class Human:
@@ -190,9 +191,18 @@ class Human:
                     # Add sample blendshape
                     blend = self.add_blendshape(meshGeom, data_path("targets/stomach/stomach-pregnant-incr.target"))
 
+                    # Get the meshGeom for the human
+                    meshGeom = stage.GetPrimAtPath(mesh_paths[0]).GetPrim()
+                    # Add sample blendshape
+                    blend = self.add_blendshape(meshGeom, data_path("targets/stomach/stomach-pregnant-incr.target"))
+
                     # Create bindings between meshes and the skeleton. Returns a list of
                     # bindings the length of the number of meshes
                     bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
+
+                    # Get the binding for the human and add the blendshape to it
+                    human_binding = bindings[0]
+                    self.add_blendshape_binding(human_binding,blend)
 
                     # Get the binding for the human and add the blendshape to it
                     human_binding = bindings[0]
