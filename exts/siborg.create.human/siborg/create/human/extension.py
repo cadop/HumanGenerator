@@ -52,27 +52,36 @@ class MakeHumanExtension(omni.ext.IExt):
                 self._window.hide()
 
     def _on_stage_event(self, event):
+        """Handles stage events. This is where we get notified when the user selects/deselects a prim in the viewport."""
         if event.type == int(omni.usd.StageEventType.SELECTION_CHANGED):
-            self._on_selection_changed()
+            # Get the current selection
+            selection = self._selection.get_selected_prim_paths()
 
-    def _on_selection_changed(self):
-        # get the current selection and stage
-        selection = self._selection.get_selected_prim_paths()
-        stage = self._usd_context.get_stage()
-        print(f"== selection changed with {len(selection)} items")
-
-        if selection and stage:
-            if len(selection) > 0:
-                path = selection[-1]
-                print(path)
-                self._selected_primpath_model.set_value(path)
-                prim = stage.GetPrimAtPath(path)
-                prim_kind = prim.GetTypeName()
-                # If the selection is a human, push an event to the event stream with the prim as a payload
+            # Check if the selection is empty
+            if not selection:
+                # Push an event to the message bus with "None" as a payload
                 # This event will be picked up by the window and used to update the UI
-                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
-                    carb.log_warn("Human selected")
-                    self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                carb.log_warn("Human deselected")
+                self._bus.push(self._human_selection_event, payload={"prim_path": None})
+            else:
+                # Get the stage
+                stage = self._usd_context.get_stage()
+
+                if stage:
+                    # Get the last selected prim path
+                    path = selection[-1]
+                    self._selected_primpath_model.set_value(path)
+                    prim = stage.GetPrimAtPath(path)
+                    prim_kind = prim.GetTypeName()
+
+                    # If the selection is a human, push an event to the message bus with the prim as a payload
+                    # This event will be picked up by the window and used to update the UI
+                    if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                        carb.log_warn("Human selected")
+                        self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                    else:
+                        carb.log_warn("Selection is not a human")
+                        self._bus.push(self._human_selection_event, payload={"prim_path": None})
 
     def on_shutdown(self):
         print("[siborg.create.human] HumanGenerator shutdown")
