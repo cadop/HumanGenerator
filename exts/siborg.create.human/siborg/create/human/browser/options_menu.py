@@ -78,6 +78,7 @@ class FolderOptionsMenu(OptionsMenu):
         # url = "https://download.tuxfamily.org/makehuman/asset_packs/shirts03/shirts03_ccby.zip"
         dest_url = data_path("")
         await self.downloader.download(url, dest_url)
+        self._hide_progress_bar()
         self.refresh_collection()
 
     def refresh_collection(self):
