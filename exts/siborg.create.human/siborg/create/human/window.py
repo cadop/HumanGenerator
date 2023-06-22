@@ -57,7 +57,7 @@ class MHWindow(ui.Window):
 
         # Subscribe to selection events on the message bus
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
-        selection_event = carb.events.type(int(omni.usd.StageEventType.SELECTION_CHANGED))
+        selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_selection_changed)
 
         # Run when visibility changes
@@ -118,30 +118,46 @@ class MHWindow(ui.Window):
         ----------
         event : carb.events.Event
             The event that was pushed to the event stream. Contains payload data with
-            the selected prim path
+            the selected prim path, or "None" if no human is selected
         """
-
-        # Show the property panel
-        self.property_panel.visible = True
-
-        # Hide the no selection notification
-        self.no_selection_notification.visible = False
-
-        # Activate the update and reset buttons
-        self.update_button.enabled = True
-        self.reset_button.enabled = True
 
         # Get the stage
         stage = omni.usd.get_context().get_stage()
 
-        # Get the prim from the path in the event payload
-        prim = stage.GetPrimAtPath(event.payload["prim_path"])
+        prim_path = event.payload["prim_path"]
 
-        # Update the human in MHCaller
-        self._human.set_prim(prim)
+        # If a valid human prim is selected, 
+        if not prim_path or not stage.GetPrimAtPath(prim_path):
+            # Hide the property panel
+            self.property_panel.visible = False
 
-        # Update the list of applied modifiers
-        self.param_panel.load_values(prim)
+            # Show the no selection notification
+            self.no_selection_notification.visible = True
+
+            # Deactivate the update and reset buttons
+            self.update_button.enabled = False
+            self.reset_button.enabled = False
+
+        else:
+
+            # Show the property panel
+            self.property_panel.visible = True
+
+            # Hide the no selection notification
+            self.no_selection_notification.visible = False
+
+            # Activate the update and reset buttons
+            self.update_button.enabled = True
+            self.reset_button.enabled = True
+
+            # Get the prim from the path in the event payload
+            prim = stage.GetPrimAtPath(prim_path)
+
+            # Update the human in MHCaller
+            self._human.set_prim(prim)
+
+            # Update the list of applied modifiers
+            self.param_panel.load_values(prim)
 
     def new_human(self):
         """Creates a new human in the scene and selects it"""
