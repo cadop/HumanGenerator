@@ -76,15 +76,20 @@ class MakeHumanExtension(omni.ext.IExt):
         try:
             import makehuman
             print("Found makehuman")
-            self.finish_startup()
-        except ImportError:
-            # Start the installation of makehuman in a separate worker thread, providing the post-install callback
+        except ModuleNotFoundError:
+            # Start the installation of makehuman in a separate worker thread,
+            # providing the post-install callback
             asyncio.create_task(self.install_makehuman(self.post_install))
 
-    def finish_startup(self):
         # show the window
         ui.Workspace.show_window(WINDOW_TITLE)
-        print("[siborg.create.human] HumanGeneratorExtension startup")
+
+    def post_install(self):
+        # This function is called after makehuman is installed
+        # We can now import makehuman
+        import makehuman
+        # Rebuild the UI to reflect the new state
+        self._window.refresh_ui()
 
     def on_shutdown(self):
         self._menu = None

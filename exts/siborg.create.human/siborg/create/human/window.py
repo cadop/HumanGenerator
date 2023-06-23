@@ -60,42 +60,51 @@ class MHWindow(ui.Window):
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
-        spacer_width = 3
-        with self.frame:
-            # Widgets are built starting on the left
-            with ui.HStack(style=window_style):
-                with ui.ZStack(width=0):
-                    # Draggable splitter
-                    with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
-                        ui.Rectangle(width=spacer_width, name="splitter")
+
+        # Check if makehuman is installed
+        try:
+            import makehuman
+            # Create a spacer width for the draggable splitter
+            spacer_width = 3
+            with self.frame:
+                # Widgets are built starting on the left
+                with ui.HStack(style=window_style):
+                    with ui.ZStack(width=0):
+                        # Draggable splitter
+                        with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
+                            ui.Rectangle(width=spacer_width, name="splitter")
+                        with ui.HStack():
+                            # Left-most panel is a browser for MakeHuman assets. It includes
+                            # a reference to the list of applied proxies so that an update
+                            # can be triggered when new assets are added
+                            self.browser = AssetBrowserFrame(self.browser_model)
+                            ui.Spacer(width=spacer_width)
                     with ui.HStack():
-                        # Left-most panel is a browser for MakeHuman assets. It includes
-                        # a reference to the list of applied proxies so that an update
-                        # can be triggered when new assets are added
-                        self.browser = AssetBrowserFrame(self.browser_model)
-                        ui.Spacer(width=spacer_width)
-                with ui.HStack():
-                    with ui.VStack():
-                        self.param_panel = ParamPanel(self.param_model,self.update_human)
-                        with ui.HStack(height=0):
-                            # Toggle whether changes should propagate instantly
-                            ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
-                with ui.VStack(width = 100):
-                    # Creates a new human in scene and resets modifiers and assets
-                    ui.Button(
-                        "New Human",
-                        clicked_fn=self.new_human,
-                    )
-                    # Updates current human in omniverse scene
-                    ui.Button(
-                        "Update Human",
-                        clicked_fn=self.update_human,
-                    )
-                    # Resets modifiers and assets on selected human
-                    ui.Button(
-                        "Reset Human",
-                        clicked_fn=self.reset_human,
-                    )
+                        with ui.VStack():
+                            self.param_panel = ParamPanel(self.param_model,self.update_human)
+                            with ui.HStack(height=0):
+                                # Toggle whether changes should propagate instantly
+                                ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
+                    with ui.VStack(width = 100):
+                        # Creates a new human in scene and resets modifiers and assets
+                        ui.Button(
+                            "New Human",
+                            clicked_fn=self.new_human,
+                        )
+                        # Updates current human in omniverse scene
+                        ui.Button(
+                            "Update Human",
+                            clicked_fn=self.update_human,
+                        )
+                        # Resets modifiers and assets on selected human
+                        ui.Button(
+                            "Reset Human",
+                            clicked_fn=self.reset_human,
+                        )
+        except ModuleNotFoundError:
+            with self.frame:
+                with ui.VStack():
+                    ui.Label("Installing MakeHuman...")
 
 
     def _on_human_selected(self, event):
@@ -161,3 +170,7 @@ class MHWindow(ui.Window):
         self._selection_sub.unsubscribe()
         self._selection_sub = None
         super().destroy()
+
+    def refresh_ui(self):
+        """Refreshes the UI, eg. when makehuman finishes installing for the first time"""
+        self.frame.rebuild()
