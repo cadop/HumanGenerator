@@ -1,7 +1,3 @@
-from .ext_ui import ParamPanelModel, ParamPanel
-from .browser import MHAssetBrowserModel, AssetBrowserFrame
-from .human import Human
-from .mhcaller import MHCaller
 from .styles import window_style
 import omni.ui as ui
 import omni.kit.ui
@@ -35,23 +31,6 @@ class MHWindow(ui.Window):
 
         super().__init__(title)
 
-        # Holds the state of the realtime toggle
-        self.toggle_model = ui.SimpleBoolModel()
-        # Holds the state of the parameter list
-        self.param_model = ParamPanelModel(self.toggle_model)
-        # Keep track of the human
-        self._human = Human()
-
-        # A model to hold browser data
-        self.browser_model = MHAssetBrowserModel(
-            self._human,
-            filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
-            timeout=carb.settings.get_settings().get(
-                "/exts/siborg.create.human.browser.asset/data/timeout"
-            ),
-        )
-
-
         # Subscribe to human selection events on the message bus
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
@@ -64,6 +43,26 @@ class MHWindow(ui.Window):
         # Check if makehuman is installed
         try:
             import makehuman
+            from .ext_ui import ParamPanelModel, ParamPanel
+            from .browser import MHAssetBrowserModel, AssetBrowserFrame
+            from .human import Human
+            from .mhcaller import MHCaller
+            # Holds the state of the realtime toggle
+            self.toggle_model = ui.SimpleBoolModel()
+            # Holds the state of the parameter list
+            self.param_model = ParamPanelModel(self.toggle_model)
+            # Keep track of the human
+            self._human = Human()
+
+            # A model to hold browser data
+            self.browser_model = MHAssetBrowserModel(
+                self._human,
+                filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
+                timeout=carb.settings.get_settings().get(
+                    "/exts/siborg.create.human.browser.asset/data/timeout"
+                ),
+            )
+
             # Create a spacer width for the draggable splitter
             spacer_width = 3
             with self.frame:
