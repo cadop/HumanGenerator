@@ -9,6 +9,8 @@ import omni
 import carb
 
 WINDOW_TITLE = "Human Generator"
+MENU_PATH = f"Window/{WINDOW_TITLE}"
+
 class MHWindow(ui.Window):
     """
     Main UI window. Contains all UI widgets. Extends omni.ui.Window.
@@ -22,7 +24,7 @@ class MHWindow(ui.Window):
         A browser for MakeHuman assets, including clothing, hair, and skeleton rigs.
     """
 
-    def __init__(self, title, menu_path):
+    def __init__(self, title):
         """Constructs an instance of MHWindow
         
         Parameters
@@ -32,8 +34,6 @@ class MHWindow(ui.Window):
         """
 
         super().__init__(title)
-
-        self._menu_path = menu_path
 
         # Holds the state of the realtime toggle
         self.toggle_model = ui.SimpleBoolModel()
@@ -51,17 +51,11 @@ class MHWindow(ui.Window):
             ),
         )
 
-        # Dock UI wherever the "Content" tab is found (bottom panel by default)
-        self.deferred_dock_in(
-            "Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
 
         # Subscribe to human selection events on the message bus
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
-
-        # Run when visibility changes
-        self.set_visibility_changed_fn(self._on_visibility_changed)
 
         self.frame.set_build_fn(self._build_ui)
 
@@ -167,17 +161,3 @@ class MHWindow(ui.Window):
         self._selection_sub.unsubscribe()
         self._selection_sub = None
         super().destroy()
-
-    def on_shutdown(self):
-        """Called when the extension is shutting down"""
-        self._win=None
-
-    def _on_visibility_changed(self, visible):
-        omni.kit.ui.get_editor_menu().set_value(self._menu_path, visible)
-
-    def show(self):
-        self.visible = True
-        self.focus()
-        
-    def hide(self):
-        self.visible = False
