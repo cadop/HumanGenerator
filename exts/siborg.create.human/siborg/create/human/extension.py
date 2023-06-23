@@ -85,14 +85,20 @@ class MakeHumanExtension(omni.ext.IExt):
             self._window.visible = False
 
     def _on_stage_event(self, event):
+        """Handles stage events. This is where we get notified when the user selects/deselects a prim in the viewport."""
         if event.type == int(omni.usd.StageEventType.SELECTION_CHANGED):
-            self._on_selection_changed()
+            # Get the current selection
+            selection = self._selection.get_selected_prim_paths()
 
-    def _on_selection_changed(self):
-        # get the current selection and stage
-        selection = self._selection.get_selected_prim_paths()
-        stage = self._usd_context.get_stage()
-        print(f"== selection changed with {len(selection)} items")
+            # Check if the selection is empty
+            if not selection:
+                # Push an event to the message bus with "None" as a payload
+                # This event will be picked up by the window and used to update the UI
+                carb.log_warn("Human deselected")
+                self._bus.push(self._human_selection_event, payload={"prim_path": None})
+            else:
+                # Get the stage
+                stage = self._usd_context.get_stage()
 
         if selection and stage:
             if len(selection) > 0:

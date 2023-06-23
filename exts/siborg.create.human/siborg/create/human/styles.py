@@ -29,3 +29,13 @@ window_style = {
     "Rectangle::splitter": {"background_color": 0xFF454545},
     "Rectangle::splitter:hovered": {"background_color": 0xFFFFCA83},
 }
+
+# Stylesheet for buttons
+button_style = {
+    "Button:disabled": {
+        "background_color": 0xFF424242,
+    },
+    "Button:disabled.Label": {
+        "color": 0xFF848484,
+    },
+}

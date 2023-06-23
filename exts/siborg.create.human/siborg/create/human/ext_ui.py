@@ -8,6 +8,7 @@ import os
 import inspect
 import makehuman
 import targets
+from siborg.create.human.shared import data_path
 
 class SliderEntry:
     """Custom UI element that encapsulates a labeled slider and field
@@ -546,6 +547,51 @@ class ParamPanel(ui.Frame):
         super().destroy()
         for model in self.models:
             model.destroy()
+
+
+class NoSelectionNotification:
+    """
+    When no human selected, show notification.
+    """
+    def __init__(self):
+        self._container = ui.ZStack()
+        with self._container:
+            ui.Rectangle()
+            with ui.VStack(spacing=10):
+                ui.Spacer(height=10)
+                with ui.HStack(height=0):
+                    ui.Spacer()
+                    ui.ImageWithProvider(
+                        data_path('human_icon.png'),
+                        width=192,
+                        height=192,
+                        fill_policy=ui.IwpFillPolicy.IWP_PRESERVE_ASPECT_FIT
+                    )
+                    ui.Spacer()
+                self._message_label = ui.Label(
+                    "No human is current selected.",
+                    height=0,
+                    alignment=ui.Alignment.CENTER
+                )
+                self._suggestion_label = ui.Label(
+                    "Select a human prim to see its properties here.",
+                    height=0,
+                    alignment=ui.Alignment.CENTER
+                )
+
+    @property
+    def visible(self) -> bool:
+        return self._container.visible
+
+    @visible.setter
+    def visible(self, value) -> None:
+        self._container.visible = value
+
+    def set_message(self, message: str) -> None:
+        messages = message.split("\n")
+        self._message_label.text = messages[0]
+        self._suggestion_label.text = messages[1]
+
 
 def modifier_image(name : str):
     """Guess the path to a modifier's corresponding image on disk based on the name
