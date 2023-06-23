@@ -6,13 +6,41 @@ import omni
 from functools import partial
 import asyncio
 
+# Omniverse ships with an API for installing python packages into the
+# internal python environment. This is usually done in extension.toml,
+# but we do it in code to prevent the extension from hanging while
+# installing the package.
+import omni.kit.pipapi as pip
+
 from .window import MHWindow, WINDOW_TITLE, MENU_PATH
 
 class MakeHumanExtension(omni.ext.IExt):
     # ext_id is current extension id. It can be used with extension manager to query additional information, like where
     # this extension is located on filesystem.
 
+    async def install_makehuman(self, callback : callable=None):
+        """Installs makehuman asyncronously using pip and runs a
+        callback when complete.
+
+        Parameters
+        ----------
+        callback : callable, optional
+            A callback function to run when the installation is complete.
+        """
+
+        loop = asyncio.get_running_loop()
+
+        try:
+            print("Attempting to install makehuman...")
+            await loop.run_in_executor(None, pip.pip_install, 'makehuman')
+            print("Successfully installed makehuman!")
+            if callback:
+                callback()
+        except Exception as e:
+            print(f"Error installing makehuman: {e}")
+
     def on_startup(self, ext_id):
+
 
         # subscribe to stage events
         # see https://github.com/mtw75/kit_customdata_view
@@ -44,6 +72,16 @@ class MakeHumanExtension(omni.ext.IExt):
             self._menu = editor_menu.add_item(
                 MENU_PATH, self.show_window, toggle=True, value=True
             )
+
+        try:
+            import makehuman
+            print("Found makehuman")
+            self.finish_startup()
+        except ImportError:
+            # Start the installation of makehuman in a separate worker thread, providing the post-install callback
+            asyncio.create_task(self.install_makehuman(self.post_install))
+
+    def finish_startup(self):
         # show the window
         ui.Workspace.show_window(WINDOW_TITLE)
         print("[siborg.create.human] HumanGeneratorExtension startup")
