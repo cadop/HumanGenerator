@@ -3,8 +3,10 @@ import omni.ui as ui
 import carb
 import carb.events
 import omni
+from functools import partial
+import asyncio
 
-from .window import MHWindow, WINDOW_TITLE
+from .window import MHWindow, WINDOW_TITLE, MENU_PATH
 
 class MakeHumanExtension(omni.ext.IExt):
     # ext_id is current extension id. It can be used with extension manager to query additional information, like where
@@ -31,25 +33,56 @@ class MakeHumanExtension(omni.ext.IExt):
         # create a model to hold the selected prim path
         self._selected_primpath_model = ui.SimpleStringModel("-")
 
-        # Create a path for menu item to open the window
-        self._menu_path = f"Window/{WINDOW_TITLE}"
+        # # Dock window wherever the "Content" tab is found (bottom panel by default)
+        # self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
 
-        # create a window for the extension
+        ui.Workspace.set_show_window_fn(WINDOW_TITLE, partial(self.show_window, None))
+
+        # create a menu item to open the window
+        editor_menu = omni.kit.ui.get_editor_menu()
+        if editor_menu:
+            self._menu = editor_menu.add_item(
+                MENU_PATH, self.show_window, toggle=True, value=True
+            )
+        # show the window
+        ui.Workspace.show_window(WINDOW_TITLE)
         print("[siborg.create.human] HumanGeneratorExtension startup")
-        self._window = None
-        self._menu = omni.kit.ui.get_editor_menu().add_item(self._menu_path, self._on_menu_click, True)
 
+    def on_shutdown(self):
+        self._menu = None
+        if self._window:
+            self._window.destroy()
+            self._window = None
 
-    def _on_menu_click(self, menu, toggled):
-        """Handles showing and hiding the window from the 'Windows' menu."""
-        if toggled:
-            if self._window is None:
-                self._window = MHWindow(WINDOW_TITLE, self._menu_path)
-            else:
-                self._window.show()
-        else:
-            if self._window is not None:
-                self._window.hide()
+        # Deregister the function that shows the window from omni.ui
+        ui.Workspace.set_show_window_fn(WINDOW_TITLE, None)
+
+    async def _destroy_window_async(self):
+        # wait one frame, this is due to the one frame defer
+        # in Window::_moveToMainOSWindow()
+        await omni.kit.app.get_app().next_update_async()
+        if self._window:
+            self._window.destroy()
+            self._window = None
+
+    def visibility_changed(self, visible):
+        # Called when window closed by user
+        editor_menu = omni.kit.ui.get_editor_menu()
+        # Update the menu item to reflect the window state
+        if editor_menu:
+            editor_menu.set_value(MENU_PATH, visible)
+        if not visible:
+            # Destroy the window, since we are creating new window
+            # in show_window
+            asyncio.ensure_future(self._destroy_window_async())
+
+    def show_window(self, menu, value):
+        """Handles showing and hiding the window"""
+        if value:
+            self._window = MHWindow(WINDOW_TITLE)
+            self._window.set_visibility_changed_fn(self.visibility_changed)
+        elif self._window:
+            self._window.visible = False
 
     def _on_stage_event(self, event):
         """Handles stage events. This is where we get notified when the user selects/deselects a prim in the viewport."""
@@ -67,28 +100,15 @@ class MakeHumanExtension(omni.ext.IExt):
                 # Get the stage
                 stage = self._usd_context.get_stage()
 
-                if stage:
-                    # Get the last selected prim path
-                    path = selection[-1]
-                    self._selected_primpath_model.set_value(path)
-                    prim = stage.GetPrimAtPath(path)
-                    prim_kind = prim.GetTypeName()
-
-                    # If the selection is a human, push an event to the message bus with the prim as a payload
-                    # This event will be picked up by the window and used to update the UI
-                    if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
-                        carb.log_warn("Human selected")
-                        self._bus.push(self._human_selection_event, payload={"prim_path": path})
-                    else:
-                        carb.log_warn("Selection is not a human")
-                        self._bus.push(self._human_selection_event, payload={"prim_path": None})
-
-    def on_shutdown(self):
-        print("[siborg.create.human] HumanGenerator shutdown")
-        omni.kit.ui.get_editor_menu().remove_item(self._menu)
-        if self._window is not None:
-            self._window.destroy()
-            self._window = None
-        # unsubscribe from stage events
-        self._stage_event_sub = None
-
+        if selection and stage:
+            if len(selection) > 0:
+                path = selection[-1]
+                print(path)
+                self._selected_primpath_model.set_value(path)
+                prim = stage.GetPrimAtPath(path)
+                prim_kind = prim.GetTypeName()
+                # If the selection is a human, push an event to the event stream with the prim as a payload
+                # This event will be picked up by the window and used to update the UI
+                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                    carb.log_warn("Human selected")
+                    self._bus.push(self._human_selection_event, payload={"prim_path": path})
