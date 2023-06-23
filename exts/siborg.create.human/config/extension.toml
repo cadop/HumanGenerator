@@ -49,4 +49,6 @@ use_online_index = true
 # than the default repo(s) configured in pip. Will pass these to pip with "--extra-index-url" argument
 repositories = ["https://test.pypi.org/simple/"]
 
-requirements = ["makehuman==1.2.2"]
+# Installing makehuman at launch hangs the extension, so it is not included in the requirements
+# Instead, we install it asynchrounously in the extension
+## requirements = ["makehuman==1.2.2"]
