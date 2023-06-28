@@ -3,6 +3,13 @@ import omni.ui as ui
 import omni.kit.ui
 import omni
 import carb
+import asyncio
+
+# Omniverse ships with an API for installing python packages into the
+# internal python environment. This is usually done in extension.toml,
+# but we do it in code to prevent the extension from hanging while
+# installing the package.
+import omni.kit.pipapi as pip
 
 WINDOW_TITLE = "Human Generator"
 MENU_PATH = f"Window/{WINDOW_TITLE}"
@@ -34,48 +41,66 @@ class MHWindow(ui.Window):
         # Subscribe to human selection events on the message bus
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
-        self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
-
+        self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_selection_changed)
+        # Build the UI
         self.frame.set_build_fn(self._build_ui)
 
+    async def install_makehuman(self, callback : callable=None):
+        """Installs makehuman asyncronously using pip and runs a
+        callback when complete.
+
+        Parameters
+        ----------
+        callback : callable, optional
+            A callback function to run when the installation is complete.
+        """
+
+        try:
+            print("Attempting to install makehuman...")
+            # Install makehuman
+            pip.install("makehuman")
+            print("Successfully installed makehuman!")
+            if callback:
+                callback()
+        except Exception as e:
+            print(f"Error installing makehuman: {e}")
+
     def _build_ui(self):
 
-        # Check if makehuman is installed
+        # Check if makehuman is installed.
         try:
             import makehuman
-            from .ext_ui import ParamPanelModel, ParamPanel
-            from .browser import MHAssetBrowserModel, AssetBrowserFrame
-            from .human import Human
-            from .mhcaller import MHCaller
-            # Holds the state of the realtime toggle
-            self.toggle_model = ui.SimpleBoolModel()
-            # Holds the state of the parameter list
-            self.param_model = ParamPanelModel(self.toggle_model)
-            # Keep track of the human
-            self._human = Human()
-
-            # A model to hold browser data
-            self.browser_model = MHAssetBrowserModel(
-                self._human,
-                filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
-                timeout=carb.settings.get_settings().get(
-                    "/exts/siborg.create.human.browser.asset/data/timeout"
-                ),
-            )
-
-            # Subscribe to human selection events on the message bus
-            bus = omni.kit.app.get_app().get_message_bus_event_stream()
-            selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
-            self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
-
-            self.frame.set_build_fn(self._build_ui)
-
+            print("Found makehuman")
+            # Build the UI for when makehuman is installed
+            self._build_makehuman_ui()
         except ModuleNotFoundError:
-            # If makehuman is not installed, show a notification
-            self.frame.set_build_fn(self._build_no_makehuman_ui)
-            return
+            print("Could not find makehuman")
+            # Install makehuman asyncronously
+            asyncio.ensure_future(self.install_makehuman(self.post_install))
+            # Build the UI for when makehuman is not installed
+            self._build_makehuman_not_installed_ui()
 
-    def _build_ui(self):
+    def _build_makehuman_ui(self):
+        from .ext_ui import ParamPanelModel, ParamPanel
+        from .browser import MHAssetBrowserModel, AssetBrowserFrame
+        from .human import Human
+        from .mhcaller import MHCaller
+        # Holds the state of the realtime toggle
+        self.toggle_model = ui.SimpleBoolModel()
+        # Holds the state of the parameter list
+        self.param_model = ParamPanelModel(self.toggle_model)
+        # Keep track of the human
+        self._human = Human()
+
+        # A model to hold browser data
+        self.browser_model = MHAssetBrowserModel(
+            self._human,
+            filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
+            timeout=carb.settings.get_settings().get(
+                "/exts/siborg.create.human.browser.asset/data/timeout"
+            ),
+        )
+
         spacer_width = 3
         with self.frame:
             # Widgets are built starting on the left
@@ -111,8 +136,7 @@ class MHWindow(ui.Window):
                     ui.Button(
                         "Reset Human",
                         clicked_fn=self.reset_human,
-                    )
-
+                        )
 
     def _on_selection_changed(self, event):
         """Callback for human selection events
@@ -208,10 +232,17 @@ class MHWindow(ui.Window):
         """Refreshes the UI, eg. when makehuman finishes installing for the first time"""
         self.frame.rebuild()
 
-    def _build_no_makehuman_ui(self):
+    def _build_makehuman_not_installed_ui(self):
         """Builds the UI when makehuman is not installed"""
         with self.frame:
             with ui.VStack(spacing=0):
                 ui.Spacer(height=10)
                 ui.Label("MakeHuman is not installed.", style={"font_size": 20})
                 ui.Label("Please wait a few minutes for it to install.", style={"font_size": 20})
+
+    def post_install(self):
+        # This function is called after makehuman is installed
+        # We can now import makehuman
+        import makehuman
+        # Rebuild the UI to reflect the new state
+        self.refresh_ui()
