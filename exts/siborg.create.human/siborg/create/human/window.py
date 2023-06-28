@@ -119,12 +119,12 @@ class MHWindow(ui.Window):
                             # can be triggered when new assets are added
                             self.browser = AssetBrowserFrame(self.browser_model)
                             ui.Spacer(width=spacer_width)
-                with ui.HStack():
-                    with ui.VStack():
-                        self.param_panel = ParamPanel(self.param_model,self.update_human)
-                        with ui.HStack(height=0):
-                            # Toggle whether changes should propagate instantly
-                            ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
+                    with ui.HStack():
+                        with ui.VStack():
+                            self.param_panel = ParamPanel(self.param_model,self.update_human)
+                            with ui.HStack(height=0):
+                                # Toggle whether changes should propagate instantly
+                                ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
                 with ui.VStack(width = 100):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
