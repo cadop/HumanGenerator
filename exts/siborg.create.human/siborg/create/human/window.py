@@ -1,7 +1,3 @@
-from .ext_ui import ParamPanelModel, ParamPanel, NoSelectionNotification
-from .browser import MHAssetBrowserModel, AssetBrowserFrame
-from .human import Human
-from .mhcaller import MHCaller
 from .styles import window_style, button_style
 import omni.ui as ui
 import omni.kit.ui
@@ -67,13 +63,17 @@ class MHWindow(ui.Window):
                 ),
             )
 
+            # Subscribe to human selection events on the message bus
+            bus = omni.kit.app.get_app().get_message_bus_event_stream()
+            selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
+            self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
 
-        # Subscribe to human selection events on the message bus
-        bus = omni.kit.app.get_app().get_message_bus_event_stream()
-        selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
-        self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_human_selected)
+            self.frame.set_build_fn(self._build_ui)
 
-        self.frame.set_build_fn(self._build_ui)
+        except ModuleNotFoundError:
+            # If makehuman is not installed, show a notification
+            self.frame.set_build_fn(self._build_no_makehuman_ui)
+            return
 
     def _build_ui(self):
         spacer_width = 3
@@ -207,3 +207,11 @@ class MHWindow(ui.Window):
     def refresh_ui(self):
         """Refreshes the UI, eg. when makehuman finishes installing for the first time"""
         self.frame.rebuild()
+
+    def _build_no_makehuman_ui(self):
+        """Builds the UI when makehuman is not installed"""
+        with self.frame:
+            with ui.VStack(spacing=0):
+                ui.Spacer(height=10)
+                ui.Label("MakeHuman is not installed.", style={"font_size": 20})
+                ui.Label("Please wait a few minutes for it to install.", style={"font_size": 20})
