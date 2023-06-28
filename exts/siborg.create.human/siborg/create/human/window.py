@@ -81,7 +81,7 @@ class MHWindow(ui.Window):
             self._build_makehuman_not_installed_ui()
 
     def _build_makehuman_ui(self):
-        from .ext_ui import ParamPanelModel, ParamPanel
+        from .ext_ui import ParamPanelModel, ParamPanel, NoSelectionNotification
         from .browser import MHAssetBrowserModel, AssetBrowserFrame
         from .human import Human
         from .mhcaller import MHCaller
@@ -105,16 +105,20 @@ class MHWindow(ui.Window):
         with self.frame:
             # Widgets are built starting on the left
             with ui.HStack(style=window_style):
-                with ui.ZStack(width=0):
-                    # Draggable splitter
-                    with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
-                        ui.Rectangle(width=spacer_width, name="splitter")
-                    with ui.HStack():
-                        # Left-most panel is a browser for MakeHuman assets. It includes
-                        # a reference to the list of applied proxies so that an update
-                        # can be triggered when new assets are added
-                        self.browser = AssetBrowserFrame(self.browser_model)
-                        ui.Spacer(width=spacer_width)
+                self.no_selection_notification = NoSelectionNotification()
+
+                self.property_panel = ui.HStack(visible=False)
+                with self.property_panel:
+                    with ui.ZStack(width=0):
+                        # Draggable splitter
+                        with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
+                            ui.Rectangle(width=spacer_width, name="splitter")
+                        with ui.HStack():
+                            # Left-most panel is a browser for MakeHuman assets. It includes
+                            # a reference to the list of applied proxies so that an update
+                            # can be triggered when new assets are added
+                            self.browser = AssetBrowserFrame(self.browser_model)
+                            ui.Spacer(width=spacer_width)
                 with ui.HStack():
                     with ui.VStack():
                         self.param_panel = ParamPanel(self.param_model,self.update_human)
