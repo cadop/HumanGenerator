@@ -83,7 +83,7 @@ class MakeHumanExtension(omni.ext.IExt):
     def show_window(self, menu, value):
         """Handles showing and hiding the window"""
         if value:
-            self._window = MHWindow(WINDOW_TITLE)
+            self._window = MHWindow(WINDOW_TITLE, width = 600, height = 400)
             self._window.set_visibility_changed_fn(self.visibility_changed)
         elif self._window:
             self._window.visible = False

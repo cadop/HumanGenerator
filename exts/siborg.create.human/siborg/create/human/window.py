@@ -27,7 +27,7 @@ class MHWindow(ui.Window):
         A browser for MakeHuman assets, including clothing, hair, and skeleton rigs.
     """
 
-    def __init__(self, title):
+    def __init__(self, title, **kwargs):
         """Constructs an instance of MHWindow
         
         Parameters
@@ -36,7 +36,7 @@ class MHWindow(ui.Window):
             The path to the menu item that opens the window
         """
 
-        super().__init__(title)
+        super().__init__(title, **kwargs)
 
         # Subscribe to human selection events on the message bus
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
