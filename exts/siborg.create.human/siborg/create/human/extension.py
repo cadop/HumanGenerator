@@ -5,6 +5,13 @@ import carb.events
 import omni
 from functools import partial
 import asyncio
+import threading
+
+# Omniverse ships with an API for installing python packages into the
+# internal python environment. This is usually done in extension.toml,
+# but we do it in code to prevent the extension from hanging while
+# installing the package.
+from omni.kit import pipapi
 
 from .window import MHWindow, WINDOW_TITLE, MENU_PATH
 
@@ -44,9 +51,50 @@ class MakeHumanExtension(omni.ext.IExt):
             self._menu = editor_menu.add_item(
                 MENU_PATH, self.show_window, toggle=True, value=True
             )
-        # show the window
+
+        self.makehuman_installed = False
+        # Attempt to import makehuman
+        try:
+            import makehuman
+            self.makehuman_installed = True
+        except ModuleNotFoundError:
+            # Start a thread to install makehuman
+            self.install_thread = threading.Thread(target=self.install_makehuman,args=(self.post_install,))
+            self.install_thread.pydev_do_not_trace = True
+            self.install_thread.start()
+        
+
         ui.Workspace.show_window(WINDOW_TITLE)
         print("[siborg.create.human] HumanGeneratorExtension startup")
+
+    def install_makehuman(self, callback : callable=None):
+        """Installs makehuman asyncronously using pip and runs a
+        callback when complete.
+
+        Parameters
+        ----------
+        callback : callable, optional
+            A callback function to run when the installation is complete.
+        """
+
+        try:
+            print("Attempting to install makehuman...")
+            # Install makehuman
+            pipapi.install("makehuman==1.2.2",
+                           extra_args=["--extra-index-url",
+                                       "http://test.pypi.org/simple/"])
+            import makehuman
+            if callback:
+                callback()
+        except Exception as e:
+            print(type(e))
+            print(f"Error installing makehuman: {e}")
+
+    def post_install(self):
+        # This function is called after makehuman is installed
+        # We can now import makehuman
+        print("Makehuman installed")
+        self.makehuman_installed = True
 
     def on_shutdown(self):
         self._menu = None
