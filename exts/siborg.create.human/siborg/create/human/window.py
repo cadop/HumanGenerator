@@ -1,7 +1,7 @@
-from .ext_ui import ParamPanelModel, ParamPanel, NoSelectionNotification
-from .browser import MHAssetBrowserModel, AssetBrowserFrame
-from .human import Human
-from .mhcaller import MHCaller
+# from .ext_ui import ParamPanelModel, ParamPanel, NoSelectionNotification
+# from .browser import MHAssetBrowserModel, AssetBrowserFrame
+# from .human import Human
+# from .mhcaller import MHCaller
 from .styles import window_style, button_style
 import omni.ui as ui
 import omni.kit.ui
@@ -35,21 +35,21 @@ class MHWindow(ui.Window):
 
         super().__init__(title)
 
-        # Holds the state of the realtime toggle
-        self.toggle_model = ui.SimpleBoolModel()
-        # Holds the state of the parameter list
-        self.param_model = ParamPanelModel(self.toggle_model)
-        # Keep track of the human
-        self._human = Human()
+        # # Holds the state of the realtime toggle
+        # self.toggle_model = ui.SimpleBoolModel()
+        # # Holds the state of the parameter list
+        # self.param_model = ParamPanelModel(self.toggle_model)
+        # # Keep track of the human
+        # self._human = Human()
 
-        # A model to hold browser data
-        self.browser_model = MHAssetBrowserModel(
-            self._human,
-            filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
-            timeout=carb.settings.get_settings().get(
-                "/exts/siborg.create.human.browser.asset/data/timeout"
-            ),
-        )
+        # # A model to hold browser data
+        # self.browser_model = MHAssetBrowserModel(
+        #     self._human,
+        #     filter_file_suffixes=["mhpxy", "mhskel", "mhclo"],
+        #     timeout=carb.settings.get_settings().get(
+        #         "/exts/siborg.create.human.browser.asset/data/timeout"
+        #     ),
+        # )
 
 
         # Subscribe to selection events on the message bus
@@ -60,50 +60,51 @@ class MHWindow(ui.Window):
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
+
         spacer_width = 3
         with self.frame:
-            # Widgets are built starting on the left
-            with ui.HStack(style=window_style):
-                # Widget to show if no human is selected
-                self.no_selection_notification = NoSelectionNotification()
+            ui.Label("Hello World")
+            # # Widgets are built starting on the left
+            # with ui.HStack(style=window_style):
+            #     # Widget to show if no human is selected
+            #     self.no_selection_notification = NoSelectionNotification()
 
-                self.property_panel = ui.HStack(visible=False)
-                with self.property_panel:
-                    with ui.ZStack(width=0):
-                        # Draggable splitter
-                        with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
-                            ui.Rectangle(width=spacer_width, name="splitter")
-                        with ui.HStack():
-                            # Left-most panel is a browser for MakeHuman assets. It includes
-                            # a reference to the list of applied proxies so that an update
-                            # can be triggered when new assets are added
-                            self.browser = AssetBrowserFrame(self.browser_model)
-                            ui.Spacer(width=spacer_width)
-                    with ui.HStack():
-                        with ui.VStack():
-                            self.param_panel = ParamPanel(self.param_model,self.update_human)
-                            with ui.HStack(height=0):
-                                # Toggle whether changes should propagate instantly
-                                ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
-                with ui.VStack(width = 100, style=button_style):
-                    # Creates a new human in scene and resets modifiers and assets
-                    ui.Button(
-                        "New Human",
-                        clicked_fn=self.new_human,
-                    )
-                    # Updates current human in omniverse scene
-                    self.update_button = ui.Button(
-                        "Update Human",
-                        clicked_fn=self.update_human,
-                        enabled=False,
-                    )
-                    # Resets modifiers and assets on selected human
-                    self.reset_button = ui.Button(
-                        "Reset Human",
-                        clicked_fn=self.reset_human,
-                        enabled=False,
-                    )
-
+            #     self.property_panel = ui.HStack(visible=False)
+            #     with self.property_panel:
+            #         with ui.ZStack(width=0):
+            #             # Draggable splitter
+            #             with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
+            #                 ui.Rectangle(width=spacer_width, name="splitter")
+            #             with ui.HStack():
+            #                 # Left-most panel is a browser for MakeHuman assets. It includes
+            #                 # a reference to the list of applied proxies so that an update
+            #                 # can be triggered when new assets are added
+            #                 self.browser = AssetBrowserFrame(self.browser_model)
+            #                 ui.Spacer(width=spacer_width)
+            #         with ui.HStack():
+            #             with ui.VStack():
+            #                 self.param_panel = ParamPanel(self.param_model,self.update_human)
+            #                 with ui.HStack(height=0):
+            #                     # Toggle whether changes should propagate instantly
+            #                     ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
+            #     with ui.VStack(width = 100, style=button_style):
+            #         # Creates a new human in scene and resets modifiers and assets
+            #         ui.Button(
+            #             "New Human",
+            #             clicked_fn=self.new_human,
+            #         )
+            #         # Updates current human in omniverse scene
+            #         self.update_button = ui.Button(
+            #             "Update Human",
+            #             clicked_fn=self.update_human,
+            #             enabled=False,
+            #         )
+            #         # Resets modifiers and assets on selected human
+            #         self.reset_button = ui.Button(
+            #             "Reset Human",
+            #             clicked_fn=self.reset_human,
+            #             enabled=False,
+            #         )
 
     def _on_selection_changed(self, event):
         """Callback for human selection events
