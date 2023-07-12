@@ -99,15 +99,15 @@ class MakeHumanExtension(omni.ext.IExt):
                 # Get the stage
                 stage = self._usd_context.get_stage()
 
-        if selection and stage:
-            if len(selection) > 0:
-                path = selection[-1]
-                print(path)
-                self._selected_primpath_model.set_value(path)
-                prim = stage.GetPrimAtPath(path)
-                prim_kind = prim.GetTypeName()
-                # If the selection is a human, push an event to the event stream with the prim as a payload
-                # This event will be picked up by the window and used to update the UI
-                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
-                    carb.log_warn("Human selected")
-                    self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                if selection and stage:
+                    if len(selection) > 0:
+                        path = selection[-1]
+                        print(path)
+                        self._selected_primpath_model.set_value(path)
+                        prim = stage.GetPrimAtPath(path)
+                        prim_kind = prim.GetTypeName()
+                        # If the selection is a human, push an event to the event stream with the prim as a payload
+                        # This event will be picked up by the window and used to update the UI
+                        if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                            carb.log_warn("Human selected")
+                            self._bus.push(self._human_selection_event, payload={"prim_path": path})
