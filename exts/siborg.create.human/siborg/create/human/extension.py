@@ -33,9 +33,6 @@ class MakeHumanExtension(omni.ext.IExt):
         # create a model to hold the selected prim path
         self._selected_primpath_model = ui.SimpleStringModel("-")
 
-        # # Dock window wherever the "Content" tab is found (bottom panel by default)
-        # self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
-
         ui.Workspace.set_show_window_fn(WINDOW_TITLE, partial(self.show_window, None))
 
         # create a menu item to open the window
@@ -80,6 +77,8 @@ class MakeHumanExtension(omni.ext.IExt):
         """Handles showing and hiding the window"""
         if value:
             self._window = MHWindow(WINDOW_TITLE)
+            # # Dock window wherever the "Content" tab is found (bottom panel by default)
+            self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
             self._window.set_visibility_changed_fn(self.visibility_changed)
         elif self._window:
             self._window.visible = False
