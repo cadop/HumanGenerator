@@ -147,64 +147,59 @@ class Human:
         """
 
         usd_context = omni.usd.get_context()
-        selection = usd_context.get_selection()
-        selected_prim_paths = selection.get_selected_prim_paths()
         stage = usd_context.get_stage()
+        prim = stage.GetPrimAtPath(prim_path)
 
-        if selected_prim_paths and stage:
-            # Get the path of the selected prim
-            if len(selected_prim_paths) == 1:
-                path = selected_prim_paths[0]
-                print(path)
-                prim = stage.GetPrimAtPath(path)
-                prim_kind = prim.GetTypeName()
-                # Check if the prim is a SkelRoot and a human
-                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
-                    # Get default prim.
-                    default_prim = stage.GetDefaultPrim()
-                    if default_prim.IsValid():
-                        # Set the rootpath under the stage's default prim, if the default prim is valid
-                        root_path = default_prim.GetPath().pathString
-                        
-                    # Write the properties of the human to the prim
-                    self.write_properties(prim_path, stage)
-
-                    # Get the objects of the human from mhcaller
-                    objects = MHCaller.objects
-
-                    # Get the human object from the list of objects
-                    human = objects[0]
-
-                    # Determine the offset for the human from the ground
-                    offset = -1 * human.getJointPosition("ground")
-
-                    # Import makehuman objects into the scene
-                    mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
-
-                    # Update the skeleton values and insert it into the stage
-                    self.usd_skel = self.skeleton.update_in_scene(stage, prim_path, offset = offset)
-
-                    # Create bindings between meshes and the skeleton. Returns a list of
-                    # bindings the length of the number of meshes
-                    bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
-
-                    # Setup weights for corresponding mh_meshes (which hold the data) and
-                    # bindings (which link USD_meshes to the skeleton)
-                    self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
-
-                    self.setup_materials(self.mh_meshes, mesh_paths, root_path, stage)
-
-                    # Explicitly setup material for human skin
-                    texture_path = data_path("skins/textures/skin.png")
-                    skin = create_material(texture_path, "Skin", root_path, stage)
-                    # Bind the skin material to the first prim in the list (the human)
-                    bind_material(mesh_paths[0], skin, stage)
+        if prim and stage:
+            print(prim.GetPath().pathString)
+            prim_kind = prim.GetTypeName()
+            # Check if the prim is a SkelRoot and a human
+            if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                # Get default prim.
+                default_prim = stage.GetDefaultPrim()
+                if default_prim.IsValid():
+                    # Set the rootpath under the stage's default prim, if the default prim is valid
+                    root_path = default_prim.GetPath().pathString
                 else:
-                    carb.log_warn("The selected prim must be a human!")
-            elif len(selected_prim_paths) > 1:
-                carb.log_warn("Please select only one prim")
+                    root_path = "/"
+                    
+                # Write the properties of the human to the prim
+                self.write_properties(prim_path, stage)
+
+                # Get the objects of the human from mhcaller
+                objects = MHCaller.objects
+
+                # Get the human object from the list of objects
+                human = objects[0]
+
+                # Determine the offset for the human from the ground
+                offset = -1 * human.getJointPosition("ground")
+
+                # Import makehuman objects into the scene
+                mesh_paths = self.import_meshes(prim_path, stage, offset = offset)
+
+                # Update the skeleton values and insert it into the stage
+                self.usd_skel = self.skeleton.update_in_scene(stage, prim_path, offset = offset)
+
+                # Create bindings between meshes and the skeleton. Returns a list of
+                # bindings the length of the number of meshes
+                bindings = self.setup_bindings(mesh_paths, stage, self.usd_skel)
+
+                # Setup weights for corresponding mh_meshes (which hold the data) and
+                # bindings (which link USD_meshes to the skeleton)
+                self.setup_weights(self.mh_meshes, bindings, self.skeleton.joint_names, self.skeleton.joint_paths)
+
+                self.setup_materials(self.mh_meshes, mesh_paths, root_path, stage)
+
+                # Explicitly setup material for human skin
+                texture_path = data_path("skins/textures/skin.png")
+                skin = create_material(texture_path, "Skin", root_path, stage)
+                # Bind the skin material to the first prim in the list (the human)
+                bind_material(mesh_paths[0], skin, stage)
+            else:
+                carb.log_warn("The selected prim must be a human!")
         else:
-            carb.log_warn("Please select a prim")
+            carb.log_warn("Can't update human. No prim selected!")
 
     def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: List[float] = [0, 0, 0]):
         """Imports the meshes of the human into the scene. This is called when the human is
@@ -686,7 +681,7 @@ class Human:
             MHCaller.add_item(path)
             self.update_in_scene(self.prim.GetPath().pathString)
         else:
-            carb.log_warn("No prim selected")
+            carb.log_warn("Can't add asset. No human prim selected!")
 
     @staticmethod
     def _set_scale(prim : Usd.Prim, scale : float):
