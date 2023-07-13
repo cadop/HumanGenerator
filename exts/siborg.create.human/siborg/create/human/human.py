@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Dict, Union
 from .mhcaller import MHCaller
 import numpy as np
 import omni.kit
@@ -386,17 +386,26 @@ class Human:
 
         return paths
 
-    def get_written_modifiers(self):
-        """List of modifiers written to the human prim. Fetched from the human prim
-        in the scene. MAY BE STALE IF THE HUMAN HAS BEEN UPDATED IN MAKEHUMAN."""
+    def get_written_modifiers(self) -> Union[Dict[str, float], None]:
+        """List of modifier names and values written to the human prim.
+        MAY BE STALE IF THE HUMAN HAS BEEN UPDATED IN MAKEHUMAN AND THE CHANGES HAVE NOT BEEN WRITTEN TO THE PRIM.
+        
+        Returns
+        -------
+        Dict[str, float]
+            Dictionary of modifier names and values. Keys are modifier names, values are modifier values"""
         return self.prim.GetCustomDataByKey("Modifiers") if self.prim else None
 
-    def get_modifiers(self):
-        """Retrieve the list of modifiers attached to the human. Fetched from the makehuman app. MAY NOT
-        MATCH THE LIST OF MODIFIERS WRITTEN TO THE HUMAN PRIM IF THE HUMAN HASN'T BEEN UPDATED"""
+    def get_changed_modifiers(self):
+        """List of modifiers which have been changed in makehuman. Fetched from the human in makehuman.
+        MAY NOT MATCH `get_written_modifiers()` IF CHANGES HAVE NOT BEEN WRITTEN TO THE PRIM."""
         return MHCaller.modifiers
 
-    def set_modifier_value(self, modifier: makehuman.humanmodifier.Modifier, value: float):
+    def get_modifiers(self):
+        """Retrieve the list of all modifiers available to the human, whether or not their values have changed."""
+        return MHCaller.default_modifiers
+
+    def set_modifier_value(self, modifier, value: float):
         """Sets the value of a modifier in makehuman. Validates the value before setting it.
         Returns true if the value was set, false otherwise.
 
