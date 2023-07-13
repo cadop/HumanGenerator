@@ -151,7 +151,7 @@ class Human:
         prim = stage.GetPrimAtPath(prim_path)
 
         if prim and stage:
-            print(path)
+            print(prim.GetPath().pathString)
             prim_kind = prim.GetTypeName()
             # Check if the prim is a SkelRoot and a human
             if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
@@ -196,8 +196,8 @@ class Human:
                 skin = create_material(texture_path, "Skin", root_path, stage)
                 # Bind the skin material to the first prim in the list (the human)
                 bind_material(mesh_paths[0], skin, stage)
-                else:
-                    carb.log_warn("The selected prim must be a human!")
+            else:
+                carb.log_warn("The selected prim must be a human!")
         else:
             carb.log_warn("Please select a prim")
 
