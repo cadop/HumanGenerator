@@ -175,8 +175,10 @@ class Human:
         usd_context = omni.usd.get_context()
         stage = usd_context.get_stage()
         prim = stage.GetPrimAtPath(prim_path)
+        prim = stage.GetPrimAtPath(prim_path)
 
         if prim and stage:
+            print(prim.GetPath().pathString)
             prim_kind = prim.GetTypeName()
             # Check if the prim is a SkelRoot and a human
             if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
@@ -187,10 +189,7 @@ class Human:
                     root_path = default_prim.GetPath().pathString
                 else:
                     root_path = "/"
-
-                # Apply MakeHuman targets
-                MHCaller.human.applyAllTargets()
-
+                    
                 # Write the properties of the human to the prim
                 self.write_properties(prim_path, stage)
 
@@ -227,7 +226,7 @@ class Human:
             else:
                 carb.log_warn("The selected prim must be a human!")
         else:
-            carb.log_warn("Please select a prim")
+            carb.log_warn("Can't update human. No prim selected!")
 
     def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: List[float] = [0, 0, 0]):
         """Imports the meshes of the human into the scene. This is called when the human is
@@ -771,7 +770,7 @@ class Human:
             MHCaller.add_item(path)
             self.update_in_scene(self.prim.GetPath().pathString)
         else:
-            carb.log_warn("No prim selected")
+            carb.log_warn("Can't add asset. No human prim selected!")
 
     @staticmethod
     def _set_scale(prim : Usd.Prim, scale : float):

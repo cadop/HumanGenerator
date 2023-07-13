@@ -5,6 +5,9 @@ import carb.events
 import omni
 from functools import partial
 import asyncio
+import omni.usd
+from pxr import Usd
+from typing import Union
 
 from .window import MHWindow, WINDOW_TITLE, MENU_PATH
 
@@ -16,12 +19,12 @@ class MakeHumanExtension(omni.ext.IExt):
 
         # subscribe to stage events
         # see https://github.com/mtw75/kit_customdata_view
-        self._usd_context = omni.usd.get_context()
-        self._selection = self._usd_context.get_selection()
+        _usd_context = omni.usd.get_context()
+        self._selection = _usd_context.get_selection()
         self._human_selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         
         # subscribe to stage events
-        self._events = self._usd_context.get_stage_event_stream()
+        self._events = _usd_context.get_stage_event_stream()
         self._stage_event_sub = self._events.create_subscription_to_push(
             self._on_stage_event,
             name='human seletion changed',
@@ -29,12 +32,6 @@ class MakeHumanExtension(omni.ext.IExt):
 
         # get message bus event stream so we can push events to the message bus
         self._bus = omni.kit.app.get_app().get_message_bus_event_stream()
-
-        # create a model to hold the selected prim path
-        self._selected_primpath_model = ui.SimpleStringModel("-")
-
-        # # Dock window wherever the "Content" tab is found (bottom panel by default)
-        # self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
 
         ui.Workspace.set_show_window_fn(WINDOW_TITLE, partial(self.show_window, None))
 
@@ -80,6 +77,8 @@ class MakeHumanExtension(omni.ext.IExt):
         """Handles showing and hiding the window"""
         if value:
             self._window = MHWindow(WINDOW_TITLE)
+            # # Dock window wherever the "Content" tab is found (bottom panel by default)
+            self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
             self._window.set_visibility_changed_fn(self.visibility_changed)
         elif self._window:
             self._window.visible = False
@@ -98,17 +97,46 @@ class MakeHumanExtension(omni.ext.IExt):
                 self._bus.push(self._human_selection_event, payload={"prim_path": None})
             else:
                 # Get the stage
-                stage = self._usd_context.get_stage()
+                _usd_context = omni.usd.get_context()
+                stage = _usd_context.get_stage()
 
-        if selection and stage:
-            if len(selection) > 0:
-                path = selection[-1]
-                print(path)
-                self._selected_primpath_model.set_value(path)
-                prim = stage.GetPrimAtPath(path)
-                prim_kind = prim.GetTypeName()
-                # If the selection is a human, push an event to the event stream with the prim as a payload
-                # This event will be picked up by the window and used to update the UI
-                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
-                    carb.log_warn("Human selected")
-                    self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                if selection and stage:
+                    if len(selection) > 0:
+                        path = selection[-1]
+                        print(path)
+                        prim = stage.GetPrimAtPath(path)
+                        prim = self._get_typed_parent(prim, "SkelRoot")
+                        # If the selection is a human, push an event to the event stream with the prim as a payload
+                        # This event will be picked up by the window and used to update the UI
+                        if prim and prim.GetCustomDataByKey("human"):
+                            # carb.log_warn("Human selected")
+                            path = prim.GetPath().pathString
+                            self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                        else:
+                            # carb.log_warn("Human deselected")
+                            self._bus.push(self._human_selection_event, payload={"prim_path": None})
+
+    def _get_typed_parent(self, prim: Union[Usd.Prim, None], type_name: str, level: int = 5):
+        """Returns the first parent of the given prim with the given type name. If no parent is found, returns None.
+
+        Parameters:
+        -----------
+        prim : Usd.Prim or None
+            The prim to search from. If None, returns None.
+        type_name : str
+            The parent type name to search for
+        level : int
+            The maximum number of levels to traverse. Defaults to 5.
+
+        Returns:
+        --------
+        Usd.Prim
+            The first parent of the given prim with the given type name. If no match is found, returns None.
+        """
+
+        if (not prim) or level == 0:
+            return None
+        elif prim and prim.GetTypeName() == type_name:
+            return prim
+        else:
+            return self._get_typed_parent(prim.GetParent(), type_name, level - 1)
