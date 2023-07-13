@@ -33,9 +33,6 @@ class MakeHumanExtension(omni.ext.IExt):
         # create a model to hold the selected prim path
         self._selected_primpath_model = ui.SimpleStringModel("-")
 
-        # # Dock window wherever the "Content" tab is found (bottom panel by default)
-        # self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
-
         ui.Workspace.set_show_window_fn(WINDOW_TITLE, partial(self.show_window, None))
 
         # create a menu item to open the window
@@ -80,6 +77,8 @@ class MakeHumanExtension(omni.ext.IExt):
         """Handles showing and hiding the window"""
         if value:
             self._window = MHWindow(WINDOW_TITLE)
+            # # Dock window wherever the "Content" tab is found (bottom panel by default)
+            self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
             self._window.set_visibility_changed_fn(self.visibility_changed)
         elif self._window:
             self._window.visible = False
@@ -100,15 +99,15 @@ class MakeHumanExtension(omni.ext.IExt):
                 # Get the stage
                 stage = self._usd_context.get_stage()
 
-        if selection and stage:
-            if len(selection) > 0:
-                path = selection[-1]
-                print(path)
-                self._selected_primpath_model.set_value(path)
-                prim = stage.GetPrimAtPath(path)
-                prim_kind = prim.GetTypeName()
-                # If the selection is a human, push an event to the event stream with the prim as a payload
-                # This event will be picked up by the window and used to update the UI
-                if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
-                    carb.log_warn("Human selected")
-                    self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                if selection and stage:
+                    if len(selection) > 0:
+                        path = selection[-1]
+                        print(path)
+                        self._selected_primpath_model.set_value(path)
+                        prim = stage.GetPrimAtPath(path)
+                        prim_kind = prim.GetTypeName()
+                        # If the selection is a human, push an event to the event stream with the prim as a payload
+                        # This event will be picked up by the window and used to update the UI
+                        if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                            carb.log_warn("Human selected")
+                            self._bus.push(self._human_selection_event, payload={"prim_path": path})
