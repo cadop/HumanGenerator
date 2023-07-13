@@ -7,6 +7,7 @@ from functools import partial
 import asyncio
 import omni.usd
 from pxr import Usd
+from typing import Union
 
 from .window import MHWindow, WINDOW_TITLE, MENU_PATH
 
@@ -104,9 +105,38 @@ class MakeHumanExtension(omni.ext.IExt):
                         path = selection[-1]
                         print(path)
                         prim = stage.GetPrimAtPath(path)
-                        prim_kind = prim.GetTypeName()
+                        prim = self._get_typed_parent(prim, "SkelRoot")
                         # If the selection is a human, push an event to the event stream with the prim as a payload
                         # This event will be picked up by the window and used to update the UI
-                        if prim_kind == "SkelRoot" and prim.GetCustomDataByKey("human"):
+                        if prim and prim.GetCustomDataByKey("human"):
                             carb.log_warn("Human selected")
+                            path = prim.GetPath().pathString
                             self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                        else:
+                            carb.log_warn("Human deselected")
+                            self._bus.push(self._human_selection_event, payload={"prim_path": None})
+
+    def _get_typed_parent(self, prim: Union[Usd.Prim, None], type_name: str, level: int = 5):
+        """Returns the first parent of the given prim with the given type name. If no parent is found, returns None.
+
+        Parameters:
+        -----------
+        prim : Usd.Prim or None
+            The prim to search from. If None, returns None.
+        type_name : str
+            The parent type name to search for
+        level : int
+            The maximum number of levels to traverse. Defaults to 5.
+
+        Returns:
+        --------
+        Usd.Prim
+            The first parent of the given prim with the given type name. If no match is found, returns None.
+        """
+
+        if (not prim) or level == 0:
+            return None
+        elif prim and prim.GetTypeName() == type_name:
+            return prim
+        else:
+            return self._get_typed_parent(prim.GetParent(), type_name, level - 1)
