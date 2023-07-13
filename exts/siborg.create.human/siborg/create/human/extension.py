@@ -109,11 +109,11 @@ class MakeHumanExtension(omni.ext.IExt):
                         # If the selection is a human, push an event to the event stream with the prim as a payload
                         # This event will be picked up by the window and used to update the UI
                         if prim and prim.GetCustomDataByKey("human"):
-                            carb.log_warn("Human selected")
+                            # carb.log_warn("Human selected")
                             path = prim.GetPath().pathString
                             self._bus.push(self._human_selection_event, payload={"prim_path": path})
                         else:
-                            carb.log_warn("Human deselected")
+                            # carb.log_warn("Human deselected")
                             self._bus.push(self._human_selection_event, payload={"prim_path": None})
 
     def _get_typed_parent(self, prim: Union[Usd.Prim, None], type_name: str, level: int = 5):

@@ -199,7 +199,7 @@ class Human:
             else:
                 carb.log_warn("The selected prim must be a human!")
         else:
-            carb.log_warn("Please select a prim")
+            carb.log_warn("Can't update human. No prim selected!")
 
     def import_meshes(self, prim_path: str, stage: Usd.Stage, offset: List[float] = [0, 0, 0]):
         """Imports the meshes of the human into the scene. This is called when the human is
@@ -681,7 +681,7 @@ class Human:
             MHCaller.add_item(path)
             self.update_in_scene(self.prim.GetPath().pathString)
         else:
-            carb.log_warn("No prim selected")
+            carb.log_warn("Can't add asset. No human prim selected!")
 
     @staticmethod
     def _set_scale(prim : Usd.Prim, scale : float):
