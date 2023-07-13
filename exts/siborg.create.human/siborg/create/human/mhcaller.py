@@ -169,6 +169,15 @@ class MHCaller:
         return [m for m in cls.human.modifiers if m.getValue() or m.isMacro()]
 
     @classproperty
+    def default_modifiers(cls):
+        """List of all the loaded modifiers, whether or not their default values have been changed.
+        -------
+        list of: humanmodifier.Modifier
+            The macros and changed modifiers included in the human
+        """
+        return cls.human.modifiers
+
+    @classproperty
     def proxies(cls):
         """List of proxies attached to the human.
         Returns
