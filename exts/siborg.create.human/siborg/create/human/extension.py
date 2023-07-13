@@ -30,9 +30,6 @@ class MakeHumanExtension(omni.ext.IExt):
         # get message bus event stream so we can push events to the message bus
         self._bus = omni.kit.app.get_app().get_message_bus_event_stream()
 
-        # create a model to hold the selected prim path
-        self._selected_primpath_model = ui.SimpleStringModel("-")
-
         ui.Workspace.set_show_window_fn(WINDOW_TITLE, partial(self.show_window, None))
 
         # create a menu item to open the window
@@ -103,7 +100,6 @@ class MakeHumanExtension(omni.ext.IExt):
                     if len(selection) > 0:
                         path = selection[-1]
                         print(path)
-                        self._selected_primpath_model.set_value(path)
                         prim = stage.GetPrimAtPath(path)
                         prim_kind = prim.GetTypeName()
                         # If the selection is a human, push an event to the event stream with the prim as a payload
