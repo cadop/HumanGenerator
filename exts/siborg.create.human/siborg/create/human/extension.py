@@ -5,6 +5,8 @@ import carb.events
 import omni
 from functools import partial
 import asyncio
+import omni.usd
+from pxr import Usd
 
 from .window import MHWindow, WINDOW_TITLE, MENU_PATH
 
