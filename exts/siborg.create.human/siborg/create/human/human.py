@@ -12,6 +12,29 @@ import carb
 
 from .materials import get_mesh_texture, create_material, bind_material
 class Human:
+    """Class representing a human in the scene. This class is used to add a human to the scene,
+    and to update the human in the scene. The class also contains functions to add and remove
+    proxies (clothing, etc.) and apply modifiers, as well as a skeleton.
+    
+    Attributes
+    ----------
+    name : str
+        Name of the human
+    prim : UsdSkel.Root
+        Reference to the usd prim for the skelroot representing the human in the stage. Can be changed using set_prim()
+    prim_path : str
+        Path to the human prim
+    scale : float
+        Scale factor for the human. Defaults to 10 (Omniverse provided humans are 10 times larger than makehuman)
+    skeleton : Makehuman.Skeleton
+        Skeleton object for the human
+    usd_skel : UsdSkel.Skeleton
+        Skeleton object for the human in the USD stage. Imported from the skeleton object.
+    objects : List[Object3D]
+        List of objects attached to the human. Fetched from the makehuman app
+    mh_meshes : List[Object3D]
+        List of meshes attached to the human. Fetched from the makehuman app
+        """
     def __init__(self, name='human', **kwargs):
         """Constructs an instance of Human.
 
@@ -31,6 +54,9 @@ class Human:
 
         # Create a skeleton object for the human
         self.skeleton = Skeleton(self.scale)
+
+        # usd_skel is none until the human is added to the stage
+        self.usd_skel = None
 
         # Set the human in makehuman to default values
         MHCaller.reset_human()
@@ -359,6 +385,59 @@ class Human:
         paths = [Sdf.Path(mesh_path) for mesh_path in usd_mesh_paths]
 
         return paths
+
+    def get_written_modifiers(self):
+        """List of modifiers written to the human prim. Fetched from the human prim
+        in the scene. MAY BE STALE IF THE HUMAN HAS BEEN UPDATED IN MAKEHUMAN."""
+        return self.prim.GetCustomDataByKey("Modifiers") if self.prim else None
+
+    def get_modifiers(self):
+        """Retrieve the list of modifiers attached to the human. Fetched from the makehuman app. MAY NOT
+        MATCH THE LIST OF MODIFIERS WRITTEN TO THE HUMAN PRIM IF THE HUMAN HASN'T BEEN UPDATED"""
+        return MHCaller.modifiers
+
+    def set_modifier_value(self, modifier: makehuman.humanmodifier.Modifier, value: float):
+        """Sets the value of a modifier in makehuman. Validates the value before setting it.
+        Returns true if the value was set, false otherwise.
+
+        Parameters
+        ----------
+        modifier : makehuman.humanmodifier.Modifier
+            Modifier to change
+        value : float
+            Value to set the modifier to
+        """
+
+        # Get the range of the modifier
+        val_min = modifier.getMin()
+        val_max = modifier.getMax()
+
+        # Check if the value is within the range of the modifier
+        if value >= val_min and value <= val_max:
+            # Set the value of the modifier
+            modifier.setValue(value)
+            return True
+        else:
+            carb.log_warn(f"Value must be between {str(val_min)} and {str(val_max)}")
+            return False
+
+    def get_modifier_by_name(self, name: str):
+        """Gets a modifier from the list of modifiers attached to the human by name
+
+        Parameters
+        ----------
+        name : str
+            Name of the modifier to get
+
+        Returns
+        -------
+        makehuman.modifiers.Modifier
+            Modifier with the given name
+        """
+        return MHCaller.human.getModifier(name)
+
+    def get_modifier_names(self):
+        return MHCaller.human.getModifierNames()
 
     def write_properties(self, prim_path: str, stage: Usd.Stage):
         """Writes the properties of the human to the human prim. This includes modifiers and
