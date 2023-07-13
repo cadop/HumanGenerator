@@ -16,12 +16,12 @@ class MakeHumanExtension(omni.ext.IExt):
 
         # subscribe to stage events
         # see https://github.com/mtw75/kit_customdata_view
-        self._usd_context = omni.usd.get_context()
-        self._selection = self._usd_context.get_selection()
+        _usd_context = omni.usd.get_context()
+        self._selection = _usd_context.get_selection()
         self._human_selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         
         # subscribe to stage events
-        self._events = self._usd_context.get_stage_event_stream()
+        self._events = _usd_context.get_stage_event_stream()
         self._stage_event_sub = self._events.create_subscription_to_push(
             self._on_stage_event,
             name='human seletion changed',
@@ -94,7 +94,8 @@ class MakeHumanExtension(omni.ext.IExt):
                 self._bus.push(self._human_selection_event, payload={"prim_path": None})
             else:
                 # Get the stage
-                stage = self._usd_context.get_stage()
+                _usd_context = omni.usd.get_context()
+                stage = _usd_context.get_stage()
 
                 if selection and stage:
                     if len(selection) > 0:
