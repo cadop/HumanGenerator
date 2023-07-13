@@ -187,7 +187,10 @@ class Human:
                     root_path = default_prim.GetPath().pathString
                 else:
                     root_path = "/"
-                    
+
+                # Apply MakeHuman targets
+                MHCaller.human.applyAllTargets()
+
                 # Write the properties of the human to the prim
                 self.write_properties(prim_path, stage)
 
