@@ -63,7 +63,9 @@ class MHWindow(ui.Window):
 
         spacer_width = 3
         with self.frame:
-            ui.Label("Hello World")
+            with ui.VStack():
+                ui.Label("Hello World")
+                self.install_progress = ui.ProgressBar(height=20, visible=True)
             # # Widgets are built starting on the left
             # with ui.HStack(style=window_style):
             #     # Widget to show if no human is selected

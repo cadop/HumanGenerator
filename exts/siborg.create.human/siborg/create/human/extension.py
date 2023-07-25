@@ -9,6 +9,7 @@ import omni.usd
 from pxr import Usd
 from typing import Union
 import threading
+from .shared import Downloader
 
 # Omniverse ships with an API for installing python packages into the
 # internal python environment. This is usually done in extension.toml,
@@ -55,18 +56,17 @@ class MakeHumanExtension(omni.ext.IExt):
             import makehuman
             self.makehuman_installed = True
         except ModuleNotFoundError:
+
             # Start a thread to install makehuman
-            self.install_thread = threading.Thread(target=self.install_makehuman,args=(self.post_install,))
-            self.install_thread.pydev_do_not_trace = True
-            self.install_thread.start()
+            asyncio.ensure_future(self.install_makehuman(self.post_install))
         
 
         ui.Workspace.show_window(WINDOW_TITLE)
         print("[siborg.create.human] HumanGeneratorExtension startup")
 
-    def install_makehuman(self, callback : callable=None):
-        """Installs makehuman asyncronously using pip and runs a
-        callback when complete.
+    async def install_makehuman(self, callback : callable=None):
+        """Downloads makehuman from test.pypi.org as a wheel and installs it.
+        Downloading before installing lets us view the progress of the download.
 
         Parameters
         ----------
@@ -74,12 +74,16 @@ class MakeHumanExtension(omni.ext.IExt):
             A callback function to run when the installation is complete.
         """
 
+        # Create a downloader instance. We'll add a progress bar when we build the UI
+        self.downloader = Downloader(self._window.install_progress.model.set_value)
+
         try:
             print("Attempting to install makehuman...")
+            await self.downloader.download(
+                "https://test-files.pythonhosted.org/packages/bc/fd/749c9a9eb29383850a4de5589767e0a37609b1cb71fbc0c41fb6b7f75e42/makehuman-1.2.2-py3-none-any.whl",
+                "makehuman.whl", unzip = False)
             # Install makehuman
-            pipapi.install("makehuman==1.2.2",
-                           extra_args=["--extra-index-url",
-                                       "http://test.pypi.org/simple/"])
+            pipapi.install("makehuman.whl")
             import makehuman
             if callback:
                 callback()
