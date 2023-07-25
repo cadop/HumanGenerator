@@ -2,8 +2,7 @@ from omni.kit.browser.core import OptionMenuDescription, OptionsMenu
 from omni.kit.browser.folder.core.models.folder_browser_item import FolderCollectionItem
 import carb
 import asyncio
-from ..shared import data_path
-from .downloader import Downloader
+from ..shared import data_path, Downloader
 import omni.ui as ui
 
 
