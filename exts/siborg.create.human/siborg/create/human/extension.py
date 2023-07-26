@@ -50,11 +50,9 @@ class MakeHumanExtension(omni.ext.IExt):
                 MENU_PATH, self.show_window, toggle=True, value=True
             )
 
-        self.makehuman_installed = False
         # Attempt to import makehuman
         try:
             import makehuman
-            self.makehuman_installed = True
         except ModuleNotFoundError:
 
             # Start a thread to install makehuman
