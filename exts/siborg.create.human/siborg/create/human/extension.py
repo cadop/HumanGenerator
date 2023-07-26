@@ -9,7 +9,7 @@ import omni.usd
 from pxr import Usd
 from typing import Union
 import threading
-from .shared import Downloader
+from .shared import Downloader, data_path
 
 # Omniverse ships with an API for installing python packages into the
 # internal python environment. This is usually done in extension.toml,
@@ -75,15 +75,15 @@ class MakeHumanExtension(omni.ext.IExt):
         """
 
         # Create a downloader instance. We'll add a progress bar when we build the UI
-        self.downloader = Downloader(self._window.install_progress.model.set_value)
+        self.downloader = Downloader(self._window.progress_model.set_value)
 
         try:
             print("Attempting to install makehuman...")
-            await self.downloader.download(
+            result = await self.downloader.download(
                 "https://test-files.pythonhosted.org/packages/bc/fd/749c9a9eb29383850a4de5589767e0a37609b1cb71fbc0c41fb6b7f75e42/makehuman-1.2.2-py3-none-any.whl",
-                "makehuman.whl", unzip = False)
+                data_path(""), unzip = False)
             # Install makehuman
-            pipapi.install("makehuman.whl")
+            pipapi.install(result.get("url"),"makehuman", extra_args=["--no-compile"])
             import makehuman
             if callback:
                 callback()
@@ -95,7 +95,7 @@ class MakeHumanExtension(omni.ext.IExt):
         # This function is called after makehuman is installed
         # We can now import makehuman
         print("Makehuman installed")
-        self.makehuman_installed = True
+        self._window.frame.rebuild()
 
     def on_shutdown(self):
         self._menu = None
