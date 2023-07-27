@@ -4,8 +4,9 @@ import omni
 import omni.usd
 import numpy as np
 import os
+import warnings
 
-SCRIPT_ROOT = r""
+SCRIPT_ROOT = r"C:\users\josh\documents\github\ov_makehuman\exts\siborg.create.human"
 
 def make_blendshapes():
     # Get USD context and stage
@@ -94,22 +95,23 @@ def mhtarget_to_blendshape(stage, prim, group_dir, path : str):
         Path to the target file.
     """
 
-
-    try:
-        raw = np.loadtxt(path, dtype=np.float32)
-    except Exception as e:
-        print(f"Failed to load {path}: {e}")
-        return
-
     target_name = Tf.MakeValidIdentifier(os.path.splitext(os.path.basename(path))[0])
     group_name = Tf.MakeValidIdentifier(os.path.basename(group_dir))
     group = stage.DefinePrim(prim.GetPath().AppendChild(group_name))
     blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
 
-    # The first column is the vertex index, the rest are the offsets.
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            raw = np.loadtxt(path, dtype=np.float32)
+            # The first column is the vertex index, the rest are the offsets.
+    except Warning as e:
+        print(f"Warning: {e}")
+        # If the file is malformed, just create an empty blendshape.
+        raw = np.zeros((0, 4), dtype=np.float32)
+
     indices = raw[:, 0].astype(np.int32)
     offsets = raw[:, 1:]
-
     blendshape.CreateOffsetsAttr().Set(offsets)
     blendshape.CreatePointIndicesAttr().Set(indices)
 
