@@ -58,18 +58,26 @@ def make_human():
 
 
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "targets")
-    for target_group in os.listdir(targets_dir):
-        target_group_dir = os.path.join(targets_dir, target_group)
+    # targets_dir = os.path.join(ext_path, "data", "targets")
+    # for dirpath, _, filenames in os.walk(targets_dir):
+    #     for filename in filenames:
+    #         # Skip non-target files
+    #         if not filename.endswith(".target"):
+    #             continue
+    #         target_filepath = os.path.join(dirpath, filename)
+    #         print(f"Importing {target_filepath}")
+    #         target = mhtarget_to_blendshape(stage, mesh.GetPrim(), dirpath, target_filepath)
+    #         target_names.append(target.GetPrim().GetName())
+    #         target_paths.append(target.GetPrim().GetPath())
 
-        for target in os.listdir(target_group_dir):
-            if not target.endswith(".target"):
-                continue
-            target_filepath = os.path.join(target_group_dir, target)
-            print(f"Importing {target_filepath}")
-            target = mhtarget_to_blendshape(stage, mesh.GetPrim(), target_group_dir, target_filepath)
-            target_names.append(target.GetPrim().GetName())
-            target_paths.append(target.GetPrim().GetPath())
+    # Create test blendshape that moves everything by 1 unit in the x direction
+    blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild("testblend"))
+    target_names.append(blendshape.GetPrim().GetName())
+    target_paths.append(blendshape.GetPrim().GetPath())
+    offset = np.zeros((len(mesh_data.vertices), 3), dtype=np.float32)
+    offset[11405:11407] = [1,1,1]
+    # v 1.8179 -5.9165 0.2681
+    blendshape.CreateOffsetsAttr().Set(offset)
 
     # Bind mesh to blend shapes.
     meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
@@ -241,3 +249,6 @@ def load_obj(filename, nPerFace=None):
     uvs = [Gf.Vec2f(*map(float, uv)) for uv in uvs]
 
     return MeshData(vertices, uvs, normals, faces, vert_indices, uv_indices, normal_indices, nface_verts)
+
+if __name__ == "__main__":
+    make_human()
