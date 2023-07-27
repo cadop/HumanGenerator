@@ -52,16 +52,13 @@ def make_human():
 
     # Create a mesh prim
     mesh = create_geom(stage, rootPath.AppendChild("mesh"), mesh_data)
-
-    # Get the mesh itself
-    mesh = get_first_child_mesh_df(mesh)
     
     target_names = []
     target_paths = []
 
 
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets")
+    targets_dir = os.path.join(ext_path, "targets")
     for target_group in os.listdir(targets_dir):
         target_group_dir = os.path.join(targets_dir, target_group)
 
@@ -90,15 +87,6 @@ def make_human():
     # Bind Skeleton to animation.
     skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
     skeletonBinding.CreateAnimationSourceRel().AddTarget(animation.GetPrim().GetPath())
-
-
-def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
-    # Depth-first search for the first mesh prim
-    for child_prim in parent_prim.GetChildren():
-        if UsdGeom.Mesh(child_prim):
-            return child_prim
-        else:
-            return get_first_child_mesh_df(child_prim)
 
 
 def mhtarget_to_blendshape(stage, prim, group_dir, path : str):
