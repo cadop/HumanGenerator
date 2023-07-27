@@ -117,4 +117,31 @@ def mhtarget_to_blendshape(stage, prim, group_dir, path : str):
 
     return blendshape
 
+def load_obj(filename):
+    with open(filename, 'r') as infile:
+        lines = infile.readlines()
+
+    vertices = []
+    texture_coords = []
+    normals = []
+    faces = []
+
+    for line in lines:
+        parts = line.strip().split()
+        if parts[0] == 'v':
+            vertices.append(parts[1:])
+        elif parts[0] == 'vt':
+            texture_coords.append(parts[1:])
+        elif parts[0] == 'vn':
+            normals.append(parts[1:])
+        elif parts[0] == 'f':
+            faces.append(parts[1:5])  # Only consider the first 4 vertices
+
+    vertices = np.array(vertices, dtype=float)
+    texture_coords = np.array(texture_coords, dtype=float) if texture_coords else None
+    normals = np.array(normals, dtype=float) if normals else None
+    faces = np.array([[list(map(int, vert.split('/'))) for vert in face] for face in faces])
+
+    return vertices, texture_coords, normals, faces
+
 make_blendshapes()
