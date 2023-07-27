@@ -41,12 +41,3 @@ name = "siborg.create.human"
 [settings]
 exts."siborg.create.human.browser.asset".instanceable = []
 exts."siborg.create.human.browser.asset".timeout = 10
-
-[python.pipapi]
-use_online_index = true
-
-# Use this to specify a list of additional repositories if your pip package is hosted somewhere other
-# than the default repo(s) configured in pip. Will pass these to pip with "--extra-index-url" argument
-repositories = ["https://test.pypi.org/simple/"]
-
-requirements = ["makehuman==1.2.2"]
