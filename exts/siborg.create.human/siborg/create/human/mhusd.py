@@ -50,36 +50,32 @@ def make_human():
     # import the mesh
     # mesh_data = load_obj(os.path.join(ext_path, "data", "3dobjs", "base.obj"))
 
-    # Create a mesh prim
+    # # Create a mesh prim
     # mesh = create_geom(stage, rootPath.AppendChild("mesh"), mesh_data)
     
     prim = omni_load_obj(usd_context, os.path.join(ext_path, "data", "3dobjs", "base.obj"), rootPath.AppendChild("mesh"))
-
-    mesh = get_first_child_mesh_df(prim)
-    target_names = []
-    target_paths = []
+    # mesh = get_first_child_mesh_df(prim)
+    # target_names = []
+    # target_paths = []
 
 
     # Traverse the MakeHuman targets directory
-    # targets_dir = os.path.join(ext_path, "data", "targets")
-    # for dirpath, _, filenames in os.walk(targets_dir):
-    #     for filename in filenames:
-    #         # Skip non-target files
-    #         if not filename.endswith(".target"):
-    #             continue
-    #         target_filepath = os.path.join(dirpath, filename)
-    #         print(f"Importing {target_filepath}")
-    #         target = mhtarget_to_blendshape(stage, mesh.GetPrim(), dirpath, target_filepath)
-    #         target_names.append(target.GetPrim().GetName())
-    #         target_paths.append(target.GetPrim().GetPath())
+    targets_dir = os.path.join(ext_path, "data", "targets","nose")
+    for dirpath, _, filenames in os.walk(targets_dir):
+        for filename in filenames:
+            # Skip non-target files
+            if not filename.endswith(".target"):
+                continue
+            print(f"Importing {filename}")
+            mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
 
     # Create test blendshape that moves everything by 1 unit in the x direction
     # blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild("testblend"))
     
-    blendshape = mhtarget_to_blendshape(stage, mesh.GetPrim(), os.path.join(ext_path, "data", "targets", "nose","nose-scale-depth-incr.target"))
+    # blendshape = mhtarget_to_blendshape(stage, mesh.GetPrim(), os.path.join(ext_path, "data", "targets", "nose","nose-scale-depth-incr.target"))
 
-    target_names.append(blendshape.GetPrim().GetName())
-    target_paths.append(blendshape.GetPrim().GetPath())
+    # target_names.append(blendshape.GetPrim().GetName())
+    # target_paths.append(blendshape.GetPrim().GetPath())
     # offset = np.zeros((len(mesh_data.vertices), 3), dtype=np.float32)
     # offset[11405:11407] = [1,1,1]
     # # v 1.8179 -5.9165 0.2681
@@ -88,9 +84,9 @@ def make_human():
     # indices = np.arange(len(mesh_data.vertices)) - 1
     # blendshape.CreatePointIndicesAttr().Set(indices)
     # Bind mesh to blend shapes.
-    meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
-    meshBinding.CreateBlendShapesAttr().Set(target_names)
-    meshBinding.CreateBlendShapeTargetsRel().SetTargets(target_paths)
+    # meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
+    # meshBinding.CreateBlendShapesAttr().Set(target_names)
+    # meshBinding.CreateBlendShapeTargetsRel().SetTargets(target_paths)
 
     # Define an Animation (with blend shape weight time-samples).
     # animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
@@ -112,7 +108,7 @@ def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
         else:
             return get_first_child_mesh_df(child_prim)
 
-def mhtarget_to_blendshape(stage, prim, path : str):
+def mhtarget_to_blendshapes(stage, prim, path : str):
     """Import a blendshape from a MakeHuman target file.
 
     Parameters
@@ -120,7 +116,8 @@ def mhtarget_to_blendshape(stage, prim, path : str):
     stage : Usd.Stage
         The stage to import the blendshape onto.
     prim : Usd.Prim
-        The prim to import the blendshape onto.
+        The prim to import the blendshape onto. Contains multiple meshes. Indices are not shared between meshes,
+        so we need to create a separate blendshape for each mesh and keep track of any index offsets.
     path : str
         Path to the target file.
     """
@@ -129,12 +126,11 @@ def mhtarget_to_blendshape(stage, prim, path : str):
     group_dir = os.path.dirname(path)
     target_name = Tf.MakeValidIdentifier(os.path.splitext(os.path.basename(path))[0])
     group_name = Tf.MakeValidIdentifier(os.path.basename(group_dir))
-    group = stage.DefinePrim(prim.GetPath().AppendChild(group_name))
-    blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
+    
+    # group = stage.DefinePrim(prim.GetPath().AppendChild(group_name))
+    # blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
 
-    offsets = np.zeros((len(prim.GetAttribute("points").Get()), 3), dtype=np.float32)
-    indices = np.arange(len(prim.GetAttribute("points").Get()))
-
+        # Load the target file
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
@@ -142,19 +138,39 @@ def mhtarget_to_blendshape(stage, prim, path : str):
             # The first column is the vertex index, the rest are the offsets.
     except Warning as e:
         print(f"Warning: {e}")
-        # If the file is malformed, just create an empty blendshape.
-        raw = np.zeros((0, 4), dtype=np.float32)
+        # Some of the files are empty, so just skip them
+        return
 
+    # The first column is the vertex index, the rest are the offsets.
     changed_indices = raw[:, 0].astype(np.int32)
     changed_offsets = raw[:, 1:]
 
-    offsets[changed_indices] = changed_offsets
+    # Get all the meshes. We need to determine which meshes are affected by this target
+    
+    meshes = prim.GetChildren()
 
-    blendshape.CreateOffsetsAttr().Set(offsets)
-    blendshape.CreatePointIndicesAttr().Set(indices)
+    # The meshes' indices are not shared, so we need to keep track of the starting index for each mesh
+    index_start = 0
+    for mesh in meshes:
+        # The next index offset is the current offset plus the number of vertices in the current mesh
+        verts = len(mesh.GetAttribute("points").Get())
+        index_end = index_start + verts
 
-    return blendshape
-
+        if np.any(np.logical_and(changed_indices >= index_start, changed_indices < index_end)):
+            print(f"{target_name} targets mesh {mesh.GetPath()}")
+            # This mesh is affected by the target, so create a blendshape for it
+            blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild(target_name))
+            indices = np.arange(verts)
+            offsets = np.zeros((verts, 3), dtype=np.float32)
+            mask = np.logical_and(changed_indices >= index_start, changed_indices < index_end)
+            target_indices = changed_indices[mask] - index_start
+            target_offsets = changed_offsets[mask]
+            offsets[target_indices] = target_offsets
+            # Set the indices and offsets
+            blendshape.CreateOffsetsAttr().Set(offsets)
+            blendshape.CreatePointIndicesAttr().Set(indices)
+        # Update the index offset
+        index_start = index_end
 
 def create_geom(stage, path:str, mesh_data: MeshData):
     """Create a UsdGeom.Mesh prim from vertices and faces.
@@ -277,7 +293,7 @@ def omni_load_obj(context, filepath, destination):
         path_to=destination,
         asset_path=filepath,
         instanceable=False)
-    return context.get_stage().GetPrimAtPath(destination)
+    return context.get_stage().GetPrimAtPath(destination).GetChildren()[0]
 
 if __name__ == "__main__":
     make_human()
