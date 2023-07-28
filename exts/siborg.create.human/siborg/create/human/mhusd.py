@@ -6,8 +6,8 @@ import numpy as np
 import os
 import warnings
 from dataclasses import dataclass
-from pxr import Gf
-
+from pxr import Gf, Sdf
+import omni.kit.commands
 
 @dataclass
 class MeshData:
@@ -48,11 +48,14 @@ def make_human():
 
 
     # import the mesh
-    mesh_data = load_obj(os.path.join(ext_path, "data", "3dobjs", "base.obj"))
+    # mesh_data = load_obj(os.path.join(ext_path, "data", "3dobjs", "base.obj"))
 
     # Create a mesh prim
-    mesh = create_geom(stage, rootPath.AppendChild("mesh"), mesh_data)
+    # mesh = create_geom(stage, rootPath.AppendChild("mesh"), mesh_data)
     
+    prim = omni_load_obj(usd_context, os.path.join(ext_path, "data", "3dobjs", "base.obj"), rootPath.AppendChild("mesh"))
+
+    mesh = get_first_child_mesh_df(prim)
     target_names = []
     target_paths = []
 
@@ -96,6 +99,13 @@ def make_human():
     skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
     skeletonBinding.CreateAnimationSourceRel().AddTarget(animation.GetPrim().GetPath())
 
+def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
+    # Depth-first search for the first mesh prim
+    for child_prim in parent_prim.GetChildren():
+        if UsdGeom.Mesh(child_prim):
+            return child_prim
+        else:
+            return get_first_child_mesh_df(child_prim)
 
 def mhtarget_to_blendshape(stage, prim, group_dir, path : str):
     """Import a blendshape from a MakeHuman target file.
@@ -249,6 +259,14 @@ def load_obj(filename, nPerFace=None):
     uvs = [Gf.Vec2f(*map(float, uv)) for uv in uvs]
 
     return MeshData(vertices, uvs, normals, faces, vert_indices, uv_indices, normal_indices, nface_verts)
+
+def omni_load_obj(context, filepath, destination):
+    omni.kit.commands.execute('CreatePayloadCommand',
+        usd_context=context,
+        path_to=destination,
+        asset_path=filepath,
+        instanceable=False)
+    return context.get_stage().GetPrimAtPath(destination)
 
 if __name__ == "__main__":
     make_human()
