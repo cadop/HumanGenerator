@@ -84,9 +84,6 @@ def make_human():
     # indices = np.arange(len(mesh_data.vertices)) - 1
     # blendshape.CreatePointIndicesAttr().Set(indices)
     # Bind mesh to blend shapes.
-    # meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
-    # meshBinding.CreateBlendShapesAttr().Set(target_names)
-    # meshBinding.CreateBlendShapeTargetsRel().SetTargets(target_paths)
 
     # Define an Animation (with blend shape weight time-samples).
     # animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
@@ -169,6 +166,9 @@ def mhtarget_to_blendshapes(stage, prim, path : str):
             # Set the indices and offsets
             blendshape.CreateOffsetsAttr().Set(offsets)
             blendshape.CreatePointIndicesAttr().Set(indices)
+            # Bind mesh to blend shapes.
+            meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
+            meshBinding.CreateBlendShapeTargetsRel().AddTarget(blendshape.GetPath())
         # Update the index offset
         index_start = index_end
 
