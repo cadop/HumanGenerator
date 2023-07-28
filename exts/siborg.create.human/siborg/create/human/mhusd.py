@@ -60,7 +60,7 @@ def make_human():
 
 
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets","nose")
+    targets_dir = os.path.join(ext_path, "data", "targets")
     for dirpath, _, filenames in os.walk(targets_dir):
         for filename in filenames:
             # Skip non-target files
