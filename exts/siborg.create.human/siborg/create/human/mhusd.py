@@ -74,21 +74,26 @@ def make_human():
     #         target_paths.append(target.GetPrim().GetPath())
 
     # Create test blendshape that moves everything by 1 unit in the x direction
-    blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild("testblend"))
+    # blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild("testblend"))
+    
+    blendshape = mhtarget_to_blendshape(stage, mesh.GetPrim(), os.path.join(ext_path, "data", "targets", "nose","nose-scale-depth-incr.target"))
+
     target_names.append(blendshape.GetPrim().GetName())
     target_paths.append(blendshape.GetPrim().GetPath())
-    offset = np.zeros((len(mesh_data.vertices), 3), dtype=np.float32)
-    offset[11405:11407] = [1,1,1]
-    # v 1.8179 -5.9165 0.2681
-    blendshape.CreateOffsetsAttr().Set(offset)
-
+    # offset = np.zeros((len(mesh_data.vertices), 3), dtype=np.float32)
+    # offset[11405:11407] = [1,1,1]
+    # # v 1.8179 -5.9165 0.2681
+    # offsets = np.load(r"C:\Users\jhg29\Documents\GitHub\HumanGenerator\exts\siborg.create.human\siborg\create\human\text.npy")
+    # blendshape.CreateOffsetsAttr().Set(offsets)
+    # indices = np.arange(len(mesh_data.vertices)) - 1
+    # blendshape.CreatePointIndicesAttr().Set(indices)
     # Bind mesh to blend shapes.
     meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
     meshBinding.CreateBlendShapesAttr().Set(target_names)
     meshBinding.CreateBlendShapeTargetsRel().SetTargets(target_paths)
 
     # Define an Animation (with blend shape weight time-samples).
-    animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
+    # animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
     # animation.CreateBlendShapesAttr().Set(["nose"])
     # weightsAttr = animation.CreateBlendShapeWeightsAttr()
     # weightsAttr.Set([0], 1)
@@ -96,8 +101,8 @@ def make_human():
     # weightsAttr.Set([0], 100)
 
     # Bind Skeleton to animation.
-    skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
-    skeletonBinding.CreateAnimationSourceRel().AddTarget(animation.GetPrim().GetPath())
+    # skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
+    # skeletonBinding.CreateAnimationSourceRel().AddTarget(animation.GetPrim().GetPath())
 
 def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
     # Depth-first search for the first mesh prim
@@ -107,7 +112,7 @@ def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
         else:
             return get_first_child_mesh_df(child_prim)
 
-def mhtarget_to_blendshape(stage, prim, group_dir, path : str):
+def mhtarget_to_blendshape(stage, prim, path : str):
     """Import a blendshape from a MakeHuman target file.
 
     Parameters
@@ -116,16 +121,19 @@ def mhtarget_to_blendshape(stage, prim, group_dir, path : str):
         The stage to import the blendshape onto.
     prim : Usd.Prim
         The prim to import the blendshape onto.
-    group_dir : str
-        Path to the directory containing the target file.
     path : str
         Path to the target file.
     """
 
+    # Get the group directory
+    group_dir = os.path.dirname(path)
     target_name = Tf.MakeValidIdentifier(os.path.splitext(os.path.basename(path))[0])
     group_name = Tf.MakeValidIdentifier(os.path.basename(group_dir))
     group = stage.DefinePrim(prim.GetPath().AppendChild(group_name))
     blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
+
+    offsets = np.zeros((len(prim.GetAttribute("points").Get()), 3), dtype=np.float32)
+    indices = np.arange(len(prim.GetAttribute("points").Get()))
 
     try:
         with warnings.catch_warnings():
@@ -137,8 +145,11 @@ def mhtarget_to_blendshape(stage, prim, group_dir, path : str):
         # If the file is malformed, just create an empty blendshape.
         raw = np.zeros((0, 4), dtype=np.float32)
 
-    indices = raw[:, 0].astype(np.int32)
-    offsets = raw[:, 1:]
+    changed_indices = raw[:, 0].astype(np.int32)
+    changed_offsets = raw[:, 1:]
+
+    offsets[changed_indices] = changed_offsets
+
     blendshape.CreateOffsetsAttr().Set(offsets)
     blendshape.CreatePointIndicesAttr().Set(indices)
 
