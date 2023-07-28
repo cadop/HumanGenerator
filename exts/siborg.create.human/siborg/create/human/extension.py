@@ -3,7 +3,7 @@ import omni.ui as ui
 import carb
 import carb.events
 import omni
-import siborg.create.human.mhusd as mhusd
+from . import mhusd
 
 # from .window import MHWindow, WINDOW_TITLE
 
