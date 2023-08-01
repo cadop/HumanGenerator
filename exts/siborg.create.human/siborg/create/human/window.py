@@ -1,11 +1,11 @@
-from .ext_ui import ParamPanelModel, ParamPanel, NoSelectionNotification
+from .ext_ui import  NoSelectionNotification
 # from .browser import MHAssetBrowserModel, AssetBrowserFrame
-from .styles import window_style, button_style
 import omni.ui as ui
 import omni.kit.ui
 import omni
 import carb
-from . import mhusd
+from . import mhusd, ext_ui
+import json, os
 
 WINDOW_TITLE = "Human Generator"
 MENU_PATH = f"Window/{WINDOW_TITLE}"
@@ -53,14 +53,14 @@ class MHWindow(ui.Window):
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_selection_changed)
-
+        self.modifier_data = self.parse_modifiers()
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
         spacer_width = 3
         with self.frame:
             # Widgets are built starting on the left
-            with ui.HStack(style=window_style):
+            with ui.HStack(style=styles.window_style):
                 # Widget to show if no human is selected
                 self.no_selection_notification = NoSelectionNotification()
 
@@ -78,11 +78,8 @@ class MHWindow(ui.Window):
                     #         ui.Spacer(width=spacer_width)
                     with ui.HStack():
                         with ui.VStack():
-                            self.param_panel = ParamPanel(self.param_model)
-                            # with ui.HStack(height=0):
-                                # Toggle whether changes should propagate instantly
-                                # ui.ToolButton(text = "Update Instantly", model = self.toggle_model)
-                with ui.VStack(width = 100, style=button_style):
+                            self._modifier_ui()
+                with ui.VStack(width = 100, style=styles.button_style):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
                         "New Human",

@@ -1,13 +1,12 @@
 import omni.ui as ui
+import omni.kit.commands
+import json
 from typing import List, TypeVar, Union, Callable
 from dataclasses import dataclass, field
 from . import styles
-from .mhcaller import MHCaller
 from pxr import Usd
 import os
 import inspect
-import makehuman
-import targets
 from siborg.create.human.shared import data_path
 
 class SliderEntry:
@@ -132,6 +131,7 @@ class Param:
     value: ui.SimpleFloatModel = None
 
 
+
 class SliderEntryPanelModel:
     """Provides a model for referencing SliderEntryPanel data. References models
     for each individual SliderEntry widget in the SliderEntryPanel widget.
@@ -168,13 +168,18 @@ class SliderEntryPanelModel:
         self.changed_params = []
         """Params o SliderEntry widgets that have been changed"""
 
-        self.toggle = toggle
-        self.instant_update = instant_update
-
         self.subscriptions = []
         """List of event subscriptions triggered by editing a SliderEntry"""
         for p in params:
             self.add_param(p)
+
+    def parse_modifiers(self):
+        """Parses modifiers from a json file and builds the UI"""
+        ext_path = omni.kit.commands.get_app().get_extension_manager().get_extension_path("siborg.create.human")
+        json_path = os.path.join(ext_path, "data", "modifiers.json")
+        with open(json_path, "r") as f:
+            data = json.load(f)
+        return data
 
     def add_param(self, param: Param):
         """Adds a parameter to the SliderEntryPanelModel. Subscribes to the parameter's model
@@ -306,18 +311,12 @@ class SliderEntryPanel:
         self.model.destroy()
 
 class ParamPanelModel(ui.AbstractItemModel):
-    def __init__(self, toggle: ui.SimpleBoolModel, **kwargs):
+    def __init__(self, **kwargs):
         """Constructs an instance of ParamPanelModel, which stores data for a ParamPanel.
-
-        Parameters
-        ----------
-        toggle : ui.SimpleBoolModel
-            Model to track whether changes should be instant
         """
 
         super().__init__(**kwargs)
         # model to track whether changes should be instant
-        self.toggle = toggle
 
         # Reference to models for each modifier/parameter. The models store modifier
         # data for reference in the UI, and track the values of the sliders
@@ -337,7 +336,7 @@ class ParamPanel(ui.Frame):
         Models for each group of parameter sliders
     """
 
-    def __init__(self, model: ParamPanelModel, instant_update : Callable = None, **kwargs):
+    def __init__(self, model: ParamPanelModel, **kwargs):
         """Constructs an instance of ParamPanel. Panel contains a scrollable list of collapseable groups. These include
         a group of macros (which affect multiple modifiers simultaneously), as well as groups of modifiers for
         different body parts. Each modifier can be adjusted using a slider or doubleclicking to enter values directly.
@@ -346,19 +345,16 @@ class ParamPanel(ui.Frame):
         Parameters
         ----------
         model: ParamPanelModel
-            Stores data for the panel. Contains a toggle model to track whether changes should be instant
-        instant_update : Callable
-            Function to call when a parameter is changed (if instant update is toggle on)
+            Stores data for the panel.
         """
 
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
         self.model = model
-        self.toggle = model.toggle
         # If no instant update function is passed, use a dummy function and do nothing
-        self.instant_update = instant_update if instant_update else lambda *args: None
         self.models = model.models
         self.set_build_fn(self._build_widget)
+
 
     def _build_widget(self):
         """Build widget UI
