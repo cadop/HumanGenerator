@@ -8,7 +8,9 @@ import warnings
 from dataclasses import dataclass
 from pxr import Gf, Sdf
 import omni.kit.commands
-
+from collections import OrderedDict
+import json
+from typing import Dict, List
 @dataclass
 class MeshData:
     vertices: list
@@ -38,26 +40,18 @@ def make_human():
     # Define a SkelRoot.
     rootPath = Sdf.Path(f"{root.GetPath()}/skel_root")
     skel_root = UsdSkel.Root.Define(stage, rootPath)
-    # stage.SetDefaultPrim(skel_root.GetPrim())
-
+    # Add custom data to the prim by key, designating the prim is a human
+    skel_root.SetCustomDataByKey("human", True)
     # Define a Skeleton, and associate with root.
     skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild("skeleton"))
     rootBinding = UsdSkel.BindingAPI.Apply(skel_root.GetPrim())
     rootBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
 
-
-
-    # import the mesh
-    # mesh_data = load_obj(os.path.join(ext_path, "data", "3dobjs", "base.obj"))
-
-    # # Create a mesh prim
-    # mesh = create_geom(stage, rootPath.AppendChild("mesh"), mesh_data)
-    
+    # Load the base mesh
     prim = omni_load_obj(usd_context, os.path.join(ext_path, "data", "3dobjs", "base.obj"), rootPath.AppendChild("mesh"))
     # mesh = get_first_child_mesh_df(prim)
-    # target_names = []
-    # target_paths = []
 
+    target_names = []
 
     # Traverse the MakeHuman targets directory
     targets_dir = os.path.join(ext_path, "data", "targets")
@@ -67,35 +61,18 @@ def make_human():
             if not filename.endswith(".target"):
                 continue
             print(f"Importing {filename}")
-            mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
+            target = mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
+            target_names.append(target)
 
-    # Create test blendshape that moves everything by 1 unit in the x direction
-    # blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild("testblend"))
-    
-    # blendshape = mhtarget_to_blendshape(stage, mesh.GetPrim(), os.path.join(ext_path, "data", "targets", "nose","nose-scale-depth-incr.target"))
-
-    # target_names.append(blendshape.GetPrim().GetName())
-    # target_paths.append(blendshape.GetPrim().GetPath())
-    # offset = np.zeros((len(mesh_data.vertices), 3), dtype=np.float32)
-    # offset[11405:11407] = [1,1,1]
-    # # v 1.8179 -5.9165 0.2681
-    # offsets = np.load(r"C:\Users\jhg29\Documents\GitHub\HumanGenerator\exts\siborg.create.human\siborg\create\human\text.npy")
-    # blendshape.CreateOffsetsAttr().Set(offsets)
-    # indices = np.arange(len(mesh_data.vertices)) - 1
-    # blendshape.CreatePointIndicesAttr().Set(indices)
-    # Bind mesh to blend shapes.
 
     # Define an Animation (with blend shape weight time-samples).
-    # animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
-    # animation.CreateBlendShapesAttr().Set(["nose"])
-    # weightsAttr = animation.CreateBlendShapeWeightsAttr()
-    # weightsAttr.Set([0], 1)
-    # weightsAttr.Set([1], 50)
-    # weightsAttr.Set([0], 100)
+    animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
+    animation.CreateBlendShapesAttr().Set(["nose"])
+    weightsAttr = animation.CreateBlendShapeWeightsAttr()
 
     # Bind Skeleton to animation.
-    # skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
-    # skeletonBinding.CreateAnimationSourceRel().AddTarget(animation.GetPrim().GetPath())
+    skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
+    skeletonBinding.CreateAnimationSourceRel().AddTarget(animation.GetPrim().GetPath())
 
 def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
     # Depth-first search for the first mesh prim
@@ -105,7 +82,7 @@ def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
         else:
             return get_first_child_mesh_df(child_prim)
 
-def mhtarget_to_blendshapes(stage, prim, path : str):
+def mhtarget_to_blendshapes(stage, prim, path : str) -> Sdf.Path:
     """Import a blendshape from a MakeHuman target file.
 
     Parameters
@@ -171,6 +148,8 @@ def mhtarget_to_blendshapes(stage, prim, path : str):
             meshBinding.CreateBlendShapeTargetsRel().AddTarget(blendshape.GetPath())
         # Update the index offset
         index_start = index_end
+
+    return target_name
 
 def create_geom(stage, path:str, mesh_data: MeshData):
     """Create a UsdGeom.Mesh prim from vertices and faces.
@@ -238,7 +217,6 @@ def create_geom(stage, path:str, mesh_data: MeshData):
 
     return meshGeom.GetPrim()
 
-
 def load_obj(filename, nPerFace=None):
 
     with open(filename, 'r') as infile:
@@ -294,6 +272,119 @@ def omni_load_obj(context, filepath, destination):
         asset_path=filepath,
         instanceable=False)
     return context.get_stage().GetPrimAtPath(destination).GetChildren()[0]
+
+def add_to_scene():
+        """Imports the pre-assembled human USD file into the scene.
+        """
+
+        # Get the extension path
+        manager = omni.kit.app.get_app().get_extension_manager()
+        ext_id = manager.get_enabled_extension_id("siborg.create.human")
+        ext_path = manager.get_extension_path(ext_id)
+        filepath = os.path.join(ext_path, "data", "human_base.usda")
+
+        # Get the stage
+        usd_context = omni.usd.get_context()
+        stage = usd_context.get_stage()
+        default_prim = stage.GetDefaultPrim()
+        prim_path = default_prim.GetPath().AppendChild("human")
+        
+        # Import the human into the scene
+
+        omni.kit.commands.execute('CreatePayloadCommand',
+            usd_context=usd_context,
+            path_to=prim_path,
+            asset_path=filepath,
+            instanceable=False)
+
+        return self.prim
+
+# def create_skeleton(bones: OrderedDict, offset: List[float] = [0, 0, 0]):
+#     """Create a USD skeleton from a Skeleton object. Traverse the skeleton data
+#     and build a skeleton tree.
+
+#     Parameters
+#     ----------
+#     bones : OrderedDict
+#         Dictionary of bone names to bone data
+#     offset : List[float], optional
+#         Geometric translation to apply, by default [0, 0, 0]
+#     Returns
+#     -------
+#     skel : UsdSkel.Skeleton
+#         The skeleton prim"""
+
+#     rel_xforms = []
+#     bind_xforms = []
+#     joint_names = []
+#     joint_paths = []
+
+#     root = bones["root"]
+
+#     visited = []  # List to keep track of visited bones.
+#     queue = []  # Initialize a queue
+#     path_queue = []  # Keep track of paths in a parallel queue
+
+
+#     visited.append(root)
+#     queue.append(root)
+#     name = Tf.MakeValidIdentifier(root.name)
+#     path_queue.append(name + "/")
+
+#     # joints are relative to the root, so we don't prepend a path for the root
+#     self._process_bone(root, "", offset=offset)
+
+#     # Traverse skeleton (breadth-first) and store joint data
+#     while queue:
+#         v = queue.pop(0)
+#         path = path_queue.pop(0)
+#         for neighbor in v.children:
+#             if neighbor not in visited:
+#                 visited.append(neighbor)
+#                 queue.append(neighbor)
+#                 name = Tf.MakeValidIdentifier(neighbor.name)
+#                 path_queue.append(path + name + "/")
+                
+# @dataclass
+# class Bone:
+#     name: str
+#     parent: str
+#     children: List[Bone]
+#     weights: np.ndarray[float, 2]
+#     helper_cube: str = None
+#     vertex_index: int = None
+
+
+
+# def load_skel_json(skeleton_json: str, weights_json: str):
+#     """Load a skeleton from a JSON file
+
+#     Parameters
+#     ----------
+#     skeleton_json : str
+#         Path to the JSON file containing the skeleton data
+#     weights_json : str
+#         Path to the JSON file containing the weights data
+
+#     Returns
+#     -------
+#     bones : OrderedDict
+#         Dictionary of bone names to bone data
+#     """
+
+#     bones = OrderedDict()
+
+#     # Load the bones from the skeleton JSON
+#     with open(skeleton_json, "r") as skeleton_json:
+#         skeleton_data = json.load(skeleton_json)
+#         for bone, bone_data in skeleton_data.items():
+#             bones[bone] = bone_data
+
+#     # Load the weights from the weights JSON
+#     with open(weights_json, "r") as weights_json:
+#         weights_data = json.load(weights_json)
+#         for bone, bone_data in weights_data.items():
+#             bones[bone]["weights"] = bone_data
 
 if __name__ == "__main__":
     make_human()
