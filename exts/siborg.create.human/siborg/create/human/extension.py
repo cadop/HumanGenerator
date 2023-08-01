@@ -31,7 +31,7 @@ class MakeHumanExtension(omni.ext.IExt):
             )
 
     #     # get message bus event stream so we can push events to the message bus
-    #     self._bus = omni.kit.app.get_app().get_message_bus_event_stream()
+        self._bus = omni.kit.app.get_app().get_message_bus_event_stream()
 
         ui.Workspace.set_show_window_fn(WINDOW_TITLE, partial(self.show_window, None))
 
