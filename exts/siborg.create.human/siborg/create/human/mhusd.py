@@ -11,6 +11,7 @@ import omni.kit.commands
 from collections import OrderedDict
 import json
 from typing import Dict, List
+import omni.timeline
 @dataclass
 class MeshData:
     vertices: list
@@ -25,6 +26,7 @@ class MeshData:
 
 def make_human():
 
+
     # Get the extension path
     manager = omni.kit.app.get_app().get_extension_manager()
     ext_id = manager.get_enabled_extension_id("siborg.create.human")
@@ -33,6 +35,9 @@ def make_human():
     # Get USD context and stage
     usd_context = omni.usd.get_context()
     stage = usd_context.get_stage()
+
+    stage.SetStartTimeCode(0.0)
+    stage.SetEndTimeCode(10.0)
 
     # Get the default root prim
     root = stage.GetDefaultPrim()
@@ -54,7 +59,7 @@ def make_human():
     target_names = []
 
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets")
+    targets_dir = os.path.join(ext_path, "data", "targets", "nose")
     for dirpath, _, filenames in os.walk(targets_dir):
         for filename in filenames:
             # Skip non-target files
@@ -67,12 +72,16 @@ def make_human():
 
     # Define an Animation (with blend shape weight time-samples).
     animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
-    animation.CreateBlendShapesAttr().Set(["nose"])
-    weightsAttr = animation.CreateBlendShapeWeightsAttr()
+    animation.CreateBlendShapesAttr().Set(target_names)
+    weightsAttr = animation.CreateBlendShapeWeightsAttr(np.zeros(len(target_names)))
+    weightsAttr.Set(np.zeros(len(target_names)), 0)
+    weightsAttr.Set(np.ones(len(target_names)), 10)
 
     # Bind Skeleton to animation.
     skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
-    skeletonBinding.CreateAnimationSourceRel().AddTarget(animation.GetPrim().GetPath())
+    anim_path=animation.GetPrim().GetPath()
+    skeletonBinding.CreateAnimationSourceRel().AddTarget(anim_path)
+    
 
 def get_first_child_mesh_df(parent_prim: Usd.Prim) -> Usd.Prim:
     # Depth-first search for the first mesh prim
@@ -298,6 +307,43 @@ def add_to_scene():
             instanceable=False)
 
         return stage.GetPrimAtPath(prim_path)
+
+def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], time = None):
+    """Edit the blendshapes of a human animation
+
+    Parameters
+    ----------
+    animation_path : Sdf.Path
+        The path to the animation
+    blendshapes : Dict[str, float]
+        A dictionary of blendshape names to weights
+    time : float, optional
+        The time to set the blendshapes at, by default None. If None, the current time is used.
+    """
+    time = time or omni.timeline.get_timeline_interface().get_current_time()
+    print(f"Blendshapes: {blendshapes}")
+
+    # Get the stage
+    usd_context = omni.usd.get_context()
+    stage = usd_context.get_stage()
+
+    # Get the animation
+    animation = UsdSkel.Animation.Get(stage, animation_path)
+
+    # Get existing blendshapes and weights
+    current_blendshapes = animation.GetBlendShapesAttr().Get(time)
+    current_weights = animation.GetBlendShapeWeightsAttr().Get(time)
+
+    current_blendshapes = list(current_blendshapes)
+
+    for bs, w in blendshapes.items():
+        if bs not in current_blendshapes:
+            continue
+        i = current_blendshapes.index(bs)
+        current_weights[i] = w
+
+    # Set the updated weights
+    animation.GetBlendShapeWeightsAttr().Set(current_weights, time)
 
 # def create_skeleton(bones: OrderedDict, offset: List[float] = [0, 0, 0]):
 #     """Create a USD skeleton from a Skeleton object. Traverse the skeleton data

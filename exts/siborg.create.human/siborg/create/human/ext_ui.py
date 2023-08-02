@@ -4,33 +4,16 @@ import json
 from typing import List, TypeVar, Union, Callable
 from dataclasses import dataclass, field
 from . import styles
-from pxr import Usd, Tf
+from pxr import Usd, Tf, UsdSkel
 import os
 import inspect
 from siborg.create.human.shared import data_path
 from collections import defaultdict
+from . import modifiers
+from .modifiers import Modifier
+from . import mhusd
 
 class SliderEntry:
-    """Custom UI element that encapsulates a labeled slider and field
-    Attributes
-    ----------
-    label : str
-        Label to display for slider/field
-    model : ui.SimpleFloatModel
-        Model to publish changes to
-    fn : object
-        Function to run when updating the human after changes are made
-    image: str
-        Path on disk to an image to display
-    step : float
-        Division between values for the slider
-    min : float
-        Minimum value
-    max : float
-        Maximum value
-    default : float
-        Default parameter value
-    """
 
     def __init__(
         self,
@@ -90,51 +73,14 @@ class SliderEntry:
                 )
                 # create a floatdrag (can be used as a slider or an entry field) to
                 # input parameter values
-                self.drag = ui.FloatDrag(model=self.model, step=self.step)
+                self.drag = ui.FloatSlider(model=self.model, step=self.step)
                 # Limit drag values to within min and max if provided
                 if self.min is not None:
                     self.drag.min = self.min
                 if self.max is not None:
                     self.drag.max = self.max
 
-
-@dataclass
-class Param:
-    """Dataclass to store SliderEntry parameter data
-
-    Attributes
-    ----------
-    label: str
-        A label for the parameter
-    full_name: str
-        The original, full name of the modifier
-    blend: str
-        The base name of the blendshape(s) to modify
-    image: str, optional
-        The path to the image to use for labeling. By default None
-    min_blend: str, optional
-        Suffix (appended to `blendshape`) naming the blendshape for decreasing the value. Empty string by default.
-    max_blend: str, optional
-        Suffix (appended to `blendshape`) naming the blendshape for increasing the value. Empty string by default.
-    min: float, optional
-        The minimum value for the parameter. By default -1
-    max: float, optional
-        The maximum value for the parameter. By default 1
-    value : ui.SimpleFloatModel
-        The model to track the current value of the parameter. By default None
-    """
-
-    label: str
-    full_name: str
-    blend: str
-    image: str = None
-    min_blend: str = ""
-    max_blend: str = ""
-    min: float = -1
-    max: float = 1
-    value: ui.SimpleFloatModel = None
-
-class ModifierGroup:
+class SliderGroup:
     """A UI widget providing a labeled group of slider entries
 
     Attributes
@@ -145,30 +91,25 @@ class ModifierGroup:
         List of parameters to display in the group
     """
 
-    def __init__(self, label: str = None, params: List[Param] = None):
+    def __init__(self, label: str = None, modifiers: List[Modifier] = None):
         self.label = label
-        self.params = params or []
+        self.modifiers = modifiers or []
         self._build_widget()
 
     def _build_widget(self):
         """Construct the UI elements"""
-        # Layer widgets on top of a rectangle to create a group frame
-        with ui.ZStack(style=styles.panel_style, height=0):
-            ui.Rectangle(name="group_rect")
+        with ui.CollapsableFrame(self.label, style=styles.panel_style, collapsed=True, height=0):
             with ui.VStack(name="contents", spacing = 8):
-                # If the panel has a label, show it
-                if self.label:
-                    ui.Label(self.label, height=0)
                 # Create a slider entry for each parameter
-                for param in self.params:
+                for m in self.modifiers:
                     SliderEntry(
-                        param.label,
-                        param.value,
-                        lambda x: None,
-                        image=param.image,
-                        min=param.min,
-                        max=param.max,
-                        default=0,
+                        m.label,
+                        m.value_model,
+                        m.fn,
+                        image=m.image,
+                        min=m.min_val,
+                        max=m.max_val,
+                        default=m.default_val,
                     )
 
     def destroy(self):
@@ -200,72 +141,25 @@ class ModifierUI(ui.Frame):
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
         # If no instant update function is passed, use a dummy function and do nothing
-        self.groups = self.parse_modifiers()
+        self.groups, self.mods = modifiers.parse_modifiers()
+        self.group_widgets = []
         self.set_build_fn(self._build_widget)
-
+        self.animation_path = None
+        self.human_prim = None
+        
     def _build_widget(self):
         with self:
-            for group, params in self.groups.items():
-                ModifierGroup(group, params)
+            with ui.VStack(spacing=10):
+                for g, m in self.groups.items():
+                    self.group_widgets.append(SliderGroup(g, m))
+        for m in self.mods:
+            callback = self.create_callback(self.animation_path, m.fn)
+            m.value_model.add_value_changed_fn(callback)
 
-    def parse_modifiers(self):
-        """Parses modifiers from a json file and builds the UI"""
-        manager = omni.kit.app.get_app().get_extension_manager()
-        ext_id = manager.get_enabled_extension_id("siborg.create.human")
-        ext_path = manager.get_extension_path(ext_id)
-        json_path = os.path.join(ext_path, "data", "modifiers", "modeling_modifiers.json")
-
-        groups = defaultdict(list)
-
-        with open(json_path, "r") as f:
-            data = json.load(f)
-            for group in data:
-                for modifier in group["modifiers"]:
-                    if "target" in modifier:
-                        tlabel = modifier["target"].split("-")
-                        if "|" in tlabel[len(tlabel) - 1]:
-                            tlabel = tlabel[:-1]
-                        if len(tlabel) > 1 and tlabel[0] == group:
-                            label = tlabel[1:]
-                        else:
-                            label = tlabel
-                        label = " ".join([word.capitalize() for word in label])
-
-                        # Guess a suitable image path from modifier name
-                        tlabel = modifier["target"].replace("|", "-").split("-")
-                        # image = modifier_image(("%s.png" % "-".join(tlabel)).lower())
-                        image = None
-
-                        # Blendshapes are named based on the modifier name
-                        blend = Tf.MakeValidIdentifier(modifier["target"])
-                        
-                        # Some modifiers only adress one blendshape, others adress two in either direction
-                        min_val = 0
-                        max_val = 1
-                        
-                        if "min" in modifier:
-                            min_blend = Tf.MakeValidIdentifier(f"{blend}_{modifier['min']}")
-                            min_val = -1
-                        if "max" in modifier:
-                            max_blend = Tf.MakeValidIdentifier(f"{blend}_{modifier['max']}")
-
-
-                        # Create a parameter for the modifier
-                        param = Param(
-                            label,
-                            modifier["target"],
-                            image or None,
-                            blend,
-                            min_blend,
-                            max_blend,
-                            min_val,
-                            max_val
-                        )
-                        # Add the parameter to the group
-                        groups[group["group"]].append(param)
-
-        return groups
-
+    def create_callback(self, animation_path, fn):
+        def callback(v):
+            mhusd.edit_blendshapes(animation_path, fn(v))
+        return callback
 
     def reset(self):
         """Reset every SliderEntryPanel to set UI values to defaults
@@ -287,20 +181,30 @@ class ModifierUI(ui.Frame):
         # Make the prim exists
         if not human_prim.IsValid():
             return
+
+        bindingAPI = UsdSkel.BindingAPI(human_prim)
+        skeleton_rel = bindingAPI.GetSkeletonRel()
+        skeleton_targets = skeleton_rel.GetTargets()
+        skeleton_path = skeleton_targets[0].pathString
+        skeleton = UsdSkel.Skeleton.Get(human_prim.GetStage(), skeleton_path)
+        bindingAPI = UsdSkel.BindingAPI(skeleton)
+        self.animation_path = bindingAPI.GetAnimationSourceRel().GetTargets()[0]
+
+        self.human_prim = human_prim
         
-        # Reset the UI to defaults
-        self.reset()
+        # # Reset the UI to defaults
+        # self.reset()
 
-        # Get the data from the prim
-        humandata = human_prim.GetCustomData()
+        # # Get the data from the prim
+        # humandata = human_prim.GetCustomData()
 
-        modifiers = humandata.get("Modifiers")
+        # modifiers = humandata.get("Modifiers")
 
-        # Set any changed values in the models
-        for SliderEntryPanelModel in self.models:
-            for param in SliderEntryPanelModel.params:
-                if param.full_name in modifiers:
-                    param.value.set_value(modifiers[param.full_name])
+        # # Set any changed values in the models
+        # for SliderEntryPanelModel in self.models:
+        #     for param in SliderEntryPanelModel.params:
+        #         if param.full_name in modifiers:
+        #             param.value.set_value(modifiers[param.full_name])
 
     def update_models(self):
         """Update all models"""
