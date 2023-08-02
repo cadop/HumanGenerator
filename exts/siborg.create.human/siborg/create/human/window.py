@@ -72,7 +72,7 @@ class MHWindow(ui.Window):
                     #         ui.Spacer(width=spacer_width)
                     with ui.HStack():
                         with ui.VStack():
-                            ModifierUI()
+                            self.modifier_ui = ModifierUI()
                 with ui.VStack(width = 100, style=styles.button_style):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
@@ -131,6 +131,7 @@ class MHWindow(ui.Window):
 
             # Get the prim from the path in the event payload
             prim = stage.GetPrimAtPath(prim_path)
+            self.modifier_ui.load_values(prim)
 
 
 
