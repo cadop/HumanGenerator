@@ -1,10 +1,10 @@
-from .ext_ui import  NoSelectionNotification
+from .ext_ui import NoSelectionNotification, ModifierUI
 # from .browser import MHAssetBrowserModel, AssetBrowserFrame
 import omni.ui as ui
 import omni.kit.ui
 import omni
 import carb
-from . import mhusd, ext_ui
+from . import mhusd, styles
 import json, os
 
 WINDOW_TITLE = "Human Generator"
@@ -34,11 +34,6 @@ class MHWindow(ui.Window):
 
         super().__init__(title)
 
-        # # Holds the state of the realtime toggle
-        # self.toggle_model = ui.SimpleBoolModel()
-        # # Holds the state of the parameter list
-        self.param_model = ParamPanelModel()
-
         # # A model to hold browser data
         # self.browser_model = MHAssetBrowserModel(
         #     self._human,
@@ -53,7 +48,6 @@ class MHWindow(ui.Window):
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_selection_changed)
-        self.modifier_data = self.parse_modifiers()
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
@@ -78,7 +72,7 @@ class MHWindow(ui.Window):
                     #         ui.Spacer(width=spacer_width)
                     with ui.HStack():
                         with ui.VStack():
-                            self._modifier_ui()
+                            ModifierUI()
                 with ui.VStack(width = 100, style=styles.button_style):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
@@ -137,12 +131,6 @@ class MHWindow(ui.Window):
 
             # Get the prim from the path in the event payload
             prim = stage.GetPrimAtPath(prim_path)
-
-            # # Update the human in MHCaller
-            # self._human.set_prim(prim)
-
-            # Update the list of applied modifiers
-            self.param_panel.load_values(prim)
 
 
 
