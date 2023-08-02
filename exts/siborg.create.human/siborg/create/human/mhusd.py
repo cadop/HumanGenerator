@@ -41,7 +41,7 @@ def make_human():
     rootPath = Sdf.Path(f"{root.GetPath()}/skel_root")
     skel_root = UsdSkel.Root.Define(stage, rootPath)
     # Add custom data to the prim by key, designating the prim is a human
-    skel_root.SetCustomDataByKey("human", True)
+    skel_root.GetPrim().SetCustomDataByKey("human", True)
     # Define a Skeleton, and associate with root.
     skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild("skeleton"))
     rootBinding = UsdSkel.BindingAPI.Apply(skel_root.GetPrim())
@@ -297,7 +297,7 @@ def add_to_scene():
             asset_path=filepath,
             instanceable=False)
 
-        return self.prim
+        return stage.GetPrimAtPath(prim_path)
 
 # def create_skeleton(bones: OrderedDict, offset: List[float] = [0, 0, 0]):
 #     """Create a USD skeleton from a Skeleton object. Traverse the skeleton data
