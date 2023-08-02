@@ -102,7 +102,7 @@ class MakeHumanExtension(omni.ext.IExt):
 
                 if selection and stage:
                     if len(selection) > 0:
-                        path = selection[-1]
+                        path = selection.pop()
                         print(path)
                         prim = stage.GetPrimAtPath(path)
                         prim = self._get_typed_parent(prim, "SkelRoot")
