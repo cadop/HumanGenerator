@@ -31,6 +31,7 @@ exts/siborg.create.human/data/*
 !exts/siborg.create.human/data/*.png
 !exts/siborg.create.human/data/skins/
 !exts/siborg.create.human/data/human_base.usda
+!exts/siborg.create.human/data/basemesh.geo.usda
 
 !exts/siborg.create.human/data/clothes/
 exts/siborg.create.human/data/clothes/*
