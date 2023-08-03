@@ -36,8 +36,8 @@ def make_human():
     usd_context = omni.usd.get_context()
     stage = usd_context.get_stage()
 
-    stage.SetStartTimeCode(0.0)
-    stage.SetEndTimeCode(10.0)
+    # Stage must have a valid start time code for animation to work
+    stage.SetStartTimeCode(1)
 
     # Get the default root prim
     root = stage.GetDefaultPrim()
@@ -59,7 +59,7 @@ def make_human():
     target_names = []
 
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets", "nose")
+    targets_dir = os.path.join(ext_path, "data", "targets")
     for dirpath, _, filenames in os.walk(targets_dir):
         for filename in filenames:
             # Skip non-target files
@@ -155,6 +155,16 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> Sdf.Path:
             # Bind mesh to blend shapes.
             meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
             meshBinding.CreateBlendShapeTargetsRel().AddTarget(blendshape.GetPath())
+            # Get the existing blendshapes for this mesh
+            existing_blendshapes = meshBinding.GetBlendShapesAttr().Get()
+            # Add the new blendshape
+            if existing_blendshapes:
+                existing_blendshapes = list(existing_blendshapes)
+                existing_blendshapes.append(target_name)
+            else:
+                existing_blendshapes = [target_name]
+            # Set the updated blendshapes for this mesh.
+            meshBinding.GetBlendShapesAttr().Set(existing_blendshapes)
         # Update the index offset
         index_start = index_end
 
@@ -308,7 +318,7 @@ def add_to_scene():
 
         return stage.GetPrimAtPath(prim_path)
 
-def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], time = None):
+def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], time = 1):
     """Edit the blendshapes of a human animation
 
     Parameters
@@ -318,10 +328,9 @@ def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], ti
     blendshapes : Dict[str, float]
         A dictionary of blendshape names to weights
     time : float, optional
-        The time to set the blendshapes at, by default None. If None, the current time is used.
+        The time to set the blendshapes at, by default 1
     """
-    time = time or omni.timeline.get_timeline_interface().get_current_time()
-    print(f"Blendshapes: {blendshapes}")
+    # print(f"Blendshapes: {blendshapes}")
 
     # Get the stage
     usd_context = omni.usd.get_context()
@@ -343,7 +352,8 @@ def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], ti
         current_weights[i] = w
 
     # Set the updated weights
-    animation.GetBlendShapeWeightsAttr().Set(current_weights, time)
+    animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
+
 
 # def create_skeleton(bones: OrderedDict, offset: List[float] = [0, 0, 0]):
 #     """Create a USD skeleton from a Skeleton object. Traverse the skeleton data
