@@ -37,15 +37,15 @@ def make_human():
     target_names = []
 
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets")
+    targets_dir = os.path.join(ext_path, "data", "targets","armslegs")
     for dirpath, _, filenames in os.walk(targets_dir):
         for filename in filenames:
             # Skip non-target files
             if not filename.endswith(".target"):
                 continue
             print(f"Importing {filename}")
-            target = mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
-            target_names.append(target)
+            if targets := mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename)):
+                target_names.extend(targets)
 
 
     # Define an Animation (with blend shape weight time-samples).
@@ -53,7 +53,6 @@ def make_human():
     animation.CreateBlendShapesAttr().Set(target_names)
     weightsAttr = animation.CreateBlendShapeWeightsAttr(np.zeros(len(target_names)))
     weightsAttr.Set(np.zeros(len(target_names)), 0)
-    weightsAttr.Set(np.ones(len(target_names)), 10)
 
     # Bind Skeleton to animation.
     skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
@@ -64,7 +63,7 @@ def make_human():
     stage.Export(os.path.join(ext_path,"data","human_base.usda"))
 
 
-def mhtarget_to_blendshapes(stage, prim, path : str) -> Sdf.Path:
+def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
     """Import a blendshape from a MakeHuman target file.
 
     Parameters
@@ -106,6 +105,7 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> Sdf.Path:
     meshes = prim.GetChildren()
 
     # The meshes' indices are not shared, so we need to keep track of the starting index for each mesh
+    num_blendshapes = 0
     index_start = 0
     for mesh in meshes:
         # The next index offset is the current offset plus the number of vertices in the current mesh
@@ -138,10 +138,11 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> Sdf.Path:
                 existing_blendshapes = [target_name]
             # Set the updated blendshapes for this mesh.
             meshBinding.GetBlendShapesAttr().Set(existing_blendshapes)
+            num_blendshapes += 1
         # Update the index offset
         index_start = index_end
 
-    return target_name
+    return [target_name] * num_blendshapes
 
 if __name__ == "__main__":
     make_human()

@@ -341,15 +341,19 @@ def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], ti
 
     # Get existing blendshapes and weights
     current_blendshapes = animation.GetBlendShapesAttr().Get(time)
-    current_weights = animation.GetBlendShapeWeightsAttr().Get(time)
+    current_weights = np.array(animation.GetBlendShapeWeightsAttr().Get(time))
 
-    current_blendshapes = list(current_blendshapes)
+    # Convert to numpy arrays
+    current_blendshapes = np.array(current_blendshapes)
+    current_weights = np.array(current_weights)
 
     for bs, w in blendshapes.items():
+        print(bs)
         if bs not in current_blendshapes:
             continue
-        i = current_blendshapes.index(bs)
-        current_weights[i] = w
+        indices = np.where(current_blendshapes==bs)[0]
+        print(indices)
+        current_weights[indices] = [w] * len(indices)
 
     # Set the updated weights
     animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
