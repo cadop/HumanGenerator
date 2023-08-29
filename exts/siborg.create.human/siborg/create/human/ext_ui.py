@@ -149,9 +149,10 @@ class ModifierUI(ui.Frame):
         
     def _build_widget(self):
         with self:
-            with ui.VStack(spacing=10):
-                for g, m in self.groups.items():
-                    self.group_widgets.append(SliderGroup(g, m))
+            with ui.ScrollingFrame():
+                with ui.VStack(spacing=10):
+                    for g, m in self.groups.items():
+                        self.group_widgets.append(SliderGroup(g, m))
         for m in self.mods:
             callback = self.create_callback(self.animation_path, m.fn)
             m.value_model.add_value_changed_fn(callback)
