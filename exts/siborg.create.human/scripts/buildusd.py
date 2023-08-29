@@ -36,7 +36,7 @@ def make_human():
     for m in meshes:
         create_geom(stage, rootPath.AppendChild(m.name), m)
 
-    prim = stage.GetPrimAtPath("/Human/skel_root/base")
+    prim = stage.GetPrimAtPath("/Human/skel_root")
 
     target_names = []
 
