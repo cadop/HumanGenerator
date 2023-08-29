@@ -83,20 +83,20 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
 
     # The original ranges for the indices of the mesh vertices
     # See http://www.makehumancommunity.org/wiki/Documentation:Basemesh
-    index_ranges = {
-        'body': (0, 13379),
-        'helper_tongue': (13380, 13605),
-        'joints': (13606, 14597),
-        'helper_x_eye': (14598, 14741),
-        'helper_x_eyelashes-y': (14742, 14991),
-        'helper_lower_teeth': (14992, 15059),
-        'helper_upper_teeth': (15060, 15127),
-        'helper_genital': (15128, 15327),
-        'helper_tights': (15328, 18001),
-        'helper_skirt': (18002, 18721),
-        'helper_hair': (18722, 19149),
-        'ground': (19150, 19157)
-    }
+    # index_ranges = {
+    #     'body': (0, 13379),
+    #     'helper_tongue': (13380, 13605),
+    #     'joints': (13606, 14597),
+    #     'helper_x_eye': (14598, 14741),
+    #     'helper_x_eyelashes-y': (14742, 14991),
+    #     'helper_lower_teeth': (14992, 15059),
+    #     'helper_upper_teeth': (15060, 15127),
+    #     'helper_genital': (15128, 15327),
+    #     'helper_tights': (15328, 18001),
+    #     'helper_skirt': (18002, 18721),
+    #     'helper_hair': (18722, 19149),
+    #     'ground': (19150, 19157)
+    # }
 
     # Get the group directory
     group_dir = os.path.dirname(path)
@@ -123,30 +123,19 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
 
     # Get all the meshes. We need to determine which meshes are affected by this target
     
-    meshes = prim.GetChildren()
+    meshes = [prim for prim in prim.GetChildren() if prim.IsA(UsdGeom.Mesh)]
 
-    # The meshes' indices are not shared, so we need to keep track of the starting index for each mesh
     num_blendshapes = 0
-    index_start = 0
     for mesh in meshes:
-        # The next index offset is the current offset plus the number of vertices in the current mesh
-        verts = len(mesh.GetAttribute("points").Get())
-        index_end = index_start + verts
-
-        mesh_name = mesh.GetName()
-        original_range = index_ranges.get((mesh_name), None)
-
+        vert_idxs = mesh.GetAttribute("faceVertexIndices").Get()
+        index_start = np.min(vert_idxs)
+        index_end = np.max(vert_idxs) + 1
         if np.any(np.logical_and(changed_indices >= index_start, changed_indices < index_end)):
             print(f"{target_name} targets mesh {mesh.GetPath()}")
             # This mesh is affected by the target, so create a blendshape for it
             blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild(target_name))
-            indices = np.arange(verts)
-            offsets = np.zeros((verts, 3), dtype=np.float32)
-            mask = np.logical_and(changed_indices >= index_start, changed_indices < index_end)
-            target_indices = changed_indices[mask] - index_start
-            target_offsets = changed_offsets[mask]
-            offsets[target_indices] = target_offsets
-            # Set the indices and offsets
+            indices = np.array(changed_indices)
+            offsets = changed_offsets[np.isin(changed_indices, indices)]
             blendshape.CreateOffsetsAttr().Set(offsets)
             blendshape.CreatePointIndicesAttr().Set(indices)
             # Bind mesh to blend shapes.
@@ -163,9 +152,6 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
             # Set the updated blendshapes for this mesh.
             meshBinding.GetBlendShapesAttr().Set(existing_blendshapes)
             num_blendshapes += 1
-        # Update the index offset
-        index_start = index_end
-    print(f"Counted {index_start} vertices")
     return [target_name] * num_blendshapes
 
 @dataclass
