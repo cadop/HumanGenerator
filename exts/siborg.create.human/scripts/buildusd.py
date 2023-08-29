@@ -5,6 +5,7 @@ from pxr import Usd, Sdf, UsdSkel, Tf, UsdGeom, Gf
 import numpy as np
 import warnings
 from dataclasses import dataclass
+from typing import List
 
 def make_human():
 
@@ -30,8 +31,10 @@ def make_human():
 
     # Load the base mesh from a file
     ext_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    base_mesh_file = os.path.join(ext_path, "data", "basemesh.geo.usda")
-    skel_root.GetPrim().GetReferences().AddReference(base_mesh_file, "/Root")
+    base_mesh_file = os.path.join(ext_path, "data", "3dobjs", "base.obj")
+    meshes = load_obj(base_mesh_file)
+    for m in meshes:
+        create_geom(stage, rootPath.AppendChild(m.name), m)
 
     prim = stage.GetPrimAtPath("/Human/skel_root/base")
 
@@ -167,6 +170,7 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
 
 @dataclass
 class MeshData:
+    name: str
     vertices: list
     uvs: list
     normals: list
@@ -179,19 +183,15 @@ class MeshData:
 
 def create_geom(stage, path: str, mesh_data: MeshData):
     """Create a UsdGeom.Mesh prim from vertices and faces.
-    
+
     Parameters
     ----------
     stage : Usd.Stage
         The stage to create the mesh on.
     path : str
         The path at which to create the mesh prim
-    vertices : np.ndarray
-        An N x 3 array of vertex positions
-    nPerFace : np.ndarray
-        An array of length N where each element is the number of vertices in each face
-    faces : np.ndarray
-        An N x max(nPerFace) array of vertex indices
+    mesh_data : MeshData
+        The mesh data to use to create the mesh prim. Contains vertices, faces, and normals.
     """
     meshGeom = UsdGeom.Mesh.Define(stage, path)
 
@@ -233,107 +233,119 @@ def create_geom(stage, path: str, mesh_data: MeshData):
     #   Example: texture coordinates for 3 vertices
     #   texCoords.Set([(0, 1), (0, 0), (1, 0)])
 
-    texCoords = meshGeom.CreatePrimvar(
-        "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying
-    )
-    texCoords.Set(mesh_data.uvs)
+    # texCoords = meshGeom.CreatePrimvar(
+    #     "st", Sdf.ValueTypeNames.TexCoord2fArray, UsdGeom.Tokens.faceVarying
+    # )
+    # texCoords.Set(mesh_data.uvs)
 
     # # Subdivision is set to catmullClark for smooth surfaces
     meshGeom.CreateSubdivisionSchemeAttr().Set("catmullClark")
 
     return meshGeom.GetPrim()
 
-# def load_obj(filename, nPerFace=None):
+def load_obj(filename, nPerFace=None):
 
-#     with open(filename, 'r') as infile:
-#         lines = infile.readlines()
-
-#     vertices = []
-#     uvs = []
-#     normals = []
-#     faces = []
-#     nface_verts = []
-
-#     for line in lines:
-#         parts = line.strip().split()
-#         if parts[0] == 'v':
-#             vertices.append(tuple(parts[1:]))
-#         elif parts[0] == 'vt':
-#             uvs.append(parts[1:])
-#         elif parts[0] == 'vn':
-#             normals.append(parts[1:])
-#         elif parts[0] == 'f':
-#             if nPerFace:
-#                 if nPerFace > len(parts[1:]):
-#                     raise ValueError(f'Face has less than {nPerFace} vertices')
-#                 faces.append(parts[1:nPerFace+1])  # Only consider the first nPerFace vertices
-#                 nface_verts.append(nPerFace)
-#             else:
-#                 faces.append(parts[1:]) # Consider all vertices
-#                 nface_verts.append(len(parts[1:]))
-
-#     # Flat lists of face vertex indices
-#     vert_indices = []
-#     uv_indices = []
-#     normal_indices = []
-
-#     for face in faces:
-#         for i in range(len(face)):
-#             vert_indices.append(int(face[i].split('/')[0]) - 1)
-#             if uvs:
-#                 uv_indices.append(int(face[i].split('/')[1]) - 1)
-#             if normals:
-#                 normal_indices.append(int(face[i].split('/')[2]) - 1)
-
-#     # convert to Gf.Vec3f
-#     vertices = [Gf.Vec3f(*map(float, v)) for v in vertices]
-#     uvs = [Gf.Vec2f(*map(float, uv)) for uv in uvs]
-
-#     return MeshData(vertices, uvs, normals, faces, vert_indices, uv_indices, normal_indices, nface_verts)
-
-
-def load_obj(filename)
-    # Read the file
-    with open(filename, 'r') as f: data = f.readlines()
+    with open(filename, 'r') as infile:
+        lines = infile.readlines()
 
     # Remove comments
-    newdata = [x.rstrip('\n').split() for x in data if '#' not in x]
-    verts = np.asarray([x[1:] for x in newdata if x[0]=='v'], float)
-    idx = np.arange(len(verts))
-    uv = np.asarray([x[1:] for x in newdata if x[0]=='vt'], float)
-    face = np.asarray([x[1:] for x in newdata if x[0]=='f']) # This should fail if it creates a ragged array
-    face = np.apply_along_axis(lambda x: [y.split('/') for y in x], 0, face)
-    # Get the face number without vertex coordinate
-    face = np.asarray(face[:,0,:], int)
+    newdata = [x.rstrip('\n').split() for x in lines if '#' not in x]
 
-    obj_types = [x[0] for x in newdata]
-    nptype = np.asarray(obj_types)
+    vertices = []
+    uvs = []
+    mesh_data = []
+    group = ""
+    faces = []
+    vert_indices = []
+    uv_indices = []
+    normal_indices = []
+    nface_verts = []
 
-    print(nptype)
-
-    idx = np.where(nptype == 'g', 1, 0)
-    idx = np.asarray(idx, dtype=int)
-    idx = np.nonzero(idx)
-
-    print(idx)
-
-    1/0
-
-    group_data = []
-    active_group = False
-
-    # Go through the file and find the group ranges
     for i, ln in enumerate(newdata):
-        if ln[0] =='g':
-            # record the body name and index
-            if not active_group:
-                group_data.append([ln[1], i])
-                active_group = True
-            # Set the end index
-            elif active_group: 
-                group_data[-1].extend([i])
-                active_group = False
-    print(group_data)
+        if ln[0] == 'v':
+            vertices.append(tuple(ln[1:]))
+        elif ln[0] == 'vt':
+            uvs.append(ln[1:])
+        elif ln[0] == 'f':
+            if nPerFace:
+                if nPerFace > len(ln[1:]):
+                    raise ValueError(f'Face has less than {nPerFace} vertices')
+                faces.append(ln[1:nPerFace+1])  # Only consider the first nPerFace vertices
+                nface_verts.append(nPerFace)
+            else:
+                faces.append(ln[1:]) # Consider all vertices
+                nface_verts.append(len(ln[1:]))
+        elif ln[0] == 'g':
+            # Record the accumulated data and start a new group
+                # Flat lists of face vertex indices
+            if group:
+                for face in faces:
+                    for i in range(len(face)):
+                        vert_indices.append(int(face[i].split('/')[0]) - 1)
+                        uv_indices.append(int(face[i].split('/')[1]) - 1)
+
+                mesh_data.append(MeshData(group, None, None, None, faces, vert_indices, uv_indices, normal_indices, nface_verts))
+            faces = []
+            vert_indices = []
+            uv_indices = []
+            normal_indices = []
+            nface_verts = []
+            group = Tf.MakeValidIdentifier(ln[1])
+            print(f"Group {group}")
+
+    # convert to Gf.Vec3f
+    vertices = [Gf.Vec3f(*map(float, v)) for v in vertices]
+    uvs = [Gf.Vec2f(*map(float, uv)) for uv in uvs]
+
+    # Add all vertices and UVs to each mesh
+    for mesh in mesh_data:
+        mesh.vertices = vertices
+        mesh.uvs = uvs
+
+    return mesh_data
+
+# def load_obj(filename)
+#     # Read the file
+#     with open(filename, 'r') as f: data = f.readlines()
+
+#     # Remove comments
+#     newdata = [x.rstrip('\n').split() for x in data if '#' not in x]
+#     verts = np.asarray([x[1:] for x in newdata if x[0]=='v'], float)
+#     idx = np.arange(len(verts))
+#     uv = np.asarray([x[1:] for x in newdata if x[0]=='vt'], float)
+#     face = np.asarray([x[1:] for x in newdata if x[0]=='f']) # This should fail if it creates a ragged array
+#     face = np.apply_along_axis(lambda x: [y.split('/') for y in x], 0, face)
+#     # Get the face number without vertex coordinate
+#     face = np.asarray(face[:,0,:], int)
+
+#     obj_types = [x[0] for x in newdata]
+#     nptype = np.asarray(obj_types)
+
+#     print(nptype)
+
+#     idx = np.where(nptype == 'g', 1, 0)
+#     idx = np.asarray(idx, dtype=int)
+#     idx = np.nonzero(idx)
+
+#     print(idx)
+
+#     1/0
+
+#     group_data = []
+#     active_group = False
+
+#     # Go through the file and find the group ranges
+#     for i, ln in enumerate(newdata):
+#         if ln[0] =='g':
+#             # record the body name and index
+#             if not active_group:
+#                 group_data.append([ln[1], i])
+#                 active_group = True
+#             # Set the end index
+#             elif active_group: 
+#                 group_data[-1].extend([i])
+#                 active_group = False
+#     print(group_data)
 
 if __name__ == "__main__":
     make_human()
