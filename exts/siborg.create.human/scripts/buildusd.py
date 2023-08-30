@@ -64,7 +64,9 @@ def make_human():
     skeletonBinding.CreateAnimationSourceRel().AddTarget(anim_path)
 
     # Save the stage to a file
-    stage.Export(os.path.join(ext_path,"data","human_base.usda"))
+    save_path = os.path.join(ext_path, "data", "human_base.usd")
+    print(f"Saving to {save_path}")
+    stage.Export(save_path)
 
 
 def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
