@@ -92,23 +92,27 @@ def parse_modifiers():
     manager = omni.kit.app.get_app().get_extension_manager()
     ext_id = manager.get_enabled_extension_id("siborg.create.human")
     ext_path = manager.get_extension_path(ext_id)
-    json_path = os.path.join(ext_path, "data", "modifiers", "modeling_modifiers.json")
+
+    files = ["modeling_modifiers.json", "bodyshapes_modifiers.json", "measurement_modifiers.json"]
+
+    json_paths = [os.path.join(ext_path, "data", "modifiers", f) for f in files]
 
     groups = defaultdict(list)
     modifiers = []
 
-    with open(json_path, "r") as f:
-        data = json.load(f)
-        for group in data:
-            groupname = group["group"].capitalize()
-            for modifier_data in group["modifiers"]:
-                if "target" not in modifier_data:
-                    continue
-                # Create an object for the modifier
-                modifier = Modifier(groupname, modifier_data)
-                # Add the modifier to the group
-                groups[groupname].append(modifier)
-                # Add the modifier to the list of all modifiers (for tracking changes)
-                modifiers.append(modifier)
+    for path in json_paths:
+        with open(path, "r") as f:
+            data = json.load(f)
+            for group in data:
+                groupname = group["group"].capitalize()
+                for modifier_data in group["modifiers"]:
+                    if "target" not in modifier_data:
+                        continue
+                    # Create an object for the modifier
+                    modifier = Modifier(groupname, modifier_data)
+                    # Add the modifier to the group
+                    groups[groupname].append(modifier)
+                    # Add the modifier to the list of all modifiers (for tracking changes)
+                    modifiers.append(modifier)
 
     return groups, modifiers
