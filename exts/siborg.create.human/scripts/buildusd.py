@@ -38,24 +38,29 @@ def make_human():
 
     prim = stage.GetPrimAtPath("/Human/skel_root")
 
-    target_names = []
-
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets","armslegs")
+    targets_dir = os.path.join(ext_path, "data", "targets")
     for dirpath, _, filenames in os.walk(targets_dir):
         for filename in filenames:
             # Skip non-target files
             if not filename.endswith(".target"):
                 continue
             print(f"Importing {filename}")
-            if targets := mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename)):
-                target_names.extend(targets)
+            mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
 
+    # Traverse all meshes and create a list of the blendshape target names
+    target_names = []
+    for mesh in [m for m in prim.GetChildren() if m.IsA(UsdGeom.Mesh)]:
+        meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
+        blendshapes = meshBinding.GetBlendShapesAttr().Get()
+        if blendshapes:
+            print(f"Mesh {mesh.GetPath()} has blendshapes {blendshapes}\n")
+            target_names.extend(blendshapes)
 
     # Define an Animation (with blend shape weight time-samples).
     animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
     animation.CreateBlendShapesAttr().Set(target_names)
-    weightsAttr = animation.CreateBlendShapeWeightsAttr(np.zeros(len(target_names)))
+    weightsAttr = animation.CreateBlendShapeWeightsAttr()
     weightsAttr.Set(np.zeros(len(target_names)), 0)
 
     # Bind Skeleton to animation.
@@ -127,7 +132,6 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
     
     meshes = [prim for prim in prim.GetChildren() if prim.IsA(UsdGeom.Mesh)]
 
-    num_blendshapes = 0
     for mesh in meshes:
         vert_idxs = mesh.GetAttribute("faceVertexIndices").Get()
         index_start = np.min(vert_idxs)
@@ -145,16 +149,25 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
             meshBinding.CreateBlendShapeTargetsRel().AddTarget(blendshape.GetPath())
             # Get the existing blendshapes for this mesh
             existing_blendshapes = meshBinding.GetBlendShapesAttr().Get()
+            bound_blendshapes = [b.name for b in meshBinding.GetBlendShapeTargetsRel().GetTargets()]
             # Add the new blendshape
             if existing_blendshapes:
+                if target_name in existing_blendshapes:
+                    print(f"Blendshape {target_name} already exists on {mesh.GetPath()}")
+                    continue
                 existing_blendshapes = list(existing_blendshapes)
                 existing_blendshapes.append(target_name)
             else:
                 existing_blendshapes = [target_name]
+            if len(existing_blendshapes) != len(bound_blendshapes):
+                bound_set = set(bound_blendshapes)
+                existing_set = set(existing_blendshapes)
+                unbound = existing_set.difference(bound_set)
+                mismatched = bound_set.difference(existing_set)
+                print(f"Blendshapes {unbound} exist but are not bound")
+                print(f"Blendshapes {mismatched} are bound but do not exist")
             # Set the updated blendshapes for this mesh.
             meshBinding.GetBlendShapesAttr().Set(existing_blendshapes)
-            num_blendshapes += 1
-    return [target_name] * num_blendshapes
 
 @dataclass
 class MeshData:
