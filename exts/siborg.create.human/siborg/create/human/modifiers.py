@@ -56,6 +56,9 @@ class Modifier:
         self.max_val = 1
         self.default_val = 0
 
+        self.min_blend = None
+        self.max_blend = None
+
         if "min" in modifier_data and "max" in modifier_data:
             # Some modifiers adress two blendshapes in either direction
             self.min_blend = Tf.MakeValidIdentifier(f"{self.blend}_{modifier_data['min']}")
