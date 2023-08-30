@@ -318,7 +318,7 @@ def add_to_scene():
 
         return stage.GetPrimAtPath(prim_path)
 
-def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], time = 1):
+def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], time = 0):
     """Edit the blendshapes of a human animation
 
     Parameters
