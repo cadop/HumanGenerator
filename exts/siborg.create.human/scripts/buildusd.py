@@ -82,8 +82,7 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
     stage : Usd.Stage
         The stage to import the blendshape onto.
     prim : Usd.Prim
-        The prim to import the blendshape onto. Contains multiple meshes. Indices are not shared between meshes,
-        so we need to create a separate blendshape for each mesh and keep track of any index offsets.
+        The prim to import the blendshape onto. Contains multiple meshes.
     path : str
         Path to the target file.
     """
