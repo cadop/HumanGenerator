@@ -104,15 +104,12 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
     #     'ground': (19150, 19157)
     # }
 
-    # Get the group directory
-    group_dir = os.path.dirname(path)
-    target_name = Tf.MakeValidIdentifier(os.path.splitext(os.path.basename(path))[0])
-    # group_name = Tf.MakeValidIdentifier(os.path.basename(group_dir))
-    
-    # group = stage.DefinePrim(prim.GetPath().AppendChild(group_name))
-    # blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
-
-        # Load the target file
+    path_components = path.split(os.path.sep)[path.split(os.path.sep).index("targets")+1:-1]
+    group_name = Tf.MakeValidIdentifier(path_components[0])
+    target_basename = os.path.splitext(os.path.basename(path))[0]
+    prefix = "_".join(path_components[1:]) or ""
+    target_name = f"{prefix}_{target_basename}" if prefix else target_basename
+    target_name = Tf.MakeValidIdentifier(target_name)
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error")
@@ -138,7 +135,8 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
         if np.any(np.logical_and(changed_indices >= index_start, changed_indices < index_end)):
             print(f"{target_name} targets mesh {mesh.GetPath()}")
             # This mesh is affected by the target, so create a blendshape for it
-            blendshape = UsdSkel.BlendShape.Define(stage, mesh.GetPath().AppendChild(target_name))
+            group = stage.DefinePrim(mesh.GetPath().AppendChild(group_name))
+            blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
             indices = np.array(changed_indices)
             offsets = changed_offsets[np.isin(changed_indices, indices)]
             blendshape.CreateOffsetsAttr().Set(offsets)
