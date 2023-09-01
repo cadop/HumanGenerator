@@ -11,8 +11,6 @@ class Modifier:
 
     Attributes
     ----------
-    full_name: str
-        The original, full name of the modifier
     min: float, optional
         The minimum value for the parameter. By default 0
     max: float, optional
@@ -24,20 +22,16 @@ class Modifier:
 
         self.group = group
 
-        # TODO: Separate class for target modifiers and macrovar modifiers
-
-        # Blendshapes are named based on the modifier name
-        self.blend = Tf.MakeValidIdentifier(modifier_data["target"])
         
         self.max_val = 1
         self.min_val = 0
         self.default_val = 0
-
+        self.macrovar = None
         self.value_model = ui.SimpleFloatModel(self.default_val)
 
         self.fn = self.get_modifier_fn()
 
-    def get_modifier_fn(self, model: ui.SimpleFloatModel) -> Callable:
+    def get_modifier_fn(self) -> Callable:
         """Return a method to list modified blendshapes and their weights
 
         Parameters
@@ -82,7 +76,8 @@ class TargetModifier(Modifier):
         else:
             print(f"No target for modifier {self.full_name}. Is this a macrovar modifier?")
             return
-        
+        # Blendshapes are named based on the modifier name
+        self.blend = Tf.MakeValidIdentifier(modifier_data["target"])        
         self.min_blend = None
         self.max_blend = None
         if "min" in modifier_data and "max" in modifier_data:
@@ -99,7 +94,7 @@ class TargetModifier(Modifier):
         super().__init__(group, modifier_data)
 
     def get_modifier_fn(self) -> dict:
-        def modifier_fn(self, model: ui.SimpleFloatModel) -> dict:
+        def modifier_fn(model: ui.SimpleFloatModel) -> dict:
             """Simple range-based function for target modifiers"""
             value = model.get_value_as_float()
             if self.max_blend and self.min_blend:
@@ -118,33 +113,56 @@ class MacroModifier(Modifier):
     ----------
     macrovar: str
         The name of the macrovar to use
+    label: str
+        The label to use for the modifier
     """
     _macro_map = None
     
-    @property
-    def macro_map():
-        if not MacroModifier._macro_map:
+    @classmethod
+    def get_macro_map(cls):
+        if not cls._macro_map:
             manager = omni.kit.app.get_app().get_extension_manager()
             ext_id = manager.get_enabled_extension_id("siborg.create.human")
             ext_path = manager.get_extension_path(ext_id)
             path = os.path.join(ext_path, "data", "modifiers", "macro.json")
             with open(path, "r") as f:
-                MacroModifier._macro_map = json.load(f)
-        return MacroModifier._macro_map
+                cls._macro_map = json.load(f)
+        return cls._macro_map
 
     def __init__(self, group, modifier_data: dict):
         if "macrovar" not in modifier_data:
             print(f"No macrovar for modifier {self.full_name}. Is this a target modifier?")
             return
-        self.macrovar = modifier_data["macrovar"]
+        self.image = None
 
         # Initialize superclass after checking data (prevent unused value model and fn)
         super().__init__(group, modifier_data)
+        self.macrovar = modifier_data["macrovar"]
+        self.label = self.macrovar.capitalize()
+
     def get_modifier_fn(self) -> Callable:
-        def modifier_fn(self, model: ui.SimpleFloatModel, macrovars: Dict{str, float}) -> dict:
+        def modifier_fn(model: ui.SimpleFloatModel, macro_variables: Dict[str, float]) -> dict:
             """Calculate blendshape weights based on modifier value and all macrovars"""
             value = model.get_value_as_float()
-            
+            macro_variables[self.macrovar] = value
+            parsed_targets = {}
+            # Parse the macrotargets section
+            for macro_var, details in self.get_macro_map()['macrotargets'].items():
+                if macro_var in macro_variables:
+                    value = macro_variables[macro_var]
+                    for part in details['parts']:
+                        if part['lowest'] <= value <= part['highest']:
+                            # Construct target name
+                            target_name = f"{macro_var}-{part['low']}.target" if value <= (part['highest'] + part['lowest']) / 2 else f"{macro_var}-{part['high']}.target"
+
+                            # Calculate weight using linear interpolation
+                            weight = interpolate(value, part['lowest'], 0, part['highest'], 1)
+
+                            parsed_targets[target_name] = weight
+                            break
+            return parsed_targets
+        return modifier_fn
+
 
 def interpolate(x, x1, y1, x2, y2):
     return y1 + (x - x1) * (y2 - y1) / (x2 - x1)
@@ -168,16 +186,13 @@ def parse_modifiers():
             for group in data:
                 groupname = group["group"].capitalize()
                 for modifier_data in group["modifiers"]:
-                    if "target" not in modifier_data:
-                        # TODO Handle macrovar modifiers
-                        continue
-                    # Create an object for the modifier
-                    modifier = Modifier(groupname, modifier_data)
+                    if "target" in modifier_data:
+                        modifier = TargetModifier(groupname, modifier_data)
+                    elif "macrovar" in modifier_data:
+                        modifier = MacroModifier(groupname, modifier_data)
                     # Add the modifier to the group
                     groups[groupname].append(modifier)
                     # Add the modifier to the list of all modifiers (for tracking changes)
                     modifiers.append(modifier)
 
     return groups, modifiers
-
-def parse_macro_json

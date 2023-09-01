@@ -359,6 +359,38 @@ def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], ti
     animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
 
 
+def read_macrovars(human: Usd.Prim) -> Dict[str, float]:
+    """Load the macrovars from a human prim
+
+    Parameters
+    ----------
+    human : Usd.Prim
+        The human prim
+
+    Returns
+    -------
+    Dict[str, float]
+        A dictionary of macrovar names to values
+    """
+    # Get the macrovars
+    customdata = human.GetPrim().GetCustomData()
+    macrovars = customdata.get("macrovars")
+    return macrovars or {}
+
+
+def write_macrovars(human: Usd.Prim, macrovars: Dict[str, float]):
+    """Write the macrovars to a human prim
+
+    Parameters
+    ----------
+    human : Usd.Prim
+        The human prim
+    macrovars : Dict[str, float]
+        A dictionary of macrovar names to values
+    """
+    # Write the macrovars
+    human.SetCustomDataByKey("macrovars", macrovars)
+
 # def create_skeleton(bones: OrderedDict, offset: List[float] = [0, 0, 0]):
 #     """Create a USD skeleton from a Skeleton object. Traverse the skeleton data
 #     and build a skeleton tree.

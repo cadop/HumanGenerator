@@ -146,6 +146,7 @@ class ModifierUI(ui.Frame):
         self.set_build_fn(self._build_widget)
         self.animation_path = None
         self.human_prim = None
+        self.macrovars = []
         
     def _build_widget(self):
         with self:
@@ -154,12 +155,25 @@ class ModifierUI(ui.Frame):
                     for g, m in self.groups.items():
                         self.group_widgets.append(SliderGroup(g, m))
         for m in self.mods:
-            callback = self.create_callback(self.animation_path, m.fn)
+            callback = self.create_callback(self.animation_path, m)
             m.value_model.add_value_changed_fn(callback)
 
-    def create_callback(self, animation_path, fn):
+    def create_callback(self, animation_path, m: Modifier):
+        """Callback for when a modifier value is changed.
+        
+        Parameters
+        ----------
+        animation_path : str
+            Path to the animation to edit
+        m : Modifier
+            Modifier whose value was changed. Used to determine which blendshape(s) to edit"""
         def callback(v):
-            mhusd.edit_blendshapes(animation_path, fn(v))
+            # If the modifier has a macrovar, we need to edit the macrovar
+            if m.macrovar:
+                mhusd.edit_blendshapes(animation_path, m.fn(v, self.macrovars))
+            else:
+                mhusd.edit_blendshapes(animation_path, m.fn(v))
+
         return callback
 
     def reset(self):
@@ -181,6 +195,8 @@ class ModifierUI(ui.Frame):
 
         # Make the prim exists
         if not human_prim.IsValid():
+            self.human_prim = None
+            self.macrovars = []
             return
 
         bindingAPI = UsdSkel.BindingAPI(human_prim)
@@ -192,6 +208,7 @@ class ModifierUI(ui.Frame):
         self.animation_path = bindingAPI.GetAnimationSourceRel().GetTargets()[0]
 
         self.human_prim = human_prim
+        self.macrovars = mhusd.read_macrovars(human_prim)
         
         # # Reset the UI to defaults
         # self.reset()
