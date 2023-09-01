@@ -12,9 +12,7 @@ _*/
 /app
 
 /mh
-.vscode/extensions.json
-.vscode/launch.json
-.vscode/settings.json
+.vscode/
 tools/*
 link_app.bat
 link_app.sh
