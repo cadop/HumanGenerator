@@ -32,6 +32,11 @@ exts/siborg.create.human/data/*
 !exts/siborg.create.human/data/skins/
 !exts/siborg.create.human/data/human_base.usd
 
+!exts/siborg.create.human/data/modifiers/
+exts/siborg.create.human/data/modifiers/*
+!exts/siborg.create.human/data/modifiers/*_modifiers.json
+
+
 !exts/siborg.create.human/data/clothes/
 exts/siborg.create.human/data/clothes/*
 
