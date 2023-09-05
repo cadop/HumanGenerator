@@ -1,10 +1,8 @@
-from pxr import Usd, Gf, UsdSkel
-from typing import List
+from pxr import Usd, Gf, UsdSkel, UsdGeom, Sdf
+from typing import List, Dict
 import numpy as np
-from .shared import sanitize
-from .mhcaller import skeleton as mhskel
-from .mhcaller import MHCaller
-
+import json
+import os
 
 class Bone:
     """Bone which constitutes skeletons to be imported using the HumanGenerator
@@ -34,13 +32,15 @@ class Bone:
         tail : str
             Name of the tail joint
         """
-        self._mh_bone = mhskel.Bone(skel, name, parent, head, tail)
 
         self.name = name
         self.skeleton = skel
 
         self.headJoint = head
         self.tailJoint = tail
+
+        self.parent = parent
+        self.children = []
 
     def getRelativeMatrix(self, offset: List[float] = [0, 0, 0]) -> np.ndarray:
         """_summary_
@@ -55,7 +55,7 @@ class Bone:
         np.ndarray
             _description_
         """
-        return self._mh_bone.getRelativeMatrix(offset)
+        raise NotImplementedError
 
     def getRestMatrix(self, offset: List[float] = [0, 0, 0]) -> np.ndarray:
         """_summary_
@@ -70,7 +70,7 @@ class Bone:
         np.ndarray
             _description_
         """
-        return self._mh_bone.getRestMatrix(offset)
+        raise NotImplementedError
 
     def getBindMatrix(self, offset: List[float] = [0, 0, 0]) -> np.ndarray:
         """_summary_
@@ -85,7 +85,7 @@ class Bone:
         np.ndarray
             _description_
         """
-        return self._mh_bone.getBindMatrix(offset)[1]
+        raise NotImplementedError
 
 
 class Skeleton:
@@ -106,6 +106,8 @@ class Skeleton:
         List of joint names in USD (breadth-first traversal) order. It is
         important that joints be ordered this way so that their indices can be
         used for skinning / weighting.
+    joints : dict of: str -> Bone
+        Dictionary of joint names to their Bone instances
     """
 
     def __init__(self, name="Skeleton") -> None:
@@ -116,18 +118,42 @@ class Skeleton:
         name : str, optional
             Name of the skeleton, by default "Skeleton"
         """
-
-        # Set the skeleton to the makehuman default
-        _mh_skeleton = MHCaller.human.getSkeleton()
         
         self._rel_transforms = []
         self._bind_transforms = []
 
-        self.roots = _mh_skeleton.roots
         self.joint_paths = []
         self.joint_names = []
+        self.root = None
 
         self.name = name
+
+    def load_skel_json(self, skeleton_json: str, weights_json: str, stage: Usd.Stage = None, usd_path: Sdf.Path = None) -> None:
+        """Load a skeleton from a JSON file
+        
+        Parameters
+        ----------
+        json_path : str
+            Path to the JSON file
+        """
+        with open(skeleton_json, 'r') as f:
+            skel_data = json.load(f)
+        with open(weights_json, 'r') as f:
+            weights_data = json.load(f)
+
+        self.root = self.build_tree("", skel_data, weights_data)
+        self.root
+
+    def build_tree(self, node_name, skel_data, weight_data):
+        """Recursively build the tree structure and integrate vertex weights."""
+        children = {name: item for name, item in skel_data.items() if item["parent"] == node_name}
+        subtree = {}
+        for child_name in children:
+            subtree[child_name] = {
+                "children": self.build_tree(child_name, skel_data, weight_data),
+                "vertex_weights": weight_data.get(child_name, [])  # Get vertex weights if available, else an empty list
+            }
+        return subtree
 
     def addBone(self, name: str, parent: str, head: str, tail: str) -> Bone:
         """Add a new bone to the Skeleton
@@ -149,10 +175,7 @@ class Skeleton:
             The bone which has been added to the skeleton
         """
         _bone = Bone(self, name, parent, head, tail)
-        # HACK Bone() creates a new Bone for _mh_bone by default. How can we
-        # avoid doing this twice without revealing it to the user?
-        _bone._mh_bone = self._mh_skeleton.addBone(name, parent, head, tail)
-        return _bone
+        self.joints[parent].children.append(_bone)
 
     def add_to_stage(self, stage: Usd.Stage, skel_root_path: str, offset: List[float] = [0, 0, 0], new_root_bone: bool = False):
         """Adds the skeleton to the USD stage
@@ -320,8 +343,6 @@ class Skeleton:
         UsdSkel.Skeleton
             The updated skeleton in USD
         """
-        # Get the skeleton from makehuman
-        _mh_skeleton = MHCaller.human.getSkeleton()
 
         # Clear out any existing data
         self._rel_transforms = []
@@ -329,8 +350,12 @@ class Skeleton:
         self.joint_paths = []
         self.joint_names = []
 
-        # Get the root bone(s) of the skeleton
-        self.roots = _mh_skeleton.roots
-
         # Overwrite the skeleton in the stage with the new skeleton
         return self.add_to_stage(stage, skel_root_path, offset)
+
+
+if __name__ == "__main__":
+    skeleton = Skeleton()
+    ext_path = os.path.dirname(os.path.abspath(__file__))
+    rig_path = os.path.join(ext_path, "data","rigs","standard")
+    skeleton.load_skel_json(os.path.join(rig_path, "rig.default.json"), os.path.join(rig_path, "weights.default.json"))
