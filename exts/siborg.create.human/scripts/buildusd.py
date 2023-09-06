@@ -6,6 +6,7 @@ import numpy as np
 import warnings
 from dataclasses import dataclass
 from typing import List
+import json
 
 def make_human():
 
@@ -24,10 +25,7 @@ def make_human():
     skel_root = UsdSkel.Root.Define(stage, rootPath)
     # Add custom data to the prim by key, designating the prim is a human
     skel_root.GetPrim().SetCustomDataByKey("human", True)
-    # Define a Skeleton, and associate with root.
-    skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild("skeleton"))
-    rootBinding = UsdSkel.BindingAPI.Apply(skel_root.GetPrim())
-    rootBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
+    
 
     # Load the base mesh from a file
     ext_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,42 +34,140 @@ def make_human():
     for m in meshes:
         create_geom(stage, rootPath.AppendChild(m.name), m)
 
-    prim = stage.GetPrimAtPath("/Human/skel_root")
+    rig = load_skel_json(os.path.join(ext_path, "data","rigs","standard","default"))
+    skeleton = create_skeleton(stage, skel_root, rig)
 
-    # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets")
-    for dirpath, _, filenames in os.walk(targets_dir):
-        for filename in filenames:
-            # Skip non-target files
-            if not filename.endswith(".target"):
-                continue
-            print(f"Importing {filename}")
-            mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
+    # # Traverse the MakeHuman targets directory
+    # targets_dir = os.path.join(ext_path, "data", "targets")
+    # for dirpath, _, filenames in os.walk(targets_dir):
+    #     for filename in filenames:
+    #         # Skip non-target files
+    #         if not filename.endswith(".target"):
+    #             continue
+    #         print(f"Importing {filename}")
+    #         mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
 
-    # Traverse all meshes and create a list of the blendshape target names
-    target_names = []
-    for mesh in [m for m in prim.GetChildren() if m.IsA(UsdGeom.Mesh)]:
-        meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
-        blendshapes = meshBinding.GetBlendShapesAttr().Get()
-        if blendshapes:
-            print(f"Mesh {mesh.GetPath()} has blendshapes {blendshapes}\n")
-            target_names.extend(blendshapes)
+    # # Traverse all meshes and create a list of the blendshape target names
+    # target_names = []
+    # for mesh in [m for m in prim.GetChildren() if m.IsA(UsdGeom.Mesh)]:
+    #     meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
+    #     blendshapes = meshBinding.GetBlendShapesAttr().Get()
+    #     if blendshapes:
+    #         print(f"Mesh {mesh.GetPath()} has blendshapes {blendshapes}\n")
+    #         target_names.extend(blendshapes)
 
-    # Define an Animation (with blend shape weight time-samples).
-    animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
-    animation.CreateBlendShapesAttr().Set(target_names)
-    weightsAttr = animation.CreateBlendShapeWeightsAttr()
-    weightsAttr.Set(np.zeros(len(target_names)), 0)
+    # # Define an Animation (with blend shape weight time-samples).
+    # animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
+    # animation.CreateBlendShapesAttr().Set(target_names)
+    # weightsAttr = animation.CreateBlendShapeWeightsAttr()
+    # weightsAttr.Set(np.zeros(len(target_names)), 0)
 
-    # Bind Skeleton to animation.
-    skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
-    anim_path=animation.GetPrim().GetPath()
-    skeletonBinding.CreateAnimationSourceRel().AddTarget(anim_path)
+    # # Bind Skeleton to animation.
+    # skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
+    # anim_path=animation.GetPrim().GetPath()
+    # skeletonBinding.CreateAnimationSourceRel().AddTarget(anim_path)
 
     # Save the stage to a file
     save_path = os.path.join(ext_path, "data", "human_base.usd")
     print(f"Saving to {save_path}")
     stage.Export(save_path)
+
+
+def create_skeleton(stage, skel_root, rig):
+    # Define a Skeleton, and associate with root.
+    rootPath = skel_root.GetPath()
+    skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild("skeleton"))
+    rootBinding = UsdSkel.BindingAPI.Apply(skel_root.GetPrim())
+    rootBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
+
+    visited = []  # List to keep track of visited bones.
+    queue = []  # Initialize a queue
+    path_queue = []  # Keep track of paths in a parallel queue
+    joint_paths = []  # Keep track of joint paths
+    joint_names = []  # Keep track of joint names
+    bind_xforms = []  # Bind xforms are in world space
+    rest_xforms = []  # Rest xforms are in local space
+
+    root = ["root", rig["root"]]
+    queue.append(root)
+    path_queue.append("root/")
+    joint_names.append("root")
+    bind_xforms.append(Gf.Matrix4d(np.eye(4)))
+    rest_xforms.append(Gf.Matrix4d(np.eye(4)))
+
+    # Traverse skeleton (breadth-first) and store joint data
+    while queue:
+        v = queue.pop(0)
+        path = path_queue.pop(0)
+        for neighbor in v[1]["children"].items():
+            if neighbor[0] not in visited:
+                visited.append(neighbor[0])
+                queue.append(neighbor)
+                child_path = path+Tf.MakeValidIdentifier(neighbor[0])+"/"
+                path_queue.append(child_path)
+                joint_paths.append(child_path)
+                joint_names.append(neighbor[0])
+                head = neighbor[1]["head"]["default_position"]
+                tail = neighbor[1]["tail"]["default_position"]
+                roll = neighbor[1]["roll"]
+                rest_xform = compute_rest_transform(head, tail, roll)
+                rest_xforms.append(Gf.Matrix4d(rest_xform))
+
+    joint_parents = {joint_name: data.get('parent', None) for joint_name, data in rig.items()}
+    bind_xforms_list = compute_world_transforms(rest_xforms, joint_names, joint_parents)
+
+    skeleton.CreateBindTransformsAttr(bind_xforms_list)
+    skeleton.CreateRestTransformsAttr(rest_xforms)
+    skeleton.CreateJointNamesAttr(joint_names)
+    skeleton.CreateJointsAttr(joint_paths)
+    return skeleton
+
+
+def compute_world_transforms(local_transforms, joint_names, parent_data):
+    
+    local_transforms_dict = {name: transform for name, transform in zip(joint_names, local_transforms)}
+    world_transforms_dict = compute_world_transforms(local_transforms_dict, joint_names, parent_data)
+    
+    # Convert back to list format in the order of joint_names
+    world_transforms = [world_transforms_dict[name] for name in joint_names]
+    
+    return world_transforms
+
+
+def compute_rest_transform(head, tail, roll):
+    # Compute the primary axis direction (bone's y-axis)
+    y_axis = np.array(tail) - np.array(head)
+    bone_length = np.linalg.norm(y_axis)
+    y_axis = y_axis / bone_length if bone_length > 0 else np.array([0, 1, 0])
+
+    # Compute an arbitrary orthogonal vector to y_axis for roll computation
+    if abs(y_axis[0]) < abs(y_axis[2]):
+        tmp_vec = np.cross(y_axis, [1, 0, 0])
+    else:
+        tmp_vec = np.cross(y_axis, [0, 0, 1])
+    x_axis = np.cross(y_axis, tmp_vec)
+    x_axis = x_axis / np.linalg.norm(x_axis)
+
+    # Compute z-axis using cross product
+    z_axis = np.cross(x_axis, y_axis)
+
+    # Apply roll
+    cos_roll = np.cos(roll)
+    sin_roll = np.sin(roll)
+    x_axis_new = cos_roll * x_axis - sin_roll * z_axis
+    z_axis_new = sin_roll * x_axis + cos_roll * z_axis
+    x_axis, z_axis = x_axis_new, z_axis_new
+
+    # Construct the 3x3 rotation matrix
+    rotation_matrix = np.array([x_axis, y_axis, z_axis]).T
+
+    # Construct the 3x4 bind transform
+    bind_transform = np.zeros((3, 4))
+    bind_transform[:, :3] = rotation_matrix
+    bind_transform[:, 3] = head
+
+    # Add the last row
+    return np.vstack([bind_transform, [0, 0, 0, 1]])
 
 
 def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
@@ -302,6 +398,38 @@ def load_obj(filename, nPerFace=None):
 
     return mesh_data
 
+def load_skel_json(json_path_base: str, stage: Usd.Stage = None, usd_path: Sdf.Path = None) -> None:
+    """Load a skeleton from JSON files
+
+    Parameters
+    ----------
+    json_path_base : str
+        Basename of the skeleton json file. The rig will be "{/path/to/}rig.{json_path_base}.json" and the weights will be
+        "{/path/to/}weights.{json_path_base}.json"
+    """
+
+    dirname = os.path.dirname(json_path_base)
+    basename = os.path.basename(json_path_base)
+    rig_json = os.path.join(dirname, f"rig.{basename}.json")
+    weights_json = os.path.join(dirname, f"weights.{basename}.json")
+
+    with open(rig_json, 'r') as f:
+        skel_data = json.load(f)
+    with open(weights_json, 'r') as f:
+        weights_data = json.load(f)
+        weights_data = weights_data["weights"]
+
+    return build_tree("", skel_data, weights_data)
+
+def build_tree(node_name, skel_data, weight_data):
+    """Recursively build the tree structure and integrate vertex weights."""
+    children = {name: item for name, item in skel_data.items() if item["parent"] == node_name}
+    subtree = {}
+    for child_name in children:
+        subtree[child_name] = children[child_name]
+        subtree[child_name]["children"] = build_tree(child_name, skel_data, weight_data)
+        subtree[child_name]["vertex_weights"] = weight_data.get(child_name, [])  # Get vertex weights if available, else an empty list
+    return subtree
 # def load_obj(filename)
 #     # Read the file
 #     with open(filename, 'r') as f: data = f.readlines()
