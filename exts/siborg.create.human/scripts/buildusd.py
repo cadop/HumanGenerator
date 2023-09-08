@@ -107,8 +107,8 @@ def create_skeleton(stage, skel_root, rig):
                 tail = neighbor[1]["tail"]["default_position"]
                 roll = neighbor[1]["roll"]
                 parent_idx = joint_names.index(v[0])
-                parent_bind_xform = bind_xforms[parent_idx]
-                rest_xform, bind_xform = compute_transforms(head, tail, roll, parent_bind_xform)
+                parent_head = v[1]["head"]["default_position"]
+                rest_xform, bind_xform = compute_transforms(head, tail, roll, parent_head)
                 rest_xforms.append(Gf.Matrix4d(rest_xform))
                 bind_xforms.append(Gf.Matrix4d(bind_xform))
 
@@ -121,22 +121,40 @@ def create_skeleton(stage, skel_root, rig):
 
 
 
-def compute_transforms(head, tail, roll, parent_bind_xform):
+def compute_transforms(head, tail, roll, parent_head=None):
+    # Bind transform is in world space
+    bind_transform = np.eye(4)
+    bind_transform[:3, 3] = np.array(head)
+
+    # If a parent head is provided, adjust the head to be in local space.
+    if parent_head is not None:
+        local_head = np.array(head) - np.array(parent_head)
+    else:
+        local_head = np.array(head)
+    rest_transform = np.eye(4)
+    rest_transform[:3, 3] = local_head
+
     # Compute the primary axis direction (bone's y-axis)
     y_axis = np.array(tail) - np.array(head)
-    bone_length = np.linalg.norm(y_axis)
-    y_axis = y_axis / bone_length if bone_length > 0 else np.array([0, 1, 0])
+    # y_axis = np.array(tail) - np.array(head)
+    y_axis = y_axis / np.linalg.norm(y_axis)
 
-    # Compute an arbitrary orthogonal vector to y_axis for roll computation
-    if abs(y_axis[0]) < abs(y_axis[2]):
-        tmp_vec = np.cross(y_axis, [1, 0, 0])
-    else:
-        tmp_vec = np.cross(y_axis, [0, 0, 1])
-    x_axis = np.cross(y_axis, tmp_vec)
+    # 2. Determine a temporary Z-axis.
+    world_side = np.array([1, 0, 0])
+    z_axis = np.cross(y_axis, world_side)
+
+    # Check if vectors' magnitudes are too small
+    if np.linalg.norm(z_axis) < 1e-8:
+        # If the y-axis is almost aligned with world_side, use a different world vector
+        world_side = np.array([0, 0, 1])
+        z_axis = np.cross(y_axis, world_side)
+
+    # Compute x-axis using cross product
+    x_axis = np.cross(y_axis, z_axis)
+
+    # Normalize axes
     x_axis = x_axis / np.linalg.norm(x_axis)
-
-    # Compute z-axis using cross product
-    z_axis = np.cross(x_axis, y_axis)
+    z_axis = z_axis / np.linalg.norm(z_axis)
 
     # Apply roll
     cos_roll = np.cos(roll)
@@ -146,19 +164,12 @@ def compute_transforms(head, tail, roll, parent_bind_xform):
     x_axis, z_axis = x_axis_new, z_axis_new
 
     # Construct the 3x3 rotation matrix
-    rotation_matrix = np.array([x_axis, y_axis, z_axis]).T
+    rotation_matrix = np.array([x_axis, y_axis, z_axis])
 
-    # Construct the 3x4 rest transform
-    rest_transform = np.zeros((3, 4))
-    rest_transform[:, :3] = rotation_matrix
-    rest_transform[:, 3] = head
+    rest_transform[:3, :3] = rotation_matrix
+    bind_transform[:3, :3] = rotation_matrix
 
-    # Convert to 4x4 matrices and row-major order
-    rest_transform = np.vstack([rest_transform, [0, 0, 0, 1]])
-    rest_transform = np.transpose(rest_transform)
-    bind_transform = np.dot(parent_bind_xform, rest_transform)
-
-    return rest_transform, bind_transform
+    return rest_transform.T, bind_transform
 
 
 def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
