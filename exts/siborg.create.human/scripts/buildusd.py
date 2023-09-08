@@ -90,8 +90,9 @@ def create_skeleton(stage, skel_root, rig):
 
     root = ["root", rig["root"]]
     queue.append(root)
-    path_queue.append("root/")
+    path_queue.append("root")
     joint_names.append("root")
+    joint_paths.append("root")
     bind_xforms.append(Gf.Matrix4d(np.eye(4)))
     rest_xforms.append(Gf.Matrix4d(np.eye(4)))
 
@@ -103,7 +104,7 @@ def create_skeleton(stage, skel_root, rig):
             if neighbor[0] not in visited:
                 visited.append(neighbor[0])
                 queue.append(neighbor)
-                child_path = path+Tf.MakeValidIdentifier(neighbor[0])+"/"
+                child_path = path+"/"+Tf.MakeValidIdentifier(neighbor[0])
                 path_queue.append(child_path)
                 joint_paths.append(child_path)
                 joint_names.append(neighbor[0])
