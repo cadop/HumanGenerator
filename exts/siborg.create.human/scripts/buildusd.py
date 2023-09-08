@@ -134,40 +134,6 @@ def compute_transforms(head, tail, roll, parent_head=None):
     rest_transform = np.eye(4)
     rest_transform[:3, 3] = local_head
 
-    # Compute the primary axis direction (bone's y-axis)
-    y_axis = np.array(tail) - np.array(head)
-    # y_axis = np.array(tail) - np.array(head)
-    y_axis = y_axis / np.linalg.norm(y_axis)
-
-    # 2. Determine a temporary Z-axis.
-    world_side = np.array([1, 0, 0])
-    z_axis = np.cross(y_axis, world_side)
-
-    # Check if vectors' magnitudes are too small
-    if np.linalg.norm(z_axis) < 1e-8:
-        # If the y-axis is almost aligned with world_side, use a different world vector
-        world_side = np.array([0, 0, 1])
-        z_axis = np.cross(y_axis, world_side)
-
-    # Compute x-axis using cross product
-    x_axis = np.cross(y_axis, z_axis)
-
-    # Normalize axes
-    x_axis = x_axis / np.linalg.norm(x_axis)
-    z_axis = z_axis / np.linalg.norm(z_axis)
-
-    # Apply roll
-    cos_roll = np.cos(roll)
-    sin_roll = np.sin(roll)
-    x_axis = cos_roll * x_axis - sin_roll * z_axis
-    z_axis = sin_roll * x_axis + cos_roll * z_axis
-
-    # Construct the 3x3 rotation matrix
-    rotation_matrix = np.array([x_axis, y_axis, z_axis])
-
-    rest_transform[:3, :3] = rotation_matrix
-    bind_transform[:3, :3] = rotation_matrix
-
     return rest_transform.T, bind_transform
 
 
