@@ -159,9 +159,8 @@ def compute_transforms(head, tail, roll, parent_head=None):
     # Apply roll
     cos_roll = np.cos(roll)
     sin_roll = np.sin(roll)
-    x_axis_new = cos_roll * x_axis - sin_roll * z_axis
-    z_axis_new = sin_roll * x_axis + cos_roll * z_axis
-    x_axis, z_axis = x_axis_new, z_axis_new
+    x_axis = cos_roll * x_axis - sin_roll * z_axis
+    z_axis = sin_roll * x_axis + cos_roll * z_axis
 
     # Construct the 3x3 rotation matrix
     rotation_matrix = np.array([x_axis, y_axis, z_axis])
