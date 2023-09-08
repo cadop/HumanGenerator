@@ -80,21 +80,16 @@ def create_skeleton(stage, skel_root, rig):
     rootBinding = UsdSkel.BindingAPI.Apply(skel_root.GetPrim())
     rootBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
 
-    visited = []  # List to keep track of visited bones.
-    queue = []  # Initialize a queue
-    path_queue = []  # Keep track of paths in a parallel queue
-    joint_paths = []  # Keep track of joint paths
-    joint_names = []  # Keep track of joint names
-    bind_xforms = []  # Bind xforms are in world space
-    rest_xforms = []  # Rest xforms are in local space
+    # Determine the root, which has no parent. If there are multiple roots, use the last one.
+    root = [name for name, item in rig.items() if item["parent"] == ""][-1]
 
-    root = ["root", rig["root"]]
-    queue.append(root)
-    path_queue.append("root")
-    joint_names.append("root")
-    joint_paths.append("root")
-    bind_xforms.append(Gf.Matrix4d(np.eye(4)))
-    rest_xforms.append(Gf.Matrix4d(np.eye(4)))
+    visited = []  # List to keep track of visited bones.
+    queue = [[root, rig[root]]]  # Initialize a queue
+    path_queue = [root]  # Keep track of paths in a parallel queue
+    joint_paths = [root]  # Keep track of joint paths
+    joint_names = [root]  # Keep track of joint names
+    bind_xforms = [Gf.Matrix4d(np.eye(4))]  # Bind xforms are in world space
+    rest_xforms = [Gf.Matrix4d(np.eye(4))]  # Rest xforms are in local space
 
     # Traverse skeleton (breadth-first) and store joint data
     while queue:
