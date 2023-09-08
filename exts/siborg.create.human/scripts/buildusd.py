@@ -111,31 +111,22 @@ def create_skeleton(stage, skel_root, rig):
                 head = neighbor[1]["head"]["default_position"]
                 tail = neighbor[1]["tail"]["default_position"]
                 roll = neighbor[1]["roll"]
-                rest_xform = compute_rest_transform(head, tail, roll)
+                parent_idx = joint_names.index(v[0])
+                parent_bind_xform = bind_xforms[parent_idx]
+                rest_xform, bind_xform = compute_transforms(head, tail, roll, parent_bind_xform)
                 rest_xforms.append(Gf.Matrix4d(rest_xform))
+                bind_xforms.append(Gf.Matrix4d(bind_xform))
 
-    joint_parents = {joint_name: data.get('parent', None) for joint_name, data in rig.items()}
-    bind_xforms_list = compute_world_transforms(rest_xforms, joint_names, joint_parents)
 
-    skeleton.CreateBindTransformsAttr(bind_xforms_list)
-    skeleton.CreateRestTransformsAttr(rest_xforms)
     skeleton.CreateJointNamesAttr(joint_names)
     skeleton.CreateJointsAttr(joint_paths)
+    skeleton.CreateBindTransformsAttr(bind_xforms)
+    skeleton.CreateRestTransformsAttr(rest_xforms)
     return skeleton
 
 
-def compute_world_transforms(local_transforms, joint_names, parent_data):
-    
-    local_transforms_dict = {name: transform for name, transform in zip(joint_names, local_transforms)}
-    world_transforms_dict = compute_world_transforms(local_transforms_dict, joint_names, parent_data)
-    
-    # Convert back to list format in the order of joint_names
-    world_transforms = [world_transforms_dict[name] for name in joint_names]
-    
-    return world_transforms
 
-
-def compute_rest_transform(head, tail, roll):
+def compute_transforms(head, tail, roll, parent_bind_xform):
     # Compute the primary axis direction (bone's y-axis)
     y_axis = np.array(tail) - np.array(head)
     bone_length = np.linalg.norm(y_axis)
@@ -162,13 +153,17 @@ def compute_rest_transform(head, tail, roll):
     # Construct the 3x3 rotation matrix
     rotation_matrix = np.array([x_axis, y_axis, z_axis]).T
 
-    # Construct the 3x4 bind transform
-    bind_transform = np.zeros((3, 4))
-    bind_transform[:, :3] = rotation_matrix
-    bind_transform[:, 3] = head
+    # Construct the 3x4 rest transform
+    rest_transform = np.zeros((3, 4))
+    rest_transform[:, :3] = rotation_matrix
+    rest_transform[:, 3] = head
 
-    # Add the last row
-    return np.vstack([bind_transform, [0, 0, 0, 1]])
+    # Convert to 4x4 matrices and row-major order
+    rest_transform = np.vstack([rest_transform, [0, 0, 0, 1]])
+    rest_transform = np.transpose(rest_transform)
+    bind_transform = np.dot(parent_bind_xform, rest_transform)
+
+    return rest_transform, bind_transform
 
 
 def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
