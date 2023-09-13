@@ -96,8 +96,8 @@ def create_skeleton(stage, skel_root, rig):
     head = rig[root]["head"]["default_position"]
     tail = rig[root]["tail"]["default_position"]
     root_rest_xform, root_bind_xform = compute_transforms(head)
-    root_rest_xform = np.dot(xform, root_rest_xform)
-    root_bind_xform = np.dot(xform, root_bind_xform)
+    root_rest_xform = np.dot(xform, root_rest_xform).T
+    root_bind_xform = np.dot(xform, root_bind_xform).T
 
     bind_xforms = [Gf.Matrix4d(root_bind_xform)]  # Bind xforms are in world space
     rest_xforms = [Gf.Matrix4d(root_rest_xform)]  # Rest xforms are in local space
