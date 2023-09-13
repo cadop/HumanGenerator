@@ -119,7 +119,7 @@ def create_skeleton(stage, skel_root, rig):
                 roll = neighbor[1]["roll"]
                 parent_idx = joint_names.index(v[0])
                 parent_head = v[1]["head"]["default_position"]
-                rest_xform, bind_xform = compute_transforms(head, tail, roll, parent_head)
+                rest_xform, bind_xform = compute_transforms(head, parent_head)
                 rest_xforms.append(Gf.Matrix4d(rest_xform))
                 bind_xforms.append(Gf.Matrix4d(bind_xform))
 
@@ -132,7 +132,7 @@ def create_skeleton(stage, skel_root, rig):
 
 
 
-def compute_transforms(head, tail, roll, parent_head=None):
+def compute_transforms(head, parent_head=None):
     # Bind transform is in world space
     bind_transform = np.eye(4)
     bind_transform[:3, 3] = np.array(head)
