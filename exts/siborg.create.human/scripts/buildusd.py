@@ -15,6 +15,9 @@ def make_human():
 
     # Stage must have a valid start time code for animation to work
     stage.SetStartTimeCode(1)
+    
+    # Set the units/scale
+    UsdGeom.SetStageMetersPerUnit(stage, 1.0)
 
     # Create a root prim
     root = stage.DefinePrim("/Human", "Xform")
@@ -37,6 +40,21 @@ def make_human():
     rig = load_skel_json(os.path.join(ext_path, "data","rigs","standard","default"))
     skeleton = create_skeleton(stage, skel_root, rig)
 
+    weights_json = os.path.join(ext_path, "data","rigs","standard","weights.default.json")
+    joint_indices, weights = vertices_to_weights(skeleton.GetJointNamesAttr().Get(), weights_json, skel_root.GetPrim().GetChildren()[0])
+    elements = joint_indices.shape[1]
+
+    rot_90_x = np.array([[1, 0, 0, 0],[0, 0, 1, 0],[0, -1, 0, 0],[0, 0, 0, 1]], dtype=np.float64)
+    scale_10 = np.array([[0.1, 0, 0, 0],[0, 0.1, 0, 0],[0, 0, 0.1, 0],[0, 0, 0, 1]], dtype=np.float64)
+    xform = rot_90_x @ scale_10
+    # bind the skeleton to each mesh
+    for mesh in [m for m in skel_root.GetPrim().GetChildren() if m.IsA(UsdGeom.Mesh)]:
+        meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
+        meshBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
+        meshBinding.CreateJointIndicesPrimvar(constant=False, elementSize=elements).Set(joint_indices)
+        meshBinding.CreateJointWeightsPrimvar(constant=False, elementSize=elements).Set(weights)
+        meshBinding.CreateGeomBindTransformAttr().Set(Gf.Matrix4d(xform))
+        
     # # Traverse the MakeHuman targets directory
     # targets_dir = os.path.join(ext_path, "data", "targets")
     # for dirpath, _, filenames in os.walk(targets_dir):
@@ -89,15 +107,9 @@ def create_skeleton(stage, skel_root, rig):
     joint_paths = [root]  # Keep track of joint paths
     joint_names = [root]  # Keep track of joint names
 
-    rot_90_x = np.array([[1, 0, 0, 0],[0, 0, 1, 0],[0, -1, 0, 0],[0, 0, 0, 1]], dtype=np.float64)
-    scale_10 = np.array([[10, 0, 0, 0],[0, 10, 0, 0],[0, 0, 10, 0],[0, 0, 0, 1]], dtype=np.float64)
-    xform = np.dot(rot_90_x, scale_10)
     # Compute the root transforms
     head = rig[root]["head"]["default_position"]
-    tail = rig[root]["tail"]["default_position"]
     root_rest_xform, root_bind_xform = compute_transforms(head)
-    root_rest_xform = np.dot(xform, root_rest_xform).T
-    root_bind_xform = np.dot(xform, root_bind_xform).T
 
     bind_xforms = [Gf.Matrix4d(root_bind_xform)]  # Bind xforms are in world space
     rest_xforms = [Gf.Matrix4d(root_rest_xform)]  # Rest xforms are in local space
@@ -145,7 +157,7 @@ def compute_transforms(head, parent_head=None):
     rest_transform = np.eye(4)
     rest_transform[:3, 3] = local_head
 
-    return rest_transform.T, bind_transform
+    return rest_transform.T, bind_transform.T
 
 
 def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
@@ -408,6 +420,32 @@ def build_tree(node_name, skel_data, weight_data):
         subtree[child_name]["children"] = build_tree(child_name, skel_data, weight_data)
         subtree[child_name]["vertex_weights"] = weight_data.get(child_name, [])  # Get vertex weights if available, else an empty list
     return subtree
+
+
+def vertices_to_weights(joint_names: List[str], weights_json: str, mesh: UsdGeom.Mesh):
+    """Returns, in vertex order, a list of joints and their weights for each vertex"""
+    vertices = mesh.GetAttribute("points").Get()
+    joint_names = list(joint_names)
+    with open(weights_json, 'r') as f:
+        weights_data = json.load(f)
+        weights_data = weights_data["weights"]
+    joint_indices = [[] for _ in range(len(vertices))]
+    joint_weights = [[] for _ in range(len(vertices))]
+    for joint in joint_names:
+        for vertex_data in weights_data[joint]:
+            idx = vertex_data[0]
+            weight = vertex_data[1]
+            joint_indices[idx].append(joint_names.index(joint))
+            joint_weights[idx].append(weight)
+    # Make the array rectangular
+    max_len = max(len(x) for x in joint_indices)
+    joint_indices = np.array([x + [0]*(max_len-len(x)) for x in joint_indices])
+    joint_weights = np.array([x + [0]*(max_len-len(x)) for x in joint_weights])
+    # Normalize the weights
+    joint_weights = joint_weights / np.sum(joint_weights, axis=1)[:, None]
+    return joint_indices, joint_weights
+
+
 # def load_obj(filename)
 #     # Read the file
 #     with open(filename, 'r') as f: data = f.readlines()
