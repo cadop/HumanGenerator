@@ -54,36 +54,37 @@ def make_human():
         meshBinding.CreateJointIndicesPrimvar(constant=False, elementSize=elements).Set(joint_indices)
         meshBinding.CreateJointWeightsPrimvar(constant=False, elementSize=elements).Set(weights)
         meshBinding.CreateGeomBindTransformAttr().Set(Gf.Matrix4d(xform))
-        
-    # # Traverse the MakeHuman targets directory
-    # targets_dir = os.path.join(ext_path, "data", "targets")
-    # for dirpath, _, filenames in os.walk(targets_dir):
-    #     for filename in filenames:
-    #         # Skip non-target files
-    #         if not filename.endswith(".target"):
-    #             continue
-    #         print(f"Importing {filename}")
-    #         mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
 
-    # # Traverse all meshes and create a list of the blendshape target names
-    # target_names = []
-    # for mesh in [m for m in prim.GetChildren() if m.IsA(UsdGeom.Mesh)]:
-    #     meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
-    #     blendshapes = meshBinding.GetBlendShapesAttr().Get()
-    #     if blendshapes:
-    #         print(f"Mesh {mesh.GetPath()} has blendshapes {blendshapes}\n")
-    #         target_names.extend(blendshapes)
+    prim = skel_root.GetPrim()
+    # Traverse the MakeHuman targets directory
+    targets_dir = os.path.join(ext_path, "data", "targets")
+    for dirpath, _, filenames in os.walk(targets_dir):
+        for filename in filenames:
+            # Skip non-target files
+            if not filename.endswith(".target"):
+                continue
+            print(f"Importing {filename}")
+            mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
 
-    # # Define an Animation (with blend shape weight time-samples).
-    # animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
-    # animation.CreateBlendShapesAttr().Set(target_names)
-    # weightsAttr = animation.CreateBlendShapeWeightsAttr()
-    # weightsAttr.Set(np.zeros(len(target_names)), 0)
+    # Traverse all meshes and create a list of the blendshape target names
+    target_names = []
+    for mesh in [m for m in prim.GetChildren() if m.IsA(UsdGeom.Mesh)]:
+        meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
+        blendshapes = meshBinding.GetBlendShapesAttr().Get()
+        if blendshapes:
+            print(f"Mesh {mesh.GetPath()} has blendshapes {blendshapes}\n")
+            target_names.extend(blendshapes)
 
-    # # Bind Skeleton to animation.
-    # skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
-    # anim_path=animation.GetPrim().GetPath()
-    # skeletonBinding.CreateAnimationSourceRel().AddTarget(anim_path)
+    # Define an Animation (with blend shape weight time-samples).
+    animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
+    animation.CreateBlendShapesAttr().Set(target_names)
+    weightsAttr = animation.CreateBlendShapeWeightsAttr()
+    weightsAttr.Set(np.zeros(len(target_names)), 0)
+
+    # Bind Skeleton to animation.
+    skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
+    anim_path=animation.GetPrim().GetPath()
+    skeletonBinding.CreateAnimationSourceRel().AddTarget(anim_path)
 
     # Save the stage to a file
     save_path = os.path.join(ext_path, "data", "human_base.usd")
