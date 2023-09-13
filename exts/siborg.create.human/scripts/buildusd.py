@@ -88,8 +88,19 @@ def create_skeleton(stage, skel_root, rig):
     path_queue = [root]  # Keep track of paths in a parallel queue
     joint_paths = [root]  # Keep track of joint paths
     joint_names = [root]  # Keep track of joint names
-    bind_xforms = [Gf.Matrix4d(np.eye(4))]  # Bind xforms are in world space
-    rest_xforms = [Gf.Matrix4d(np.eye(4))]  # Rest xforms are in local space
+
+    rot_90_x = np.array([[1, 0, 0, 0],[0, 0, 1, 0],[0, -1, 0, 0],[0, 0, 0, 1]], dtype=np.float64)
+    scale_10 = np.array([[10, 0, 0, 0],[0, 10, 0, 0],[0, 0, 10, 0],[0, 0, 0, 1]], dtype=np.float64)
+    xform = np.dot(rot_90_x, scale_10)
+    # Compute the root transforms
+    head = rig[root]["head"]["default_position"]
+    tail = rig[root]["tail"]["default_position"]
+    root_rest_xform, root_bind_xform = compute_transforms(head)
+    root_rest_xform = np.dot(xform, root_rest_xform)
+    root_bind_xform = np.dot(xform, root_bind_xform)
+
+    bind_xforms = [Gf.Matrix4d(root_bind_xform)]  # Bind xforms are in world space
+    rest_xforms = [Gf.Matrix4d(root_rest_xform)]  # Rest xforms are in local space
 
     # Traverse skeleton (breadth-first) and store joint data
     while queue:
