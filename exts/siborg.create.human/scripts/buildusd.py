@@ -212,7 +212,7 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
 
     # Get all the meshes. We need to determine which meshes are affected by this target
     
-    meshes = [prim for prim in prim.GetChildren() if prim.IsA(UsdGeom.Mesh)]
+    meshes = [child for child in prim.GetChildren() if child.IsA(UsdGeom.Mesh)]
 
     for mesh in meshes:
         vert_idxs = mesh.GetAttribute("faceVertexIndices").Get()
