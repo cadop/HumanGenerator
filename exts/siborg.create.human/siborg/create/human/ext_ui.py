@@ -144,7 +144,6 @@ class ModifierUI(ui.Frame):
         self.groups, self.mods = modifiers.parse_modifiers()
         self.group_widgets = []
         self.set_build_fn(self._build_widget)
-        self.animation_path = None
         self.human_prim = None
         self.macrovars = []
         
@@ -155,24 +154,21 @@ class ModifierUI(ui.Frame):
                     for g, m in self.groups.items():
                         self.group_widgets.append(SliderGroup(g, m))
         for m in self.mods:
-            callback = self.create_callback(self.animation_path, m)
+            callback = self.create_callback(m)
             m.value_model.add_value_changed_fn(callback)
 
-    def create_callback(self, animation_path, m: Modifier):
+    def create_callback(self, m: Modifier):
         """Callback for when a modifier value is changed.
         
         Parameters
-        ----------
-        animation_path : str
-            Path to the animation to edit
         m : Modifier
             Modifier whose value was changed. Used to determine which blendshape(s) to edit"""
         def callback(v):
             # If the modifier has a macrovar, we need to edit the macrovar
             if m.macrovar:
-                mhusd.edit_blendshapes(animation_path, m.fn(v, self.macrovars))
+                mhusd.edit_blendshapes(self.human_prim, m.fn(v, self.macrovars))
             else:
-                mhusd.edit_blendshapes(animation_path, m.fn(v))
+                mhusd.edit_blendshapes(self.human_prim, m.fn(v))
 
         return callback
 
@@ -198,15 +194,6 @@ class ModifierUI(ui.Frame):
             self.human_prim = None
             self.macrovars = []
             return
-
-        bindingAPI = UsdSkel.BindingAPI(human_prim)
-        skeleton_rel = bindingAPI.GetSkeletonRel()
-        skeleton_targets = skeleton_rel.GetTargets()
-        skeleton_path = skeleton_targets[0].pathString
-        skeleton = UsdSkel.Skeleton.Get(human_prim.GetStage(), skeleton_path)
-        bindingAPI = UsdSkel.BindingAPI(skeleton)
-        self.animation_path = bindingAPI.GetAnimationSourceRel().GetTargets()[0]
-
         self.human_prim = human_prim
         self.macrovars = mhusd.read_macrovars(human_prim)
         

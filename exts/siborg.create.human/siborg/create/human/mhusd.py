@@ -318,25 +318,26 @@ def add_to_scene():
 
         return stage.GetPrimAtPath(prim_path)
 
-def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], time = 0):
+def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     """Edit the blendshapes of a human animation
 
     Parameters
     ----------
-    animation_path : Sdf.Path
-        The path to the animation
+    prim : Usd.Prim
+        A prim, containing meshes and a skeleton with blendshapes
     blendshapes : Dict[str, float]
         A dictionary of blendshape names to weights
     time : float, optional
-        The time to set the blendshapes at, by default 1
+        The time to set the blendshapes at, by default 0
     """
     # print(f"Blendshapes: {blendshapes}")
 
     # Get the stage
     usd_context = omni.usd.get_context()
     stage = usd_context.get_stage()
-
-    # Get the animation
+    skeleton_path = UsdSkel.BindingAPI(prim).GetSkeletonRel().GetTargets()[0]
+    skeleton = UsdSkel.Skeleton.Get(stage, skeleton_path)
+    animation_path = UsdSkel.BindingAPI(skeleton).GetAnimationSourceRel().GetTargets()[0]
     animation = UsdSkel.Animation.Get(stage, animation_path)
 
     # Get existing blendshapes and weights
@@ -357,6 +358,8 @@ def edit_blendshapes(animation_path: Sdf.Path, blendshapes: Dict[str, float], ti
 
     # Set the updated weights
     animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
+
+    # TODO Add unbound skeleton to apply scaling from geometry
 
 
 def read_macrovars(human: Usd.Prim) -> Dict[str, float]:
