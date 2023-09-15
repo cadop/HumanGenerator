@@ -107,6 +107,7 @@ def create_skeleton(stage, skel_root, rig):
     path_queue = [root]  # Keep track of paths in a parallel queue
     joint_paths = [root]  # Keep track of joint paths
     joint_names = [root]  # Keep track of joint names
+    joint_helpers = {}  # Keep track of helper geometry (meshes/vertices)
 
     # Compute the root transforms
     head = rig[root]["head"]["default_position"]
@@ -135,12 +136,15 @@ def create_skeleton(stage, skel_root, rig):
                 rest_xform, bind_xform = compute_transforms(head, parent_head)
                 rest_xforms.append(Gf.Matrix4d(rest_xform))
                 bind_xforms.append(Gf.Matrix4d(bind_xform))
+                helper = Tf.MakeValidIdentifier(neighbor[1]["head"]["cube_name"]) or neighbor[0]["head"]["vertex_index"]
+                joint_helpers[helper] = neighbor[0]
 
 
     skeleton.CreateJointNamesAttr(joint_names)
     skeleton.CreateJointsAttr(joint_paths)
     skeleton.CreateBindTransformsAttr(bind_xforms)
     skeleton.CreateRestTransformsAttr(rest_xforms)
+    skeleton.GetPrim().SetCustomData(joint_helpers)
     return skeleton
 
 
