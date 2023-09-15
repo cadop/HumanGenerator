@@ -191,6 +191,8 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
     #     'ground': (19150, 19157)
     # }
 
+    # Create a prim to hold the blendshapes. It's just a container for the blendshapes so it doesn't need a type.
+    targets_prim = stage.DefinePrim(prim.GetPath().AppendChild("targets"))
     path_components = path.split(os.path.sep)[path.split(os.path.sep).index("targets")+1:-1]
     group_name = Tf.MakeValidIdentifier(path_components[0])
     target_basename = os.path.splitext(os.path.basename(path))[0]
@@ -210,6 +212,12 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
     # The first column is the vertex index, the rest are the offsets.
     changed_indices = raw[:, 0].astype(np.int32)
     changed_offsets = raw[:, 1:]
+    group = stage.DefinePrim(targets_prim.GetPath().AppendChild(group_name))
+    blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
+    indices = np.array(changed_indices)
+    offsets = changed_offsets[np.isin(changed_indices, indices)]
+    blendshape.CreateOffsetsAttr().Set(offsets)
+    blendshape.CreatePointIndicesAttr().Set(indices)
 
     # Get all the meshes. We need to determine which meshes are affected by this target
     
@@ -221,14 +229,7 @@ def mhtarget_to_blendshapes(stage, prim, path : str) -> [Sdf.Path]:
         index_end = np.max(vert_idxs) + 1
         if np.any(np.logical_and(changed_indices >= index_start, changed_indices < index_end)):
             print(f"{target_name} targets mesh {mesh.GetPath()}")
-            # This mesh is affected by the target, so create a blendshape for it
-            group = stage.DefinePrim(mesh.GetPath().AppendChild(group_name))
-            blendshape = UsdSkel.BlendShape.Define(stage, group.GetPath().AppendChild(target_name))
-            indices = np.array(changed_indices)
-            offsets = changed_offsets[np.isin(changed_indices, indices)]
-            blendshape.CreateOffsetsAttr().Set(offsets)
-            blendshape.CreatePointIndicesAttr().Set(indices)
-            # Bind mesh to blend shapes.
+            # This mesh is affected by the target, so bind it to the blendshape
             meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
             meshBinding.CreateBlendShapeTargetsRel().AddTarget(blendshape.GetPath())
             # Get the existing blendshapes for this mesh
