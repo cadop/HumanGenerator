@@ -36,24 +36,22 @@ def make_human():
     meshes = load_obj(base_mesh_file)
     for m in meshes:
         create_geom(stage, rootPath.AppendChild(m.name), m)
+    meshes = [m for m in skel_root.GetPrim().GetChildren() if m.IsA(UsdGeom.Mesh)]
 
-    rig = load_skel_json(os.path.join(ext_path, "data","rigs","standard","default"))
-    skeleton = create_skeleton(stage, skel_root, rig)
+    rig = load_skel_json(os.path.join(ext_path, "data","rigs","default.mhskel"))
+    verts = np.array(meshes[0].GetPrim().GetAttribute("points").Get())
+    skeleton = create_skeleton(stage, skel_root, rig, verts)
 
-    weights_json = os.path.join(ext_path, "data","rigs","standard","weights.default.json")
+    weights_json = os.path.join(ext_path, "data","rigs","default_weights.mhw")
     joint_indices, weights = vertices_to_weights(skeleton.GetJointNamesAttr().Get(), weights_json, skel_root.GetPrim().GetChildren()[0])
     elements = joint_indices.shape[1]
 
-    rot_90_x = np.array([[1, 0, 0, 0],[0, 0, 1, 0],[0, -1, 0, 0],[0, 0, 0, 1]], dtype=np.float64)
-    scale_10 = np.array([[0.1, 0, 0, 0],[0, 0.1, 0, 0],[0, 0, 0.1, 0],[0, 0, 0, 1]], dtype=np.float64)
-    xform = rot_90_x @ scale_10
     # bind the skeleton to each mesh
-    for mesh in [m for m in skel_root.GetPrim().GetChildren() if m.IsA(UsdGeom.Mesh)]:
+    for mesh in meshes:
         meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
         meshBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
         meshBinding.CreateJointIndicesPrimvar(constant=False, elementSize=elements).Set(joint_indices)
         meshBinding.CreateJointWeightsPrimvar(constant=False, elementSize=elements).Set(weights)
-        meshBinding.CreateGeomBindTransformAttr().Set(Gf.Matrix4d(xform))
 
     prim = skel_root.GetPrim()
     # Traverse the MakeHuman targets directory
@@ -68,7 +66,7 @@ def make_human():
 
     # Traverse all meshes and create a list of the blendshape target names
     target_names = []
-    for mesh in [m for m in prim.GetChildren() if m.IsA(UsdGeom.Mesh)]:
+    for mesh in meshes:
         meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
         blendshapes = meshBinding.GetBlendShapesAttr().Get()
         if blendshapes:
@@ -92,7 +90,7 @@ def make_human():
     stage.Export(save_path)
 
 
-def create_skeleton(stage, skel_root, rig):
+def create_skeleton(stage, skel_root, rig, mesh_verts):
     # Define a Skeleton, and associate with root.
     rootPath = skel_root.GetPath()
     skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild("skeleton"))
@@ -100,18 +98,19 @@ def create_skeleton(stage, skel_root, rig):
     rootBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
 
     # Determine the root, which has no parent. If there are multiple roots, use the last one.
-    root = [name for name, item in rig.items() if item["parent"] == ""][-1]
+    root = [name for name, item in rig.items() if item["parent"] == None][-1]
 
     visited = []  # List to keep track of visited bones.
     queue = [[root, rig[root]]]  # Initialize a queue
     path_queue = [root]  # Keep track of paths in a parallel queue
     joint_paths = [root]  # Keep track of joint paths
     joint_names = [root]  # Keep track of joint names
-    joint_helpers = {}  # Keep track of helper geometry (meshes/vertices)
+    helper_vertices = {}  # Keep track of helper geometry (vertices)
 
     # Compute the root transforms
-    head = rig[root]["head"]["default_position"]
-    root_rest_xform, root_bind_xform = compute_transforms(head)
+    root_vert_idxs = rig[root]["head_vertices"]
+    root_vertices = mesh_verts[root_vert_idxs]
+    root_rest_xform, root_bind_xform = compute_transforms(mesh_verts, root_vertices)
 
     bind_xforms = [Gf.Matrix4d(root_bind_xform)]  # Bind xforms are in world space
     rest_xforms = [Gf.Matrix4d(root_rest_xform)]  # Rest xforms are in local space
@@ -128,37 +127,37 @@ def create_skeleton(stage, skel_root, rig):
                 path_queue.append(child_path)
                 joint_paths.append(child_path)
                 joint_names.append(neighbor[0])
-                head = neighbor[1]["head"]["default_position"]
-                tail = neighbor[1]["tail"]["default_position"]
-                roll = neighbor[1]["roll"]
-                parent_idx = joint_names.index(v[0])
-                parent_head = v[1]["head"]["default_position"]
-                rest_xform, bind_xform = compute_transforms(head, parent_head)
+                vert_idxs = np.array(neighbor[1]["head_vertices"])
+                helper_vertices[child_path] = vert_idxs
+                parent_vert_idxs = np.array(v[1]["head_vertices"])
+                vertices = mesh_verts[vert_idxs]
+                parent_vertices = mesh_verts[parent_vert_idxs]
+                rest_xform, bind_xform = compute_transforms(mesh_verts, vertices, parent_vertices)
                 rest_xforms.append(Gf.Matrix4d(rest_xform))
                 bind_xforms.append(Gf.Matrix4d(bind_xform))
-                helper = Tf.MakeValidIdentifier(neighbor[1]["head"]["cube_name"]) or neighbor[0]["head"]["vertex_index"]
-                joint_helpers[helper] = neighbor[0]
 
 
     skeleton.CreateJointNamesAttr(joint_names)
     skeleton.CreateJointsAttr(joint_paths)
     skeleton.CreateBindTransformsAttr(bind_xforms)
     skeleton.CreateRestTransformsAttr(rest_xforms)
-    skeleton.GetPrim().SetCustomData(joint_helpers)
+    skeleton.GetPrim().SetCustomData(helper_vertices)
     return skeleton
 
 
 
-def compute_transforms(head, parent_head=None):
+def compute_transforms(mesh_verts, head_vertices, parent_vertices=None):
+    """Compute the rest and bind transforms for a joint. vertices"""
+    head_position = np.mean(head_vertices, axis=0)
     # Bind transform is in world space
     bind_transform = np.eye(4)
-    bind_transform[:3, 3] = np.array(head)
+    bind_transform[:3, 3] = head_position
 
     # If a parent head is provided, adjust the head to be in local space.
-    if parent_head is not None:
-        local_head = np.array(head) - np.array(parent_head)
+    if parent_vertices is not None:
+        local_head = head_position - np.mean(parent_vertices, axis=0)
     else:
-        local_head = np.array(head)
+        local_head = head_position
     rest_transform = np.eye(4)
     rest_transform[:3, 3] = local_head
 
@@ -394,32 +393,30 @@ def load_obj(filename, nPerFace=None):
 
     return mesh_data
 
-def load_skel_json(json_path_base: str, stage: Usd.Stage = None, usd_path: Sdf.Path = None) -> None:
-    """Load a skeleton from JSON files
+def load_skel_json(rig_json: str) -> dict:
+    """Load a skeleton from JSON files"""
 
-    Parameters
-    ----------
-    json_path_base : str
-        Basename of the skeleton json file. The rig will be "{/path/to/}rig.{json_path_base}.json" and the weights will be
-        "{/path/to/}weights.{json_path_base}.json"
-    """
-
-    dirname = os.path.dirname(json_path_base)
-    basename = os.path.basename(json_path_base)
-    rig_json = os.path.join(dirname, f"rig.{basename}.json")
-    weights_json = os.path.join(dirname, f"weights.{basename}.json")
+    dirname = os.path.dirname(rig_json)
 
     with open(rig_json, 'r') as f:
         skel_data = json.load(f)
+    weights_json = os.path.join(dirname, skel_data["weights_file"])
     with open(weights_json, 'r') as f:
         weights_data = json.load(f)
         weights_data = weights_data["weights"]
-
-    return build_tree("", skel_data, weights_data)
+    # Root bone has no parent
+    return build_tree(None, skel_data, weights_data)
 
 def build_tree(node_name, skel_data, weight_data):
     """Recursively build the tree structure and integrate vertex weights."""
-    children = {name: item for name, item in skel_data.items() if item["parent"] == node_name}
+    children = {}
+    for name, item in skel_data["bones"].items():
+        if item["parent"] == node_name:
+            children[name] = item
+            child = children[name]
+            child["head_vertices"] = skel_data["joints"][child["head"]]
+            child["tail_vertices"] = skel_data["joints"][child["tail"]]
+
     subtree = {}
     for child_name in children:
         subtree[child_name] = children[child_name]
@@ -438,6 +435,8 @@ def vertices_to_weights(joint_names: List[str], weights_json: str, mesh: UsdGeom
     joint_indices = [[] for _ in range(len(vertices))]
     joint_weights = [[] for _ in range(len(vertices))]
     for joint in joint_names:
+        if joint not in weights_data:
+            continue
         for vertex_data in weights_data[joint]:
             idx = vertex_data[0]
             weight = vertex_data[1]
