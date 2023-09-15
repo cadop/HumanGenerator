@@ -127,11 +127,11 @@ def create_skeleton(stage, skel_root, rig, mesh_verts):
                 path_queue.append(child_path)
                 joint_paths.append(child_path)
                 joint_names.append(neighbor[0])
-                vert_idxs = np.array(neighbor[1]["head_vertices"])
+                vert_idxs = neighbor[1]["head_vertices"]
                 helper_vertices[child_path] = vert_idxs
-                parent_vert_idxs = np.array(v[1]["head_vertices"])
-                vertices = mesh_verts[vert_idxs]
-                parent_vertices = mesh_verts[parent_vert_idxs]
+                parent_vert_idxs = v[1]["head_vertices"]
+                vertices = mesh_verts[np.array(vert_idxs)]
+                parent_vertices = mesh_verts[np.array(parent_vert_idxs)]
                 rest_xform, bind_xform = compute_transforms(mesh_verts, vertices, parent_vertices)
                 rest_xforms.append(Gf.Matrix4d(rest_xform))
                 bind_xforms.append(Gf.Matrix4d(bind_xform))
