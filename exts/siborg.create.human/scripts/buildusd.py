@@ -67,15 +67,11 @@ def make_human():
             print(f"Importing {filename}")
             mhtarget_to_blendshapes(stage, prim, os.path.join(dirpath, filename))
 
-    # Traverse all meshes and create a list of the blendshape target names
+    # Traverse the "targets" group
     target_names = []
-    for mesh in meshes:
-        meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
-        blendshapes = meshBinding.GetBlendShapesAttr().Get()
-        if blendshapes:
-            print(f"Mesh {mesh.GetPath()} has blendshapes {blendshapes}\n")
-            target_names.extend(blendshapes)
-
+    targets = prim.GetChild("targets")
+    for group in targets.GetChildren():
+        target_names.extend(target.GetName() for target in group.GetChildren())
     # Define an Animation (with blend shape weight time-samples).
     animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
     animation.CreateBlendShapesAttr().Set(target_names)
