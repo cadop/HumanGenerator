@@ -263,7 +263,6 @@ class MeshData:
     vertices: list
     uvs: list
     normals: list
-    faces: list
     vert_indices: list
     uv_indices: list
     normal_indices: list
@@ -373,7 +372,7 @@ def load_obj(filename, nPerFace=None):
                         vert_indices.append(int(face[i].split('/')[0]) - 1)
                         uv_indices.append(int(face[i].split('/')[1]) - 1)
 
-                mesh_data.append(MeshData(group, None, None, None, faces, vert_indices, uv_indices, normal_indices, nface_verts))
+                mesh_data.append(MeshData(group, None, None, None, vert_indices, uv_indices, normal_indices, nface_verts))
             faces = []
             vert_indices = []
             uv_indices = []
