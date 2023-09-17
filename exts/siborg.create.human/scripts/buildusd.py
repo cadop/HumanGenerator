@@ -34,20 +34,23 @@ def make_human():
     ext_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     base_mesh_file = os.path.join(ext_path, "data", "3dobjs", "base.obj")
     meshes = load_obj(base_mesh_file)
+    meshes = combine_joint_meshes(meshes)
     for m in meshes:
         create_geom(stage, rootPath.AppendChild(m.name), m)
-    meshes = [m for m in skel_root.GetPrim().GetChildren() if m.IsA(UsdGeom.Mesh)]
 
+    # Get all meshes that are not joints
+    non_joint_meshes = [m for m in skel_root.GetPrim().GetChildren() if m.IsA(UsdGeom.Mesh) and not m.GetName().startswith("joint")]
     rig = load_skel_json(os.path.join(ext_path, "data","rigs","default.mhskel"))
-    verts = np.array(meshes[0].GetPrim().GetAttribute("points").Get())
+    verts = np.array(non_joint_meshes[0].GetPrim().GetAttribute("points").Get())
     skeleton = create_skeleton(stage, skel_root, rig, verts)
+    target_skeleton = create_skeleton(stage, skel_root, rig, verts, "target_skeleton")
 
     weights_json = os.path.join(ext_path, "data","rigs","default_weights.mhw")
     joint_indices, weights = vertices_to_weights(skeleton.GetJointNamesAttr().Get(), weights_json, skel_root.GetPrim().GetChildren()[0])
     elements = joint_indices.shape[1]
 
-    # bind the skeleton to each mesh
-    for mesh in meshes:
+    # bind the skeleton to each non-joint mesh
+    for mesh in non_joint_meshes:
         meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
         meshBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
         meshBinding.CreateJointIndicesPrimvar(constant=False, elementSize=elements).Set(joint_indices)
@@ -55,7 +58,7 @@ def make_human():
 
     prim = skel_root.GetPrim()
     # Traverse the MakeHuman targets directory
-    targets_dir = os.path.join(ext_path, "data", "targets")
+    targets_dir = os.path.join(ext_path, "data", "targets", "armslegs")
     for dirpath, _, filenames in os.walk(targets_dir):
         for filename in filenames:
             # Skip non-target files
@@ -89,11 +92,37 @@ def make_human():
     print(f"Saving to {save_path}")
     stage.Export(save_path)
 
+def combine_joint_meshes(meshes):
+    joints, non_joints = [], []
+    for m in meshes:
+        if m.name.startswith("joint"):
+            joints.append(m)
+        else:
+            non_joints.append(m)
+    meshes = non_joints
+    # Combine the joint meshes into a single mesh
+    vertices = joints[0].vertices
+    uvs = joints[0].uvs
+    normals = joints[0].normals
+    face_verts = []
+    vertex_idxs = []
+    uv_idxs = []
+    normal_idxs = []
+    for m in joints:
+        face_verts.extend(m.nface_verts)
+        vertex_idxs.extend(m.vert_indices)
+        uv_idxs.extend(m.uv_indices)
+        normal_idxs.extend(m.normal_indices)
+    # Create a new mesh
+    joint_mesh = MeshData("joints", vertices, uvs, normals, vertex_idxs, uv_idxs, normal_idxs, face_verts)
+    meshes.append(joint_mesh)
+    return meshes
 
-def create_skeleton(stage, skel_root, rig, mesh_verts):
+
+def create_skeleton(stage, skel_root, rig, mesh_verts, name = "skeleton"):
     # Define a Skeleton, and associate with root.
     rootPath = skel_root.GetPath()
-    skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild("skeleton"))
+    skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild(name))
     rootBinding = UsdSkel.BindingAPI.Apply(skel_root.GetPrim())
     rootBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
 
