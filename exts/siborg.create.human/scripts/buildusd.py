@@ -73,7 +73,7 @@ def make_human():
     for group in targets.GetChildren():
         target_names.extend(target.GetName() for target in group.GetChildren())
     # Define an Animation (with blend shape weight time-samples).
-    animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("animation"))
+    animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("target_animation"))
     animation.CreateBlendShapesAttr().Set(target_names)
     weightsAttr = animation.CreateBlendShapeWeightsAttr()
     weightsAttr.Set(np.zeros(len(target_names)), 0)
@@ -157,7 +157,7 @@ def create_skeleton(stage, skel_root, rig, mesh_verts, name = "skeleton"):
                 parent_vert_idxs = v[1]["head_vertices"]
                 vertices = mesh_verts[np.array(vert_idxs)]
                 parent_vertices = mesh_verts[np.array(parent_vert_idxs)]
-                rest_xform, bind_xform = compute_transforms(mesh_verts, vertices, parent_vertices)
+                rest_xform, bind_xform = compute_transforms(vertices, parent_vertices)
                 rest_xforms.append(Gf.Matrix4d(rest_xform))
                 bind_xforms.append(Gf.Matrix4d(bind_xform))
 
@@ -171,8 +171,8 @@ def create_skeleton(stage, skel_root, rig, mesh_verts, name = "skeleton"):
 
 
 
-def compute_transforms(mesh_verts, head_vertices, parent_vertices=None):
-    """Compute the rest and bind transforms for a joint. vertices"""
+def compute_transforms(head_vertices, parent_vertices=None):
+    """Compute the rest and bind transforms for a joint"""
     head_position = np.mean(head_vertices, axis=0)
     # Bind transform is in world space
     bind_transform = np.eye(4)
