@@ -324,20 +324,23 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     Parameters
     ----------
     prim : Usd.Prim
-        A prim, containing meshes and a skeleton with blendshapes
+        A prim, containing meshes and 2 skeletons with blendshapes
     blendshapes : Dict[str, float]
         A dictionary of blendshape names to weights
     time : float, optional
-        The time to set the blendshapes at, by default 0
+        The time to set the blendshapes at, by default 1
     """
     # print(f"Blendshapes: {blendshapes}")
 
     # Get the stage
     usd_context = omni.usd.get_context()
     stage = usd_context.get_stage()
-    skeleton_path = UsdSkel.BindingAPI(prim).GetSkeletonRel().GetTargets()[0]
+    skeleton_paths = UsdSkel.BindingAPI(prim).GetSkeletonRel().GetTargets()
+    # Grab the the first skeleton that isn't the target skeleton. This skeleton deforms the meshes
+    skeleton_path = next(path for path in skeleton_paths if path.elementString != "target_skeleton")
     skeleton = UsdSkel.Skeleton.Get(stage, skeleton_path)
-    animation_path = UsdSkel.BindingAPI(skeleton).GetAnimationSourceRel().GetTargets()[0]
+    animation_paths = UsdSkel.BindingAPI(skeleton).GetAnimationSourceRel().GetTargets()
+    animation_path = next(path for path in animation_paths if path.elementString == "target_animation")
     animation = UsdSkel.Animation.Get(stage, animation_path)
 
     # Get existing blendshapes and weights
@@ -359,8 +362,95 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     # Set the updated weights
     animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
 
-    # TODO Add unbound skeleton to apply scaling from geometry
+    joints_mesh = prim.GetChild("joints").GetPrim()
+    blendshapes_data = get_blendshape_data_from_prim(joints_mesh)
 
+    # Now, use the previously defined 'compute_new_vertex_positions' function
+    vertices = np.array(joints_mesh.GetAttribute("points").Get())
+    new_positions = compute_new_vertex_positions(vertices, blendshapes_data)
+
+    # Get the target skeleton and apply any corresponding changes made to the "joints" mesh
+    # The target skeleton remains in the same position, so we can move it to the average position of the vertices
+    # of each set of joint helper vertices
+    target_skeleton_path = next(path for path in skeleton_paths if path.elementString == "target_skeleton")
+    target_skeleton = UsdSkel.Skeleton.Get(stage, target_skeleton_path)
+    joint_helper_vertices = target_skeleton.GetPrim().GetCustomData()
+    joint_helper_vertices = {k:v for k, v in joint_helper_vertices.items() if k.startswith("root")}
+    joint_paths_attr = target_skeleton.GetJointsAttr()
+    joint_paths = joint_paths_attr.Get()
+    joint_positions_attr = target_skeleton.GetBindTransformsAttr()
+    joint_positions = np.array(joint_positions_attr.Get())
+    for joint, vertex_indices in joint_helper_vertices.items():
+        vertex_indices = np.array(vertex_indices)
+        joint_index = list(joint_paths).index(joint)
+        _, joint_positions[joint_index], = compute_transforms(vertices[vertex_indices])
+    joint_positions_attr.Set(joint_positions, time)
+    print(target_skeleton.GetBindTransformsAttr().Get())
+
+def compute_transforms(head_vertices, parent_vertices=None):
+    """Compute the rest and bind transforms for a joint"""
+    head_position = np.mean(head_vertices, axis=0)
+    # Bind transform is in world space
+    bind_transform = np.eye(4)
+    bind_transform[:3, 3] = head_position
+
+    # If a parent head is provided, adjust the head to be in local space.
+    if parent_vertices is not None:
+        local_head = head_position - np.mean(parent_vertices, axis=0)
+    else:
+        local_head = head_position
+    rest_transform = np.eye(4)
+    rest_transform[:3, 3] = local_head
+
+    return rest_transform.T, bind_transform.T
+
+def get_blendshape_data_from_prim(mesh_prim):
+    """
+    Retrieve blendshape data for a given mesh prim.
+
+    Parameters:
+    - mesh_prim (Usd.Prim): The mesh prim for which we want to get blendshape data.
+
+    Returns:
+    - list of dict: Blendshape data (name, weight, offsets).
+    """
+    
+    # List to hold blendshape data
+    blendshapes_data = []
+
+    # Get the skeleton via skel binding
+    skel_binding = UsdSkel.BindingAPI(mesh_prim)
+    skels = skel_binding.GetSkeletonRel().GetTargets()
+    # Get the first skeleton that isn't the target skeleton
+    skel_path = next(skel for skel in skels if skel.elementString != "target_skeleton")
+    skel = UsdSkel.Skeleton.Get(mesh_prim.GetStage(), skel_path)
+    
+    if not skel:
+        print("No associated skeleton found for the mesh prim.")
+        return blendshapes_data
+
+    # Access the skel root
+    skel_root = skel.GetPrim().GetParent()
+    target_groups = skel_root.GetChild("targets")
+
+    # Iterate through children prims which are untyped (representing blendshape categories)
+    for child_prim in target_groups.GetChildren():
+        if child_prim.GetTypeName() == "":
+            # This is a blendshape category
+            for blendshape_prim in child_prim.GetChildren():
+                if blendshape_prim.IsA(UsdSkel.BlendShape):
+                    # Fetch blendshape data
+                    name = blendshape_prim.GetName()
+                    weight = blendshape_prim.GetWeightAttr().Get()
+                    offsets = blendshape_prim.GetOffsetsAttr().Get()
+
+                    blendshapes_data.append({
+                        "name": name,
+                        "weight": weight,
+                        "offsets": offsets
+                    })
+
+    return blendshapes_data
 
 def read_macrovars(human: Usd.Prim) -> Dict[str, float]:
     """Load the macrovars from a human prim
