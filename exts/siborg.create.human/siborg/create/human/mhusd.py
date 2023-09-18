@@ -361,6 +361,7 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
 
     # Set the updated weights
     animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
+    # TODO: Use built-in BlendshapeQuery.ComputeDeformedPoints to compute the new vertex positions
 
     joints_mesh = prim.GetChild("joints").GetPrim()
     blendshapes_data = get_blendshape_data_from_prim(joints_mesh)
