@@ -1,4 +1,4 @@
-from pxr import Sdf, Usd, UsdGeom, UsdSkel, Tf
+from pxr import Sdf, Usd, UsdGeom, UsdSkel, Tf, Vt
 import carb
 import omni
 import omni.usd
@@ -352,41 +352,44 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     current_weights = np.array(current_weights)
 
     for bs, w in blendshapes.items():
-        print(bs)
+        # print(bs)
         if bs not in current_blendshapes:
             continue
         indices = np.where(current_blendshapes==bs)[0]
-        print(indices)
+        # print(indices)
         current_weights[indices] = [w] * len(indices)
 
     # Set the updated weights
     animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
-    # TODO: Use built-in BlendshapeQuery.ComputeDeformedPoints to compute the new vertex positions
 
-    joints_mesh = prim.GetChild("joints").GetPrim()
-    blendshapes_data = get_blendshape_data_from_prim(joints_mesh)
+    body = prim.GetChild("body")
+    blendShapeIndices = Vt.UIntArray(current_blendshapes.size)
+    mesh_binding = UsdSkel.BindingAPI(body)
+    blendshapes = mesh_binding.GetBlendShapeTargetsRel().GetTargets()
+    blend_query = UsdSkel.BlendShapeQuery(mesh_binding)
+    # Use updated blendshape weights to compute subShapeWeights, blendShapeIndices, and subShapeIndices
+    current_weights = Vt.FloatArray().FromNumpy(current_weights)
+    subShapeWeights, blendShapeIndices, subShapeIndices = blend_query.ComputeSubShapeWeights(current_weights)
+    blendShapePointIndices = blend_query.ComputeBlendShapePointIndices()
+    subShapePointOffset = blend_query.ComputeSubShapePointOffsets()
+    current_points = body.GetAttribute("points").Get()
+    points = np.array(current_points)
+    points = Vt.Vec3fArray().FromNumpy(np.copy(points))
+    success = blend_query.ComputeDeformedPoints(subShapeWeights,
+                                                blendShapeIndices,
+                                                subShapeIndices,
+                                                blendShapePointIndices,
+                                                subShapePointOffset,
+                                                points)
+    if success:
+        # Compare old points to new points
+        old_points = np.array(current_points)
+        new_points = np.array(points)
+        # See what changed
+        changed = np.where(old_points != new_points)[0]
+        # print(f"Changed: {changed}")
 
-    # Now, use the previously defined 'compute_new_vertex_positions' function
-    vertices = np.array(joints_mesh.GetAttribute("points").Get())
-    new_positions = compute_new_vertex_positions(vertices, blendshapes_data)
 
-    # Get the target skeleton and apply any corresponding changes made to the "joints" mesh
-    # The target skeleton remains in the same position, so we can move it to the average position of the vertices
-    # of each set of joint helper vertices
-    target_skeleton_path = next(path for path in skeleton_paths if path.elementString == "target_skeleton")
-    target_skeleton = UsdSkel.Skeleton.Get(stage, target_skeleton_path)
-    joint_helper_vertices = target_skeleton.GetPrim().GetCustomData()
-    joint_helper_vertices = {k:v for k, v in joint_helper_vertices.items() if k.startswith("root")}
-    joint_paths_attr = target_skeleton.GetJointsAttr()
-    joint_paths = joint_paths_attr.Get()
-    joint_positions_attr = target_skeleton.GetBindTransformsAttr()
-    joint_positions = np.array(joint_positions_attr.Get())
-    for joint, vertex_indices in joint_helper_vertices.items():
-        vertex_indices = np.array(vertex_indices)
-        joint_index = list(joint_paths).index(joint)
-        _, joint_positions[joint_index], = compute_transforms(vertices[vertex_indices])
-    joint_positions_attr.Set(joint_positions, time)
-    print(target_skeleton.GetBindTransformsAttr().Get())
 
 def compute_transforms(head_vertices, parent_vertices=None):
     """Compute the rest and bind transforms for a joint"""
@@ -404,54 +407,6 @@ def compute_transforms(head_vertices, parent_vertices=None):
     rest_transform[:3, 3] = local_head
 
     return rest_transform.T, bind_transform.T
-
-def get_blendshape_data_from_prim(mesh_prim):
-    """
-    Retrieve blendshape data for a given mesh prim.
-
-    Parameters:
-    - mesh_prim (Usd.Prim): The mesh prim for which we want to get blendshape data.
-
-    Returns:
-    - list of dict: Blendshape data (name, weight, offsets).
-    """
-    
-    # List to hold blendshape data
-    blendshapes_data = []
-
-    # Get the skeleton via skel binding
-    skel_binding = UsdSkel.BindingAPI(mesh_prim)
-    skels = skel_binding.GetSkeletonRel().GetTargets()
-    # Get the first skeleton that isn't the target skeleton
-    skel_path = next(skel for skel in skels if skel.elementString != "target_skeleton")
-    skel = UsdSkel.Skeleton.Get(mesh_prim.GetStage(), skel_path)
-    
-    if not skel:
-        print("No associated skeleton found for the mesh prim.")
-        return blendshapes_data
-
-    # Access the skel root
-    skel_root = skel.GetPrim().GetParent()
-    target_groups = skel_root.GetChild("targets")
-
-    # Iterate through children prims which are untyped (representing blendshape categories)
-    for child_prim in target_groups.GetChildren():
-        if child_prim.GetTypeName() == "":
-            # This is a blendshape category
-            for blendshape_prim in child_prim.GetChildren():
-                if blendshape_prim.IsA(UsdSkel.BlendShape):
-                    # Fetch blendshape data
-                    name = blendshape_prim.GetName()
-                    weight = blendshape_prim.GetWeightAttr().Get()
-                    offsets = blendshape_prim.GetOffsetsAttr().Get()
-
-                    blendshapes_data.append({
-                        "name": name,
-                        "weight": weight,
-                        "offsets": offsets
-                    })
-
-    return blendshapes_data
 
 def read_macrovars(human: Usd.Prim) -> Dict[str, float]:
     """Load the macrovars from a human prim
