@@ -389,24 +389,47 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
         changed = np.where(old_points != new_points)[0]
         # print(f"Changed: {changed}")
 
+    # Get the skeleton used for targetting
+    target_skeleton_path = next(path for path in skeleton_paths if path.elementString == "target_skeleton")
+    target_skeleton = UsdSkel.Skeleton.Get(stage, target_skeleton_path)
+
+    # Get mapping from each bone to its set of vertices
+    bone_vertices_idxs = target_skeleton.GetPrim().GetCustomData()
+
+    # Query the target skeleton
+    skel_cache = UsdSkel.Cache()
+    skel_query = skel_cache.GetSkelQuery(target_skeleton)
+
+    # Get the list of bones (excluding the root)
+    joints = skel_query.GetJointOrder()[1:]
+
+    scale_animation_path = UsdSkel.BindingAPI(target_skeleton).GetAnimationSourceRel().GetTargets()[0]
+    scale_animation = UsdSkel.Animation.Get(stage, scale_animation_path)
+    # Animate the bone transforms on the target skeleton
+    scale_animation.CreateJointsAttr().Set(joints)
+
+    # Get the points attribute as a numpy array for multi-indexing
+    points = np.array(points)
+    # Get transforms for each bone
+    xforms = []
+    for joint in joints:
+        vert_idxs = np.array(bone_vertices_idxs[joint])
+        verts = points[vert_idxs]
+        xforms.append(compute_transform(verts))
+
+    xforms = Vt.Matrix4dArray().FromNumpy(np.array(xforms))
+    
+    scale_animation.SetTransforms(xforms, time)
 
 
-def compute_transforms(head_vertices, parent_vertices=None):
+def compute_transform(head_vertices):
     """Compute the rest and bind transforms for a joint"""
     head_position = np.mean(head_vertices, axis=0)
     # Bind transform is in world space
-    bind_transform = np.eye(4)
-    bind_transform[:3, 3] = head_position
+    transform = np.eye(4)
+    transform[:3, 3] = head_position
 
-    # If a parent head is provided, adjust the head to be in local space.
-    if parent_vertices is not None:
-        local_head = head_position - np.mean(parent_vertices, axis=0)
-    else:
-        local_head = head_position
-    rest_transform = np.eye(4)
-    rest_transform[:3, 3] = local_head
-
-    return rest_transform.T, bind_transform.T
+    return Gf.Matrix4d(transform.T)
 
 def read_macrovars(human: Usd.Prim) -> Dict[str, float]:
     """Load the macrovars from a human prim
