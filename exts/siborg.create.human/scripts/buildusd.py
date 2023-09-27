@@ -43,7 +43,6 @@ def make_human():
     rig = load_skel_json(os.path.join(ext_path, "data","rigs","default.mhskel"))
     verts = np.array(non_joint_meshes[0].GetPrim().GetAttribute("points").Get())
     skeleton = create_skeleton(stage, skel_root, rig, verts)
-    target_skeleton = create_skeleton(stage, skel_root, rig, verts, "target_skeleton")
 
     weights_json = os.path.join(ext_path, "data","rigs","default_weights.mhw")
     joint_indices, weights = vertices_to_weights(skeleton.GetJointNamesAttr().Get(), weights_json, skel_root.GetPrim().GetChildren()[0])
@@ -73,15 +72,15 @@ def make_human():
     for group in targets.GetChildren():
         target_names.extend(target.GetName() for target in group.GetChildren())
     # Define an Animation (with blend shape weight time-samples).
-    animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("target_animation"))
-    animation.CreateBlendShapesAttr().Set(target_names)
-    weightsAttr = animation.CreateBlendShapeWeightsAttr()
+    blend_animation = UsdSkel.Animation.Define(stage, skeleton.GetPrim().GetPath().AppendChild("blendshape_animation"))
+    blend_animation.CreateBlendShapesAttr().Set(target_names)
+    weightsAttr = blend_animation.CreateBlendShapeWeightsAttr()
     weightsAttr.Set(np.zeros(len(target_names)), 0)
 
     # Bind Skeleton to animation.
     skeletonBinding = UsdSkel.BindingAPI.Apply(skeleton.GetPrim())
-    anim_path=animation.GetPrim().GetPath()
-    skeletonBinding.CreateAnimationSourceRel().AddTarget(anim_path)
+    blend_anim_path = blend_animation.GetPrim().GetPath()
+    skeletonBinding.CreateAnimationSourceRel().AddTarget(blend_anim_path)
 
     # Save the stage to a file
     save_path = os.path.join(ext_path, "data", "human_base.usd")
