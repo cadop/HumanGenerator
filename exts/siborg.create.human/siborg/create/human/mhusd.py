@@ -420,8 +420,85 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
 
     xforms = Vt.Matrix4dArray().FromNumpy(np.array(xforms))
     topo = UsdSkel.Topology(joints)
+    scale_xforms = UsdSkel.ComputeJointLocalTransforms(topo, xforms, Gf.Matrix4d(np.eye(4)))
     scale_animation.SetTransforms(scale_xforms, time)
     # Calculate new bone transforms based on the resized skeleton's bone lengths
+    new_xforms = lengthen_bones_xforms(resize_skel, skeleton, time)
+    animation.SetTransforms(new_xforms, time)
+
+
+def lengthen_bones_xforms(source_skeleton: UsdSkel.Skeleton, target_skeleton: UsdSkel.Skeleton, time: int) -> Vt.Matrix4dArray:
+    '''Calculates new bone transforms for a skeleton by lengthening each bone to match the source skeleton.
+    
+    Parameters
+    ----------
+    source_skeleton : UsdSkel.Skeleton
+        The skeleton to copy bone lengths from
+    target_skeleton : UsdSkel.Skeleton
+        The skeleton to copy bone lengths to
+    time : int
+        Time to query
+    Returns
+    -------
+    Vt.Matrix4dArray
+        The new bone transforms'''
+    lengths = compute_lengths(source_skeleton, time)
+    skelcache = UsdSkel.Cache()
+    skelquery = skelcache.GetSkelQuery(target_skeleton)
+    xforms = skelquery.ComputeJointSkelTransforms(time)
+    joints = skelquery.GetJointOrder()
+    new_xforms = np.zeros((len(joints), 4, 4))
+    for i in range(len(joints)):
+        xform = np.array(xforms[i])
+        parent = skelquery.GetTopology().GetParent(i)
+        if parent == -1:
+            # Root bone
+            new_xforms[i] = xform
+            continue
+        parent_xform = np.array(xforms[parent])
+        length = lengths[i]
+        # Get the bone direction
+        direction = xform[3, :3] - parent_xform[3, :3]
+        # Normalize the direction
+        direction = direction / np.linalg.norm(direction)
+        # Scale the direction by the length
+        direction = direction * length
+        # Set the new tail position
+        xform[3, :3] = parent_xform[3, :3] + direction
+        new_xforms[i] = xform
+
+    close = np.allclose(new_xforms, xforms)
+    return Vt.Matrix4dArray.FromNumpy(new_xforms)
+
+
+def compute_lengths(skeleton: UsdSkel.Skeleton, time: int) -> [float]:
+    '''Compute the lengths of each bone in a skeleton.
+    
+    Parameters
+    ----------
+    skeleton : UsdSkel.Skeleton
+        The skeleton to compute bone lengths for
+    Returns
+    -------
+    [float]
+        Bone lengths, in joint order
+    '''
+    skelcache = UsdSkel.Cache()
+    skelquery = skelcache.GetSkelQuery(skeleton)
+    joints = skelquery.GetJointOrder()
+    xforms = skelquery.ComputeJointSkelTransforms(time)
+    lengths = []
+    for i in range(len(joints)):
+        tail_xform = np.array(xforms[i])
+        parent = skelquery.GetTopology().GetParent(i)
+        if parent == -1:
+            # Root bone
+            lengths.append(0)
+            continue
+        parent_xform = np.array(xforms[parent])
+        length = np.linalg.norm(tail_xform[3, :3] - parent_xform[3, :3])
+        lengths.append(length)
+    return lengths
 
 
 def compute_transform(head_vertices):
