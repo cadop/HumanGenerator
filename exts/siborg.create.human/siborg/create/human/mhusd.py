@@ -400,7 +400,7 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     skel_cache = UsdSkel.Cache()
     skel_query = skel_cache.GetSkelQuery(resize_skel)
 
-    # Get the list of bones (excluding the root)
+    # Get the list of bones
     joints = skel_query.GetJointOrder()
 
     scale_animation_path = UsdSkel.BindingAPI(resize_skel).GetAnimationSourceRel().GetTargets()[0]
@@ -412,6 +412,7 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     points = np.array(points)
     # Get transforms for each bone
     xforms = [Gf.Matrix4d(np.eye(4))]
+    # Exclude root
     for joint in joints[1:]:
         vert_idxs = np.array(bone_vertices_idxs[joint])
         verts = points[vert_idxs]
