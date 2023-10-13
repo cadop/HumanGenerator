@@ -342,7 +342,19 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     animation_paths = UsdSkel.BindingAPI(skeleton).GetAnimationSourceRel().GetTargets()
     animation_path = next(path for path in animation_paths if path.elementString == "blendshape_animation")
     animation = UsdSkel.Animation.Get(stage, animation_path)
+    apply_weights(animation, blendshapes, time)
+    body = prim.GetChild("body")
+    points = compute_new_points(body, animation, time)
+    # Get the skeleton for resizing
+    resize_skelpath = next(path for path in skeleton_paths if path.elementString == "resize_skeleton")
+    resize_skel = UsdSkel.Skeleton.Get(stage, resize_skelpath)
+    resize_bones(resize_skel, points, time)
+    # Calculate new bone transforms based on the resized skeleton's bone lengths
+    new_xforms = lengthen_bones_xforms(resize_skel, skeleton, time)
+    animation.SetTransforms(new_xforms, time)
 
+
+def apply_weights(animation: UsdSkel.Animation, blendshapes: Dict[str, float], time=0) -> None:
     # Get existing blendshapes and weights
     current_blendshapes = animation.GetBlendShapesAttr().Get(time)
     current_weights = np.array(animation.GetBlendShapeWeightsAttr().Get(time))
@@ -362,12 +374,13 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     # Set the updated weights
     animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
 
-    body = prim.GetChild("body")
-    blendShapeIndices = Vt.UIntArray(current_blendshapes.size)
+def compute_new_points(body: Usd.Prim, animation: UsdSkel.Animation, time=0) -> Vt.Vec3fArray:
     mesh_binding = UsdSkel.BindingAPI(body)
-    blendshapes = mesh_binding.GetBlendShapeTargetsRel().GetTargets()
     blend_query = UsdSkel.BlendShapeQuery(mesh_binding)
     # Use updated blendshape weights to compute subShapeWeights, blendShapeIndices, and subShapeIndices
+    current_blendshapes = animation.GetBlendShapesAttr().Get(time)
+    current_weights = np.array(animation.GetBlendShapeWeightsAttr().Get(time))
+    current_blendshapes = np.array(current_blendshapes)
     current_weights = Vt.FloatArray().FromNumpy(current_weights)
     subShapeWeights, blendShapeIndices, subShapeIndices = blend_query.ComputeSubShapeWeights(current_weights)
     blendShapePointIndices = blend_query.ComputeBlendShapePointIndices()
@@ -388,10 +401,11 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
         # See what changed
         changed = np.where(old_points != new_points)[0]
         # print(f"Changed: {changed}")
+    return points
 
-    # Get the skeleton used for resizing the rig
-    resize_skelpath = next(path for path in skeleton_paths if path.elementString == "resize_skeleton")
-    resize_skel = UsdSkel.Skeleton.Get(stage, resize_skelpath)
+
+def resize_bones(resize_skel: UsdSkel.Skeleton, points: Vt.Vec3fArray, time: int):
+    stage = resize_skel.GetPrim().GetStage()
 
     # Get mapping from each bone to its set of vertices
     bone_vertices_idxs = resize_skel.GetPrim().GetCustomData()
@@ -422,9 +436,6 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     topo = UsdSkel.Topology(joints)
     scale_xforms = UsdSkel.ComputeJointLocalTransforms(topo, xforms, Gf.Matrix4d(np.eye(4)))
     scale_animation.SetTransforms(scale_xforms, time)
-    # Calculate new bone transforms based on the resized skeleton's bone lengths
-    new_xforms = lengthen_bones_xforms(resize_skel, skeleton, time)
-    animation.SetTransforms(new_xforms, time)
 
 
 def lengthen_bones_xforms(source_skeleton: UsdSkel.Skeleton, target_skeleton: UsdSkel.Skeleton, time: int) -> Vt.Matrix4dArray:
