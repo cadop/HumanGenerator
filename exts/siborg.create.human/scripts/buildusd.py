@@ -122,7 +122,7 @@ def combine_joint_meshes(meshes):
     return meshes
 
 
-def create_skeleton(stage, skel_root, rig, mesh_verts, name = "skeleton"):
+def create_skeleton(stage, skel_root, rig, mesh_verts, name = "skeleton") -> UsdSkel.Skeleton:
     # Define a Skeleton, and associate with root.
     rootPath = skel_root.GetPath()
     skeleton = UsdSkel.Skeleton.Define(stage, rootPath.AppendChild(name))
