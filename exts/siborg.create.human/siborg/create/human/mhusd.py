@@ -420,8 +420,8 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
 
     xforms = Vt.Matrix4dArray().FromNumpy(np.array(xforms))
     topo = UsdSkel.Topology(joints)
-    local_xforms = UsdSkel.ComputeJointLocalTransforms(topo, xforms, Gf.Matrix4d(np.eye(4)))
-    scale_animation.SetTransforms(local_xforms, time)
+    scale_animation.SetTransforms(scale_xforms, time)
+    # Calculate new bone transforms based on the resized skeleton's bone lengths
 
 
 def compute_transform(head_vertices):
