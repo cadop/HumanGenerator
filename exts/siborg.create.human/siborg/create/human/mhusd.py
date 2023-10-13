@@ -337,7 +337,7 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     stage = usd_context.get_stage()
     skeleton_paths = UsdSkel.BindingAPI(prim).GetSkeletonRel().GetTargets()
     # Grab the the first skeleton that isn't the target skeleton. This skeleton deforms the meshes
-    skeleton_path = next(path for path in skeleton_paths if path.elementString != "target_skeleton")
+    skeleton_path = next(path for path in skeleton_paths if path.elementString != "resize_skeleton")
     skeleton = UsdSkel.Skeleton.Get(stage, skeleton_path)
     animation_paths = UsdSkel.BindingAPI(skeleton).GetAnimationSourceRel().GetTargets()
     animation_path = next(path for path in animation_paths if path.elementString == "blendshape_animation")
@@ -389,23 +389,23 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
         changed = np.where(old_points != new_points)[0]
         # print(f"Changed: {changed}")
 
-    # Get the skeleton used for targetting
-    target_skeleton_path = next(path for path in skeleton_paths if path.elementString == "target_skeleton")
-    target_skeleton = UsdSkel.Skeleton.Get(stage, target_skeleton_path)
+    # Get the skeleton used for resizing the rig
+    resize_skelpath = next(path for path in skeleton_paths if path.elementString == "resize_skeleton")
+    resize_skel = UsdSkel.Skeleton.Get(stage, resize_skelpath)
 
     # Get mapping from each bone to its set of vertices
-    bone_vertices_idxs = target_skeleton.GetPrim().GetCustomData()
+    bone_vertices_idxs = resize_skel.GetPrim().GetCustomData()
 
-    # Query the target skeleton
+    # Query the resizing skeleton
     skel_cache = UsdSkel.Cache()
-    skel_query = skel_cache.GetSkelQuery(target_skeleton)
+    skel_query = skel_cache.GetSkelQuery(resize_skel)
 
     # Get the list of bones (excluding the root)
     joints = skel_query.GetJointOrder()
 
-    scale_animation_path = UsdSkel.BindingAPI(target_skeleton).GetAnimationSourceRel().GetTargets()[0]
+    scale_animation_path = UsdSkel.BindingAPI(resize_skel).GetAnimationSourceRel().GetTargets()[0]
     scale_animation = UsdSkel.Animation.Get(stage, scale_animation_path)
-    # Animate the bone transforms on the target skeleton
+    # Animate the bone transforms on the resizing skeleton
     scale_animation.CreateJointsAttr().Set(joints)
 
     # Get the points attribute as a numpy array for multi-indexing
