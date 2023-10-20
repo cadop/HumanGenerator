@@ -348,7 +348,10 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     # Get the skeleton for resizing
     resize_skelpath = next(path for path in skeleton_paths if path.elementString == "resize_skeleton")
     resize_skel = UsdSkel.Skeleton.Get(stage, resize_skelpath)
-    resize_bones(resize_skel, points, time)
+    scale_animation_path = UsdSkel.BindingAPI(resize_skel).GetAnimationSourceRel().GetTargets()[0]
+    scale_animation = UsdSkel.Animation.Get(stage, scale_animation_path)
+    resized_bone_xforms = resize_bones(resize_skel, points, time)
+    scale_animation.SetTransforms(resized_bone_xforms, time)
     # Calculate new bone transforms based on the resized skeleton's bone lengths
     new_xforms = lengthen_bones_xforms(resize_skel, skeleton, time)
     animation.SetTransforms(new_xforms, time)
@@ -414,8 +417,6 @@ def compute_new_points(body: Usd.Prim, animation: UsdSkel.Animation, time=0) -> 
 
 
 def resize_bones(resize_skel: UsdSkel.Skeleton, points: Vt.Vec3fArray, time: int):
-    stage = resize_skel.GetPrim().GetStage()
-
     # Get mapping from each bone to its set of vertices
     bone_vertices_idxs = resize_skel.GetPrim().GetCustomData()
 
@@ -425,11 +426,6 @@ def resize_bones(resize_skel: UsdSkel.Skeleton, points: Vt.Vec3fArray, time: int
 
     # Get the list of bones
     joints = skel_query.GetJointOrder()
-
-    scale_animation_path = UsdSkel.BindingAPI(resize_skel).GetAnimationSourceRel().GetTargets()[0]
-    scale_animation = UsdSkel.Animation.Get(stage, scale_animation_path)
-    # Animate the bone transforms on the resizing skeleton
-    scale_animation.CreateJointsAttr().Set(joints)
 
     # Get the points attribute as a numpy array for multi-indexing
     points = np.array(points)
@@ -443,8 +439,7 @@ def resize_bones(resize_skel: UsdSkel.Skeleton, points: Vt.Vec3fArray, time: int
 
     xforms = Vt.Matrix4dArray().FromNumpy(np.array(xforms))
     topo = UsdSkel.Topology(joints)
-    scale_xforms = UsdSkel.ComputeJointLocalTransforms(topo, xforms, Gf.Matrix4d(np.eye(4)))
-    scale_animation.SetTransforms(scale_xforms, time)
+    return UsdSkel.ComputeJointLocalTransforms(topo, xforms, Gf.Matrix4d(np.eye(4)))
 
 
 def lengthen_bones_xforms(source_skeleton: UsdSkel.Skeleton, target_skeleton: UsdSkel.Skeleton, time: int) -> Vt.Matrix4dArray:
