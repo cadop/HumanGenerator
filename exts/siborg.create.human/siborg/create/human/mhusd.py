@@ -350,20 +350,33 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     resize_skel = UsdSkel.Skeleton.Get(stage, resize_skelpath)
     scale_animation_path = UsdSkel.BindingAPI(resize_skel).GetAnimationSourceRel().GetTargets()[0]
     scale_animation = UsdSkel.Animation.Get(stage, scale_animation_path)
-    resized_bone_xforms = resize_bones(resize_skel, points, time)
-    scale_animation.SetTransforms(resized_bone_xforms, time)
-    # Calculate new bone transforms based on the resized skeleton's bone lengths
-    new_xforms = lengthen_bones_xforms(resize_skel, skeleton, time)
+
+    source_xforms = joints_from_points(resize_skel, points, time)
+    scale_animation.SetTransforms(source_xforms, time)
+    new_xforms = compose_xforms(source_xforms, skeleton, time)
     animation.SetTransforms(new_xforms, time)
 
     # Set joints property on both animations
     skel_cache = UsdSkel.Cache()
-    skel_query = skel_cache.GetSkelQuery(skeleton)
+    add_joints_attr(skel_cache, skeleton, animation)
+    add_joints_attr(skel_cache, resize_skel, scale_animation)
+
+
+def add_joints_attr(skel_cache, skel, anim):
+    skel_query = skel_cache.GetSkelQuery(skel)
     joints = skel_query.GetJointOrder()
-    animation.GetJointsAttr().Set(joints)
-    resize_skel_query = skel_cache.GetSkelQuery(resize_skel)
-    resize_joints = resize_skel_query.GetJointOrder()
-    scale_animation.GetJointsAttr().Set(resize_joints)
+    anim.GetJointsAttr().Set(joints)
+
+
+def compose_xforms(source_xforms: Vt.Matrix4dArray, target_skeleton: UsdSkel.Skeleton, time: int) -> Vt.Matrix4dArray:
+    source_xforms = np.array(source_xforms)
+    skel_cache = UsdSkel.Cache()
+    skel_query = skel_cache.GetSkelQuery(target_skeleton)
+    xforms = skel_query.ComputeJointLocalTransforms(time)
+    xforms = np.array(xforms)
+    inv_xforms = np.linalg.inv(xforms)
+    new_xforms = np.matmul(source_xforms, inv_xforms)
+    return Vt.Matrix4dArray().FromNumpy(new_xforms)
 
 
 def apply_weights(animation: UsdSkel.Animation, blendshapes: Dict[str, float], time=0) -> None:
@@ -416,7 +429,9 @@ def compute_new_points(body: Usd.Prim, animation: UsdSkel.Animation, time=0) -> 
     return points
 
 
-def resize_bones(resize_skel: UsdSkel.Skeleton, points: Vt.Vec3fArray, time: int):
+def joints_from_points(resize_skel: UsdSkel.Skeleton, points: Vt.Vec3fArray, time: int):
+    """Compute the joint transforms for a skeleton from a set of points. Requires that the skeleton has customdata 
+    with a mapping from each bone to its set of vertices. Transforms are returned in local space."""
     # Get mapping from each bone to its set of vertices
     bone_vertices_idxs = resize_skel.GetPrim().GetCustomData()
 
