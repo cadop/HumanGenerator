@@ -159,6 +159,7 @@ def create_skeleton(stage, skel_root, rig, mesh_verts, name = "skeleton") -> Usd
     bind_xforms = [Gf.Matrix4d(root_bind_xform)]  # Bind xforms are in world space
     rest_xforms = [Gf.Matrix4d(root_rest_xform)]  # Rest xforms are in local space
 
+    helper_vertices[root] = root_vert_idxs
     # Traverse skeleton (breadth-first) and store joint data
     while queue:
         v = queue.pop(0)

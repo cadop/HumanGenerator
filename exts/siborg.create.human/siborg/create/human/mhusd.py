@@ -430,9 +430,8 @@ def resize_bones(resize_skel: UsdSkel.Skeleton, points: Vt.Vec3fArray, time: int
     # Get the points attribute as a numpy array for multi-indexing
     points = np.array(points)
     # Get transforms for each bone
-    xforms = [Gf.Matrix4d(np.eye(4))]
-    # Exclude root
-    for joint in joints[1:]:
+    xforms = []
+    for joint in joints:
         vert_idxs = np.array(bone_vertices_idxs[joint])
         verts = points[vert_idxs]
         xforms.append(compute_transform(verts))
