@@ -483,7 +483,8 @@ def lengthen_bones_xforms(source_skeleton: UsdSkel.Skeleton, target_skeleton: Us
         new_xforms[i] = xform
 
     close = np.allclose(new_xforms, xforms)
-    return Vt.Matrix4dArray.FromNumpy(new_xforms)
+    world_xforms = Vt.Matrix4dArray.FromNumpy(new_xforms)
+    return UsdSkel.ComputeJointLocalTransforms(skelquery.GetTopology(), world_xforms, Gf.Matrix4d(np.eye(4)))
 
 
 def compute_lengths(skeleton: UsdSkel.Skeleton, time: int) -> [float]:
