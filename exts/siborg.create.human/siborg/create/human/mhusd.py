@@ -353,6 +353,15 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     new_xforms = lengthen_bones_xforms(resize_skel, skeleton, time)
     animation.SetTransforms(new_xforms, time)
 
+    # Set joints property on both animations
+    skel_cache = UsdSkel.Cache()
+    skel_query = skel_cache.GetSkelQuery(skeleton)
+    joints = skel_query.GetJointOrder()
+    animation.GetJointsAttr().Set(joints)
+    resize_skel_query = skel_cache.GetSkelQuery(resize_skel)
+    resize_joints = resize_skel_query.GetJointOrder()
+    scale_animation.GetJointsAttr().Set(resize_joints)
+
 
 def apply_weights(animation: UsdSkel.Animation, blendshapes: Dict[str, float], time=0) -> None:
     # Get existing blendshapes and weights
