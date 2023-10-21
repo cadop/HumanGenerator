@@ -376,6 +376,7 @@ def compose_xforms(source_xforms: Vt.Matrix4dArray, target_skeleton: UsdSkel.Ske
     xforms = np.array(xforms)
     inv_xforms = np.linalg.inv(xforms)
     new_xforms = np.matmul(source_xforms, inv_xforms)
+    new_xforms = np.matmul(new_xforms, xforms)
     return Vt.Matrix4dArray().FromNumpy(new_xforms)
 
 
