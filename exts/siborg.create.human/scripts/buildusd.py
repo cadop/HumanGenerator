@@ -38,22 +38,25 @@ def make_human():
     for m in meshes:
         create_geom(stage, rootPath.AppendChild(m.name), m)
 
-    # Get all meshes that are not joints
+    # # Get all meshes that are not joints
     non_joint_meshes = [m for m in skel_root.GetPrim().GetChildren() if m.IsA(UsdGeom.Mesh) and not m.GetName().startswith("joint")]
-    rig = load_skel_json(os.path.join(ext_path, "data","rigs","default.mhskel"))
-    verts = np.array(non_joint_meshes[0].GetPrim().GetAttribute("points").Get())
-    skeleton = create_skeleton(stage, skel_root, rig, verts)
+    # rig = load_skel_json(os.path.join(ext_path, "data","rigs","default.mhskel"))
+    # verts = np.array(non_joint_meshes[0].GetPrim().GetAttribute("points").Get())
+    # skeleton = create_skeleton(stage, skel_root, rig, verts)
 
-    weights_json = os.path.join(ext_path, "data","rigs","default_weights.mhw")
-    joint_indices, weights = vertices_to_weights(skeleton.GetJointNamesAttr().Get(), weights_json, skel_root.GetPrim().GetChildren()[0])
-    elements = joint_indices.shape[1]
+    # weights_json = os.path.join(ext_path, "data","rigs","default_weights.mhw")
+    # joint_indices, weights = vertices_to_weights(skeleton.GetJointNamesAttr().Get(), weights_json, skel_root.GetPrim().GetChildren()[0])
+    # elements = joint_indices.shape[1]
+
+    # Create a skeleton to use for animating blendshapes and bind it to the skelroot
+    skeleton = UsdSkel.Skeleton.Define(stage, skel_root.GetPath().AppendChild("blendshape_skeleton"))
+    rootBinding = UsdSkel.BindingAPI.Apply(skel_root.GetPrim())
+    rootBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
 
     # bind the skeleton to each non-joint mesh
     for mesh in non_joint_meshes:
         meshBinding = UsdSkel.BindingAPI.Apply(mesh.GetPrim())
         meshBinding.CreateSkeletonRel().AddTarget(skeleton.GetPrim().GetPath())
-        meshBinding.CreateJointIndicesPrimvar(constant=False, elementSize=elements).Set(joint_indices)
-        meshBinding.CreateJointWeightsPrimvar(constant=False, elementSize=elements).Set(weights)
 
     prim = skel_root.GetPrim()
     # Traverse the MakeHuman targets directory
@@ -87,21 +90,21 @@ def make_human():
     blend_anim_path = blend_animation.GetPrim().GetPath()
     skeletonBinding.CreateAnimationSourceRel().AddTarget(blend_anim_path)
 
-    # Create a resizing skeleton for scaling. When blendshapes are applied, we will update the resizing skeleton
-    # joints in the rest pose, and then transfer the bone lengths to the original skeleton.
-    resize_skel = create_skeleton(stage, skel_root, rig, verts, "resize_skeleton")
-    # Move the original skeleton to the resizing skeleton's rest pose
-    resizeSkelQuery = skelcache.GetSkelQuery(resize_skel)
-    resize_skel_restxforms = resizeSkelQuery.ComputeJointLocalTransforms(0)
-    skeleton.GetRestTransformsAttr().Set(resize_skel_restxforms)
-    # Create animation just for scaling the resizing skeleton
-    scale_animation = UsdSkel.Animation.Define(stage, resize_skel.GetPrim().GetPath().AppendChild("scale_animation"))
-    # Add a joints attribute to the scaling animation
-    joints = resizeSkelQuery.GetJointOrder()
-    scale_animation.CreateJointsAttr(joints)
-    # Bind resizing skeleton to animation (so we can transform bones)
-    resize_skelbinding = UsdSkel.BindingAPI.Apply(resize_skel.GetPrim())
-    resize_skelbinding.CreateAnimationSourceRel().AddTarget(scale_animation.GetPrim().GetPath())
+    # # Create a resizing skeleton for scaling. When blendshapes are applied, we will update the resizing skeleton
+    # # joints in the rest pose, and then transfer the bone lengths to the original skeleton.
+    # resize_skel = create_skeleton(stage, skel_root, rig, verts, "resize_skeleton")
+    # # Move the original skeleton to the resizing skeleton's rest pose
+    # resizeSkelQuery = skelcache.GetSkelQuery(resize_skel)
+    # resize_skel_restxforms = resizeSkelQuery.ComputeJointLocalTransforms(0)
+    # skeleton.GetRestTransformsAttr().Set(resize_skel_restxforms)
+    # # Create animation just for scaling the resizing skeleton
+    # scale_animation = UsdSkel.Animation.Define(stage, resize_skel.GetPrim().GetPath().AppendChild("scale_animation"))
+    # # Add a joints attribute to the scaling animation
+    # joints = resizeSkelQuery.GetJointOrder()
+    # scale_animation.CreateJointsAttr(joints)
+    # # Bind resizing skeleton to animation (so we can transform bones)
+    # resize_skelbinding = UsdSkel.BindingAPI.Apply(resize_skel.GetPrim())
+    # resize_skelbinding.CreateAnimationSourceRel().AddTarget(scale_animation.GetPrim().GetPath())
     # Save the stage to a file
     save_path = os.path.join(ext_path, "data", "human_base.usd")
     print(f"Saving to {save_path}")
