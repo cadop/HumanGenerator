@@ -357,9 +357,9 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     animation.SetTransforms(new_xforms, time)
 
     # Set joints property on both animations
-    skel_cache = UsdSkel.Cache()
-    add_joints_attr(skel_cache, skeleton, animation)
-    add_joints_attr(skel_cache, resize_skel, scale_animation)
+    # skel_cache = UsdSkel.Cache()
+    # add_joints_attr(skel_cache, skeleton, animation)
+    # add_joints_attr(skel_cache, resize_skel, scale_animation)
 
 
 def add_joints_attr(skel_cache, skel, anim):
