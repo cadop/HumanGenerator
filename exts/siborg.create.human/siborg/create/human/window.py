@@ -21,18 +21,24 @@ class MHWindow(ui.Window):
         proxies, and executing human creation and updates
     browser: AssetBrowserFrame
         A browser for MakeHuman assets, including clothing, hair, and skeleton rigs.
+    prim : Usd.Prim
+        The prim for the selected human
     """
 
-    def __init__(self, title):
+    def __init__(self, title, _ext_path):
         """Constructs an instance of MHWindow
         
         Parameters
         ----------
-        menu_path : str
-            The path to the menu item that opens the window
+        title : str
+            The title of the window
+        _ext_path : str
+            The path to the extension folder
         """
 
         super().__init__(title)
+        global ext_path
+        ext_path = _ext_path
 
         # # A model to hold browser data
         # self.browser_model = MHAssetBrowserModel(
@@ -48,6 +54,7 @@ class MHWindow(ui.Window):
         bus = omni.kit.app.get_app().get_message_bus_event_stream()
         selection_event = carb.events.type_from_string("siborg.create.human.human_selected")
         self._selection_sub = bus.create_subscription_to_push_by_type(selection_event, self._on_selection_changed)
+        self.prim = None
         self.frame.set_build_fn(self._build_ui)
 
     def _build_ui(self):
@@ -57,6 +64,10 @@ class MHWindow(ui.Window):
             with ui.HStack(style=styles.window_style):
                 # Widget to show if no human is selected
                 self.no_selection_notification = NoSelectionNotification()
+                self.baked_notification = ui.Label(
+                    "Human is baked. No further changes can be made wihout removing the rig.",
+                    visible=False,
+                    )
 
                 self.property_panel = ui.HStack(visible=False)
                 with self.property_panel:
@@ -85,12 +96,20 @@ class MHWindow(ui.Window):
                         clicked_fn=self.reset_human,
                         enabled=False,
                     )
-                    # Build a human from scratch
-                    ui.Button(
-                        "Build Human",
-                        clicked_fn=mhusd.make_human,
+                    # Adds a skeleton to the selected human and "bakes" modifiers, preventing further changes
+                    self.bake_button = ui.Button(
+                        "Bake and Rig",
+                        clicked_fn=self._bake_and_rig,
+                        enabled = False,
                     )
 
+    def _bake_and_rig(self):
+        """Bakes the current modifiers and adds a skeleton to the selected human"""
+        if self.prim:
+            rig_path = os.path.join(ext_path, "data","rigs")
+            mhusd.bake_rig(self.prim, rig_path)
+        else:
+            raise RuntimeError("No human selected")
 
     def _on_selection_changed(self, event):
         """Callback for human selection events
@@ -111,14 +130,27 @@ class MHWindow(ui.Window):
         if not prim_path or not stage.GetPrimAtPath(prim_path):
             # Hide the property panel
             self.property_panel.visible = False
+            # Hide the baked notification
+            self.baked_notification.visible = False
 
             # Show the no selection notification
             self.no_selection_notification.visible = True
 
             # Deactivate the reset button
             self.reset_button.enabled = False
+            self.bake_button.enabled = False
 
         else:
+            # Get the prim from the path in the event payload
+            self.prim = stage.GetPrimAtPath(prim_path)
+            # Check if the human is baked
+            if self.prim.GetCustomDataByKey("baked"):
+                # Show the baked notification, hide the property panel and hide the no selection notification
+                self.baked_notification.visible = True
+                self.property_panel.visible = False
+                self.no_selection_notification.visible = False
+                self.bake_button.enabled = False
+                return
 
             # Show the property panel
             self.property_panel.visible = True
@@ -129,11 +161,9 @@ class MHWindow(ui.Window):
             # Activate the reset button
             self.reset_button.enabled = True
 
-            # Get the prim from the path in the event payload
-            prim = stage.GetPrimAtPath(prim_path)
-            self.modifier_ui.load_values(prim)
-
-
+            # Activate the bake button
+            self.bake_button.enabled = True
+            self.modifier_ui.load_values(self.prim)
 
     def reset_human(self):
         # """Resets the current human in the scene"""

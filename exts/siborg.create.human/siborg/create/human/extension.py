@@ -8,14 +8,18 @@ import asyncio
 import omni.usd
 from pxr import Usd
 from typing import Union
+import omni.kit.app
 
 from .window import MHWindow, WINDOW_TITLE, MENU_PATH
+ext_path = ""
 
 class MakeHumanExtension(omni.ext.IExt):
     # # ext_id is current extension id. It can be used with extension manager to query additional information, like where
     # # this extension is located on filesystem.
 
     def on_startup(self, ext_id):
+        global ext_path
+        ext_path = omni.kit.app.get_app().get_extension_manager().get_extension_path(ext_id)
 
         # subscribe to stage events
         # see https://github.com/mtw75/kit_customdata_view
@@ -76,7 +80,7 @@ class MakeHumanExtension(omni.ext.IExt):
     def show_window(self, menu, value):
         """Handles showing and hiding the window"""
         if value:
-            self._window = MHWindow(WINDOW_TITLE)
+            self._window = MHWindow(WINDOW_TITLE, ext_path)
             # # Dock window wherever the "Content" tab is found (bottom panel by default)
             self._window.deferred_dock_in("Content", ui.DockPolicy.CURRENT_WINDOW_IS_ACTIVE)
             self._window.set_visibility_changed_fn(self.visibility_changed)
