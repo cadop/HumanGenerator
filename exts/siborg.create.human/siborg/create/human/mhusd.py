@@ -343,8 +343,8 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     animation_path = next(path for path in animation_paths if path.elementString == "blendshape_animation")
     animation = UsdSkel.Animation.Get(stage, animation_path)
     apply_weights(animation, blendshapes, time)
-    body = prim.GetChild("body")
-    points = compute_new_points(body, animation, time)
+    helpers = prim.GetChild("joints")
+    points = compute_new_points(helpers, animation, time)
     # Get the skeleton for resizing
     resize_skelpath = next(path for path in skeleton_paths if path.elementString == "resize_skeleton")
     resize_skel = UsdSkel.Skeleton.Get(stage, resize_skelpath)
@@ -357,9 +357,9 @@ def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     animation.SetTransforms(new_xforms, time)
 
     # Set joints property on both animations
-    skel_cache = UsdSkel.Cache()
-    add_joints_attr(skel_cache, skeleton, animation)
-    add_joints_attr(skel_cache, resize_skel, scale_animation)
+    # skel_cache = UsdSkel.Cache()
+    # add_joints_attr(skel_cache, skeleton, animation)
+    # add_joints_attr(skel_cache, resize_skel, scale_animation)
 
 
 def add_joints_attr(skel_cache, skel, anim):
@@ -376,6 +376,7 @@ def compose_xforms(source_xforms: Vt.Matrix4dArray, target_skeleton: UsdSkel.Ske
     xforms = np.array(xforms)
     inv_xforms = np.linalg.inv(xforms)
     new_xforms = np.matmul(source_xforms, inv_xforms)
+    new_xforms = np.matmul(new_xforms, xforms)
     return Vt.Matrix4dArray().FromNumpy(new_xforms)
 
 
@@ -406,7 +407,12 @@ def compute_new_points(body: Usd.Prim, animation: UsdSkel.Animation, time=0) -> 
     current_blendshapes = animation.GetBlendShapesAttr().Get(time)
     current_weights = np.array(animation.GetBlendShapeWeightsAttr().Get(time))
     current_blendshapes = np.array(current_blendshapes)
-    current_weights = Vt.FloatArray().FromNumpy(current_weights)
+    # Get just the blendshapes that apply to this mesh
+    blendshapes_on_body = body.GetAttribute("skel:blendShapes").Get()
+    blendshapes_on_body = np.array(blendshapes_on_body)
+    weights_on_body = current_weights[np.isin(current_blendshapes, blendshapes_on_body)]
+    current_blendshapes = current_blendshapes[np.isin(current_blendshapes, blendshapes_on_body)]
+    current_weights = Vt.FloatArray().FromNumpy(weights_on_body)
     subShapeWeights, blendShapeIndices, subShapeIndices = blend_query.ComputeSubShapeWeights(current_weights)
     blendShapePointIndices = blend_query.ComputeBlendShapePointIndices()
     subShapePointOffset = blend_query.ComputeSubShapePointOffsets()
