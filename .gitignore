@@ -29,7 +29,7 @@ exts/siborg.create.human/data/*
 !exts/siborg.create.human/data/*.png
 !exts/siborg.create.human/data/skins/
 !exts/siborg.create.human/data/human_base.usd
-!exts/siborg.create.human/data/skin+blend_example.usda
+!exts/siborg.create.human/data/*example.usda
 
 !exts/siborg.create.human/data/modifiers/
 exts/siborg.create.human/data/modifiers/*
