@@ -141,11 +141,15 @@ class ModifierUI(ui.Frame):
         # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
         # If no instant update function is passed, use a dummy function and do nothing
-        self.groups, self.mods = modifiers.parse_modifiers()
+        self.groups, self.mods = self._init_groups_and_mods()
         self.group_widgets = []
         self.set_build_fn(self._build_widget)
         self.human_prim = None
         self.macrovars = []
+
+    def _init_groups_and_mods(self):
+        """Initialize the groups and modifiers"""
+        return modifiers.parse_modifiers()
         
     def _build_widget(self):
         with self:
@@ -223,7 +227,22 @@ class ModifierUI(ui.Frame):
         for model in self.models:
             model.destroy()
 
+class DemoUI(ModifierUI):
+    """UI widget for modifying one blendshape on a demo mesh. Demonstrates helper-driving-skeleton functionality."""
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def _init_groups_and_mods(self):
+        """For the demo, we have one group with one modifier that we define explicitly"""
+        # Define the group and modifier
+        group = "Demo"
+        modifier = Modifier(group, {})
+        modifier.blend = Tf.MakeValidIdentifier("length")
+        modifier.label = "Length"
+        modifier.fn = lambda model: {modifier.blend: model.get_value_as_float()}
+        mods = [modifier]
+        return {group: mods}, mods
 class NoSelectionNotification:
     """
     When no human selected, show notification.
