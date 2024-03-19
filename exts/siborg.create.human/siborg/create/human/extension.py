@@ -112,6 +112,9 @@ class MakeHumanExtension(omni.ext.IExt):
                             # carb.log_warn("Human selected")
                             path = prim.GetPath().pathString
                             self._bus.push(self._human_selection_event, payload={"prim_path": path})
+                        elif prim and prim.GetCustomDataByKey("demo"):
+                            # carb.log_warn("Demo deselected")
+                            self._bus.push(self._human_selection_event, payload={"prim_path": path})
                         else:
                             # carb.log_warn("Human deselected")
                             self._bus.push(self._human_selection_event, payload={"prim_path": None})

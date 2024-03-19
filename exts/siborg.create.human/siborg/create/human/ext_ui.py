@@ -10,7 +10,7 @@ import inspect
 from siborg.create.human.shared import data_path
 from collections import defaultdict
 from . import modifiers
-from .modifiers import Modifier
+from .modifiers import Modifier, ExplicitModifier
 from . import mhusd
 
 class SliderEntry:
@@ -237,12 +237,17 @@ class DemoUI(ModifierUI):
         """For the demo, we have one group with one modifier that we define explicitly"""
         # Define the group and modifier
         group = "Demo"
-        modifier = Modifier(group, {})
-        modifier.blend = Tf.MakeValidIdentifier("length")
+        modifier = ExplicitModifier(group, "length")
         modifier.label = "Length"
         modifier.fn = lambda model: {modifier.blend: model.get_value_as_float()}
         mods = [modifier]
         return {group: mods}, mods
+    
+    def load_values(self, prim: Usd.Prim):
+        """Select a prim to modify"""
+        self.human_prim = prim
+
+
 class NoSelectionNotification:
     """
     When no human selected, show notification.

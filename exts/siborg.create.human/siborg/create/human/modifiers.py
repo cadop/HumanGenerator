@@ -28,6 +28,7 @@ class Modifier:
         self.default_val = 0
         self.macrovar = None
         self.value_model = ui.SimpleFloatModel(self.default_val)
+        self.image = None
 
         self.fn = self.get_modifier_fn()
 
@@ -105,6 +106,34 @@ class TargetModifier(Modifier):
             else:
                 return {self.blend: value}
         return modifier_fn
+
+class ExplicitModifier(Modifier):
+    """A class for an explicitly defined modifier function"""
+    def __init__(self, group, name):
+        self.name = name
+        super().__init__(group, {})
+
+    def get_modifier_fn(self) -> dict:
+        """Return a method to list modified blendshapes and their weights
+
+        Parameters
+        ----------
+        model : ui.SimpleFloatModel
+            The model to get the value from
+        
+        Returns
+        -------
+        dict
+            A dictionary of blendshape names and weights
+        """
+        self.blend = Tf.MakeValidIdentifier(self.name)
+        self.label = str.capitalize(self.name)
+        def modifier_fn(model: ui.SimpleFloatModel) -> dict:
+            """Simple range-based function for explicit blendshape modifiers"""
+            value = model.get_value_as_float()
+            return {self.blend: value}
+
+    
 
 class MacroModifier(Modifier):
     """More complicated modifier that changes a variable set of targets based on a macrovar.
