@@ -318,6 +318,32 @@ def add_to_scene():
 
         return stage.GetPrimAtPath(prim_path)
 
+def add_demo_arm():
+        """Imports the pre-assembled human USD file into the scene.
+        """
+
+        # Get the extension path
+        manager = omni.kit.app.get_app().get_extension_manager()
+        ext_id = manager.get_enabled_extension_id("siborg.create.human")
+        ext_path = manager.get_extension_path(ext_id)
+        filepath = os.path.join(ext_path, "data", "skin+blend_example.usda")
+
+        # Get the stage
+        usd_context = omni.usd.get_context()
+        stage = usd_context.get_stage()
+        default_prim = stage.GetDefaultPrim()
+        prim_path = default_prim.GetPath()
+        
+        # Import the human into the scene
+
+        omni.kit.commands.execute('CreatePayloadCommand',
+            usd_context=usd_context,
+            path_to=prim_path,
+            asset_path=filepath,
+            instanceable=False)
+
+        return stage.GetPrimAtPath(prim_path)
+
 def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
     """Edit the blendshapes of a human animation
 
