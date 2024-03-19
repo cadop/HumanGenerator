@@ -1,4 +1,4 @@
-from .ext_ui import NoSelectionNotification, ModifierUI
+from .ext_ui import NoSelectionNotification, ModifierUI, DemoUI
 # from .browser import MHAssetBrowserModel, AssetBrowserFrame
 import omni.ui as ui
 import omni.kit.ui
@@ -55,11 +55,12 @@ class MHWindow(ui.Window):
         with self.frame:
             # Widgets are built starting on the left
             with ui.HStack(style=styles.window_style):
+                self.demo_ui = DemoUI()
                 # Widget to show if no human is selected
-                self.no_selection_notification = NoSelectionNotification()
+                # self.no_selection_notification = NoSelectionNotification()
 
-                self.property_panel = ui.HStack(visible=False)
-                with self.property_panel:
+                # self.property_panel = ui.HStack(visible=False)
+                # with self.property_panel:
                     # with ui.ZStack(width=0):
                     #     # Draggable splitter
                     #     with ui.Placer(offset_x=self.frame.computed_content_width/1.8, draggable=True, drag_axis=ui.Axis.X):
@@ -70,26 +71,31 @@ class MHWindow(ui.Window):
                     #         # can be triggered when new assets are added
                     #         self.browser = AssetBrowserFrame(self.browser_model)
                     #         ui.Spacer(width=spacer_width)
-                    with ui.HStack():
-                        with ui.VStack():
-                            self.modifier_ui = ModifierUI()
+                    # with ui.HStack():
+                    #     with ui.VStack():
+                            # self.modifier_ui = ModifierUI()
+
                 with ui.VStack(width = 100, style=styles.button_style):
                     # Creates a new human in scene and resets modifiers and assets
                     ui.Button(
-                        "New Human",
-                        clicked_fn=mhusd.add_to_scene,
+                        "Demo Arm",
+                        clicked_fn=mhusd.add_demo_arm,
                     )
-                    # Resets modifiers and assets on selected human
-                    self.reset_button = ui.Button(
-                        "Reset Human",
-                        clicked_fn=self.reset_human,
-                        enabled=False,
-                    )
-                    # Build a human from scratch
-                    ui.Button(
-                        "Build Human",
-                        clicked_fn=mhusd.make_human,
-                    )
+                    # ui.Button(
+                    #     "New Human",
+                    #     clicked_fn=mhusd.add_to_scene,
+                    # )
+                    # # Resets modifiers and assets on selected human
+                    # self.reset_button = ui.Button(
+                    #     "Reset Human",
+                    #     clicked_fn=self.reset_human,
+                    #     enabled=False,
+                    # )
+                    # # Build a human from scratch
+                    # ui.Button(
+                    #     "Build Human",
+                    #     clicked_fn=mhusd.make_human,
+                    # )
 
 
     def _on_selection_changed(self, event):
@@ -107,31 +113,33 @@ class MHWindow(ui.Window):
 
         prim_path = event.payload["prim_path"]
 
-        # If a valid human prim is selected, 
+        # If a valid human prim is not selected, 
         if not prim_path or not stage.GetPrimAtPath(prim_path):
             # Hide the property panel
-            self.property_panel.visible = False
+            # self.property_panel.visible = False
 
-            # Show the no selection notification
-            self.no_selection_notification.visible = True
+            # # Show the no selection notification
+            # self.no_selection_notification.visible = True
 
-            # Deactivate the reset button
-            self.reset_button.enabled = False
+            # # Deactivate the reset button
+            # self.reset_button.enabled = False
+            pass
 
         else:
 
-            # Show the property panel
-            self.property_panel.visible = True
+            # # Show the property panel
+            # self.property_panel.visible = True
 
-            # Hide the no selection notification
-            self.no_selection_notification.visible = False
+            # # Hide the no selection notification
+            # self.no_selection_notification.visible = False
 
-            # Activate the reset button
-            self.reset_button.enabled = True
+            # # Activate the reset button
+            # self.reset_button.enabled = True
 
-            # Get the prim from the path in the event payload
+            # # Get the prim from the path in the event payload
             prim = stage.GetPrimAtPath(prim_path)
-            self.modifier_ui.load_values(prim)
+            # self.modifier_ui.load_values(prim)
+            self.demo_ui.load_values(prim)
 
 
 
