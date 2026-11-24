@@ -52,7 +52,8 @@ def create_skeleton(stage, skel_root, rig, mesh_verts, name="skeleton") -> UsdSk
     # Compute the root transforms
     root_vert_idxs = rig[root]["head_vertices"]
     root_vertices = mesh_verts[root_vert_idxs]
-    root_rest_xform, root_bind_xform = compute_transforms(mesh_verts, root_vertices)
+    # The root has no parent, so its rest (local) and bind (world) transforms are both at its head position
+    root_rest_xform, root_bind_xform = compute_transforms(root_vertices)
 
     bind_xforms = [Gf.Matrix4d(root_bind_xform)]  # Bind xforms are in world space
     rest_xforms = [Gf.Matrix4d(root_rest_xform)]  # Rest xforms are in local space
