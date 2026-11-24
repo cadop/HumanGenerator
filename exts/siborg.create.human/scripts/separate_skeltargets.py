@@ -194,7 +194,9 @@ def separate_blendshape(prim: Usd.Prim, blendshape: UsdSkel.BlendShape, skeltarg
     blendshape.GetOffsetsAttr().Set(Vt.Vec3fArray().FromNumpy(corrected_offsets))
     blendshape.GetPointIndicesAttr().Set(Vt.IntArray().FromNumpy(blendshape_indices))
 
-    # TODO Add custom attributes to the blendshape to store the skeletal transformations
+    # Mark the blendshape as separated so it is never separated a second time
+    blendshape.GetPrim().SetCustomDataByKey("skelfree", True)
+    blendshape.GetPrim().SetCustomDataByKey("skeltarget", os.path.basename(skeltarget_path))
     return blendshape
 
 
