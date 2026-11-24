@@ -106,7 +106,10 @@ def calculate_skeltarget_verts(prim: Usd.Prim, skeltarget_path: str) -> Vt.Vec3f
     # Get the animation of the skeleton
     anim_path = UsdSkel.BindingAPI(skel).GetAnimationSourceRel().GetTargets()[0]
     anim = UsdSkel.Animation.Get(prim.GetStage(), anim_path)
-    anim.SetTransforms(xforms, 0)
+    # Posing is temporary: author it in the session layer so it never reaches an exported layer
+    stage = prim.GetStage()
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        anim.SetTransforms(xforms, 0)
 
     # Query the skeleton and geometry
     skelRoot = UsdSkel.Root(prim)
@@ -123,7 +126,8 @@ def calculate_skeltarget_verts(prim: Usd.Prim, skeltarget_path: str) -> Vt.Vec3f
 
     # # Reset the joint positions to rest pose so they don't stack
     xforms = skelQuery.ComputeJointLocalTransforms(0, True)
-    anim.SetTransforms(xforms, 0)
+    with Usd.EditContext(stage, stage.GetSessionLayer()):
+        anim.SetTransforms(xforms, 0)
 
     return skinned_points
 
