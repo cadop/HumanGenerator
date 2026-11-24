@@ -2,7 +2,7 @@
 # Write skeletal transformations to a separate .skeltargets file
 
 import os
-from pxr import Usd, UsdSkel, UsdGeom, Gf, Vt
+from pxr import Usd, UsdSkel, UsdGeom, Gf, Sdf, Vt
 import numpy as np
 import json
 
@@ -200,6 +200,68 @@ def separate_blendshape(prim: Usd.Prim, blendshape: UsdSkel.BlendShape, skeltarg
     return blendshape
 
 
+def separate_all(src_path: str, out_path: str, skeltargets_dir: str) -> str:
+    """Separate skeletal deformation from every blendshape bound to the body in `src_path`.
+
+    `src_path` is never modified. The corrected blendshapes are written as overrides to a new layer at `out_path`
+    which sublayers `src_path`, and one .skeltarget file per blendshape is written to `skeltargets_dir`. The output
+    layer is rebuilt from scratch on every run, so running this repeatedly gives the same result.
+
+    Returns the path of the output layer.
+    """
+    src_path = os.path.abspath(src_path)
+    out_path = os.path.abspath(out_path)
+    if os.path.normcase(src_path) == os.path.normcase(out_path):
+        raise ValueError("The output layer must not overwrite the source layer")
+
+    # Compose a fresh, empty override layer over the untouched source. All edits land in the override layer.
+    layer = Sdf.Layer.CreateAnonymous(".usda")
+    layer.subLayerPaths.append(src_path)
+    # Stage metadata is only read from the root layer, so carry it over from the source
+    src_layer = Sdf.Layer.FindOrOpen(src_path)
+    authored = set(src_layer.pseudoRoot.ListInfoKeys())
+    for key in ("defaultPrim", "startTimeCode", "endTimeCode", "timeCodesPerSecond", "framesPerSecond"):
+        if key in authored:
+            setattr(layer, key, getattr(src_layer, key))
+    stage = Usd.Stage.Open(layer)
+    if "upAxis" in authored:
+        UsdGeom.SetStageUpAxis(stage, src_layer.pseudoRoot.GetInfo("upAxis"))
+    if "metersPerUnit" in authored:
+        UsdGeom.SetStageMetersPerUnit(stage, src_layer.pseudoRoot.GetInfo("metersPerUnit"))
+    prim = stage.GetDefaultPrim().GetChild("skel_root")
+    mesh = prim.GetChild("body")
+    targets = UsdSkel.BindingAPI(mesh).GetBlendShapeTargetsRel().GetTargets()
+
+    # Refuse input that has already been separated, otherwise the skeletal deformation is subtracted twice
+    already = [p.name for p in targets if stage.GetPrimAtPath(p).GetCustomDataByKey("skelfree")]
+    if already:
+        raise ValueError(
+            f"{src_path} contains blendshapes that were already separated (e.g. {already[0]}). "
+            "Pass the original human_base.usd produced by buildusd.py."
+        )
+
+    os.makedirs(skeltargets_dir, exist_ok=True)
+    for blendshape_path in targets:
+        blendshape = UsdSkel.BlendShape.Get(stage, blendshape_path)
+        blendshape_name = blendshape.GetPrim().GetName()
+        # Store the skeletal transformations in a .skeltarget file
+        skeltarget_path = os.path.join(skeltargets_dir, f"{blendshape_name}.skeltarget")
+        blendshape_to_skeltarget(prim, blendshape_name, skeltarget_path)
+        # Override the blendshape with a version that excludes the skeletal deformation
+        separate_blendshape(prim, blendshape, skeltarget_path)
+        print(f"Removed skeletal deformation from {blendshape_name:>31}")
+
+    # Reference the source relative to the output so the pair can be moved together. Edit a detached copy so the open
+    # stage doesn't try to recompose with a relative path it can't resolve from an anonymous layer.
+    out_dir = os.path.dirname(out_path)
+    os.makedirs(out_dir, exist_ok=True)
+    out_layer = Sdf.Layer.CreateAnonymous(".usda")
+    out_layer.TransferContent(layer)
+    out_layer.subLayerPaths[0] = os.path.relpath(src_path, out_dir).replace(os.sep, "/")
+    out_layer.Export(out_path)
+    return out_path
+
+
 def skel_from_skeltarget(prim: Usd.Prim, skeltarget_path: str):
     """Create a new skeleton from a .skeltarget file"""
     with open(skeltarget_path, "r") as f:
@@ -309,25 +371,15 @@ def compute_transform(head_vertices: np.array) -> Gf.Matrix4d:
 
 
 if __name__ == "__main__":
-    ext_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_path = os.path.join(ext_path, "data")
-    stage = Usd.Stage.Open(os.path.join(data_path, "human_base.usd"))
-    prim = stage.GetDefaultPrim().GetChild("skel_root")
-    prim_path = prim.GetPath()
-    mesh = prim.GetChild("body")
-    # Get all existing blendshapes
-    # for blendshape_path in UsdSkel.BindingAPI(mesh).GetBlendShapeTargetsRel().GetTargets():
-    for blendshape_path in UsdSkel.BindingAPI(mesh).GetBlendShapeTargetsRel().GetTargets():
-        blendshape = UsdSkel.BlendShape.Get(stage, blendshape_path)
-        blendshape_name = blendshape.GetPrim().GetName()
-        # Store the skeletal transformations in a .skeltarget file
-        skeltarget_path = os.path.join(data_path, "skeltargets", f"{blendshape_name}.skeltarget")
-        blendshape_to_skeltarget(prim, blendshape_name, skeltarget_path)
+    import argparse
 
-        # Create a new blendshape without the skeletal transformations and bind it to the mesh and animation
-        skelfree_blendshape = separate_blendshape(prim, blendshape, skeltarget_path)
-        print(f"Removed skeletal deformation from {blendshape_name:>31}")
+    data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+    parser = argparse.ArgumentParser(description="Separate skeletal deformation from blendshapes. Never modifies --src.")
+    parser.add_argument("--src", default=os.path.join(data_path, "human_base.usd"), help="stage built by buildusd.py")
+    parser.add_argument("--out", default=os.path.join(data_path, "human_base_separated.usda"),
+                        help="override layer to (re)write; sublayers --src")
+    parser.add_argument("--skeltargets-dir", default=os.path.join(data_path, "skeltargets"))
+    args = parser.parse_args()
 
-    # Save the new stage
-    stage.GetRootLayer().Save()
-    print(f"{stage.GetDefaultPrim().GetName()} has been saved. Skeltargets have been written to {os.path.join(data_path,'skeltargets')}")
+    out = separate_all(args.src, args.out, args.skeltargets_dir)
+    print(f"Wrote {out}. Skeltargets have been written to {args.skeltargets_dir}")
