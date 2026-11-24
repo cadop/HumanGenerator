@@ -179,8 +179,16 @@ def separate_blendshape(prim: Usd.Prim, blendshape: UsdSkel.BlendShape, skeltarg
     blendshape_offsets = np.array(blendshape.GetOffsetsAttr().Get())
     blendshape_indices = np.array(blendshape.GetPointIndicesAttr().Get())
 
-    # Subtract the skeletal deformation from the blendshape offsets at any
-    corrected_offsets = blendshape_offsets - skeletal_deformation_offset[blendshape_indices]
+    # Subtract the skeletal deformation from the blendshape offsets. Moving joints also drags vertices the original
+    # target never touched (e.g. lengthening the thigh moves the shin), so the corrected blendshape must cover every
+    # vertex the skeleton moves, not just the original point indices.
+    dense_offsets = np.zeros_like(default_points)
+    dense_offsets[blendshape_indices] = blendshape_offsets
+    dense_offsets -= skeletal_deformation_offset
+    affected = np.any(np.abs(skeletal_deformation_offset) > 1e-7, axis=1)
+    affected[blendshape_indices] = True
+    blendshape_indices = np.where(affected)[0].astype(np.int32)
+    corrected_offsets = dense_offsets[blendshape_indices].astype(np.float32)
 
     # Overwrite the blendshape with the corrected offsets
     blendshape.GetOffsetsAttr().Set(Vt.Vec3fArray().FromNumpy(corrected_offsets))
