@@ -5,7 +5,6 @@ import os
 from pxr import Usd, UsdSkel, UsdGeom, Gf, Vt
 import numpy as np
 import json
-from concurrent.futures import ThreadPoolExecutor
 
 
 def blendshape_to_skeltarget(prim: Usd.Prim, blendshape_name: str, output_path: str):
@@ -148,26 +147,13 @@ def applyJointAnimation(
 
     skel_local_to_world = xform_cache.GetLocalToWorldTransform(skel_prim)
     prim_world_to_local = xform_cache.GetLocalToWorldTransform(skinning_query.GetPrim()).GetInverse()
-    skel_to_prim_local = skel_local_to_world * prim_world_to_local
+    skel_to_prim_local = np.array(skel_local_to_world * prim_world_to_local)
 
-    def transform_points(start, end):
-        for i in range(start, end):
-            skinned_points[i] = skel_to_prim_local.Transform(skinned_points[i])
-
-    points_size = len(skinned_points)
-    grain_size = 1000
-
-    with ThreadPoolExecutor() as executor:
-        futures = []
-        for i in range(0, points_size, grain_size):
-            start = i
-            end = min(i + grain_size, points_size)
-            futures.append(executor.submit(transform_points, start, end))
-
-        for future in futures:
-            future.result()
-
-    return skinned_points
+    # Transform all points at once (USD matrices are row-major, so points are row vectors on the left). Assigning
+    # Gf.Vec3f per element from Python fails on newer pxr builds and was slow anyway.
+    pts = np.array(skinned_points, dtype=np.float64)
+    pts = np.c_[pts, np.ones(len(pts))] @ skel_to_prim_local
+    return Vt.Vec3fArray.FromNumpy(pts[:, :3].astype(np.float32))
 
 
 def separate_blendshape(prim: Usd.Prim, blendshape: UsdSkel.BlendShape, skeltarget_path: str) -> UsdSkel.BlendShape:
