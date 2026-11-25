@@ -28,3 +28,5 @@ siborg.create.human/data/human_base.usd
 siborg.create.human/data/human_base_separated.usd
 siborg.create.human/data/human.usdz
 siborg.create.human/data/human.usdc
+# USD schema plugin: scripts/generate_schema.py (run by kit-app-template's repo build)
+siborg.create.human/plugins/humanGenerator/

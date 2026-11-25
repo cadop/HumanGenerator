@@ -1,0 +1,169 @@
+#usda 1.0
+(
+    """Schemas for siborg.create.human.
+
+    Codeless: run usdGenSchema on this file to produce generatedSchema.usda and plugInfo.json, then make sure the
+    plugin directory is registered before USD initializes (PXR_PLUGINPATH_NAME, or the host app's equivalent).
+    Schemas registered after the USD schema registry has been built are ignored.
+
+    Data authored with these schemas stays readable as ordinary attributes wherever the schema is not registered.
+
+    Overview
+        HumanModifierGroup   UI grouping of modifiers (prim hierarchy and child order give the layout)
+        HumanModifier        one slider: its authored value, range, and how the value maps onto labels
+        ModifierTargetAPI    on a BlendShape: which modifiers drive it, and with which label
+        SkelTargetAPI        on a BlendShape: the joint translation offsets that go with it
+
+    Evaluation, from modifier values to everything else
+        labelWeight(m, label)  = piecewise-linear interpolation of m.value over m.knots (see HumanModifier)
+        weight(blendShape)     = product over i of  labelWeight(drivers[i], labels[i])
+        jointTranslations      = restTranslations + sum over b of  weight(b) * translationOffsets_b
+    Modifier values are the authored state. BlendShape weights and joint translations are derived from them.
+    """
+    subLayers = [
+        @usd/schema.usda@,
+        @usdMedia/schema.usda@
+    ]
+)
+
+over "GLOBAL" (
+    customData = {
+        string libraryName = "humanGenerator"
+        string libraryPath = "."
+        bool skipCodeGeneration = true
+    }
+)
+{
+}
+
+class HumanModifierGroup "HumanModifierGroup" (
+    inherits = </Typed>
+    doc = """A UI group of modifiers, such as "Arms and legs" or "Macro details".
+
+    Children that are HumanModifier prims are the group's sliders, in child order. Groups may nest. A UI is built by
+    traversing the human's descendants: each HumanModifierGroup becomes a section, each HumanModifier a slider."""
+)
+{
+    uniform string label = "" (
+        doc = "Display name for the group. Falls back to the prim name when empty."
+    )
+}
+
+class HumanModifier "HumanModifier" (
+    inherits = </Typed>
+    prepend apiSchemas = ["AssetPreviewsAPI"]
+    doc = """One modifier slider. Its value is the authored state of the human; blendshape weights and joint
+    translations are derived from it, so animating `value` animates the modifier.
+
+    The value maps onto labels through `knots` and `labels`, two parallel arrays. Knots are non-decreasing; the
+    slider range is knots[0] to knots[-1]. For a value v between knots[i] and knots[i+1], with
+    t = (v - knots[i]) / (knots[i+1] - knots[i]):
+
+        labelWeight(labels[i])   += 1 - t
+        labelWeight(labels[i+1]) += t
+
+    and every other label has weight 0. Values outside the range are clamped. An empty label is neutral: it has no
+    target, so its share of the weight is simply dropped.
+
+    Examples
+        paired target (decr/incr)   knots = [-1, 0, 1]             labels = ["decr", "", "incr"]
+        single target               knots = [0, 1]                 labels = ["", "incr"]
+        age                         knots = [0, 0.1875, 0.5, 1]    labels = ["baby", "child", "young", "old"]
+        height (neutral 0.49-0.51)  knots = [0, 0.49, 0.51, 1]     labels = ["minheight", "", "", "maxheight"]
+        african (race)              knots = [0, 1]                 labels = ["", "african"]
+
+    BlendShapes refer to a modifier and one of its labels through ModifierTargetAPI.
+
+    The slider's preview image is the default thumbnail of the built-in AssetPreviewsAPI (UsdMedia), stored in
+    assetInfo["previews"]["thumbnails"]["default"]["defaultImage"]. Being an asset path in metadata, it is carried
+    into a .usdz package by UsdUtils.CreateNewUsdzPackage along with the layers."""
+)
+{
+    float value = 0 (
+        doc = "Current modifier value. Varying, so modifiers can be animated."
+    )
+    uniform float defaultValue = 0 (
+        doc = "Value the UI resets to."
+    )
+    uniform float[] knots = [] (
+        doc = "Non-decreasing positions on the slider. knots[0] and knots[-1] are its minimum and maximum."
+    )
+    uniform token[] labels = [] (
+        doc = "Label at each knot, parallel to knots. An empty token is neutral (no target)."
+    )
+    uniform string label = "" (
+        doc = "Display name for the slider. Falls back to the prim name when empty."
+    )
+    uniform token normalizationGroup = "" (
+        doc = """Modifiers sharing a non-empty token form a set whose values a UI keeps summing to 1 (MakeHuman's
+        ethnic modifiers: african, asian, caucasian). Evaluation always uses values as authored."""
+    )
+}
+
+class "ModifierTargetAPI" (
+    inherits = </APISchemaBase>
+    doc = """Maps a BlendShape back to the modifier labels that drive it.
+
+    The BlendShape's weight is the product of one label weight per driver:
+
+        weight = product over i of  labelWeight(drivers[i], labels[i])
+
+    An ordinary target has one driver, for example l_foot_scale_incr: drivers = [<.../armslegs/l_foot_scale>],
+    labels = ["incr"]. A macro target has one driver per macro variable, for example
+    female-young-averagemuscle-averageweight-maxheight: drivers = [gender, age, muscle, weight, height],
+    labels = ["female", "young", "averagemuscle", "averageweight", "maxheight"].
+
+    The mapping lives on the BlendShape, not the modifier, because a macro target depends on several modifiers at
+    once. To find the shapes a slider affects, collect the BlendShapes whose drivers include it (one traversal,
+    cacheable)."""
+    customData = {
+        token apiSchemaType = "singleApply"
+        token[] apiSchemaCanOnlyApplyTo = ["BlendShape"]
+        string className = "ModifierTargetAPI"
+    }
+)
+{
+    rel modifierTarget:drivers (
+        doc = """HumanModifier prims driving this BlendShape, parallel to modifierTarget:labels. Order matters:
+        author the targets explicitly rather than through prepend/append list edits."""
+    )
+    uniform token[] modifierTarget:labels = [] (
+        doc = "For each driver, the label of that modifier this BlendShape corresponds to."
+    )
+}
+
+class "SkelTargetAPI" (
+    inherits = </APISchemaBase>
+    doc = """Joint translation offsets that accompany a UsdSkelBlendShape: the skeletal part of a MakeHuman target.
+
+    The BlendShape's own offsets hold the target's surface change with the skeleton-driven movement removed. This
+    API holds that movement as per-joint translation deltas. Because the deltas are keyed to the BlendShape, the
+    weight that drives the shape also drives the skeleton:
+
+        jointTranslations(t) = restTranslations + sum over b of  blendShapeWeight_b(t) * translationOffsets_b
+
+    UsdSkel does not evaluate this. The application computes it from the blendshape weights (themselves derived from
+    HumanModifier values, see ModifierTargetAPI) and writes the result as joint translations. Joints keep their bind transforms and skin weights, so applying a
+    target never requires reskinning.
+
+    Offsets are local-space translations at weight 1, relative to the skeleton's rest transforms. Joints carry no
+    rotation or scale change, which keeps evaluation linear: partial weights and stacked targets combine exactly.
+
+    Inbetween shapes are not covered; joint offsets always scale linearly with the weight."""
+    customData = {
+        token apiSchemaType = "singleApply"
+        token[] apiSchemaCanOnlyApplyTo = ["BlendShape"]
+        string className = "SkelTargetAPI"
+    }
+)
+{
+    uniform token[] skelTarget:joints = [] (
+        doc = """Joints moved by this target, as paths in the joint order of the Skeleton bound to the mesh (the
+        same tokens used by Skeleton.joints and SkelAnimation.joints). Sparse, like BlendShape.pointIndices: joints
+        the target doesn't move are left out. Parallel to skelTarget:translationOffsets."""
+    )
+    uniform vector3f[] skelTarget:translationOffsets = [] (
+        doc = """Local-space translation delta for each joint in skelTarget:joints at weight 1, relative to that
+        joint's rest translation. Must be the same length as skelTarget:joints."""
+    )
+}
