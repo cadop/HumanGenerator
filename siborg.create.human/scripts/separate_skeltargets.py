@@ -1,23 +1,38 @@
-# Build the recalculated blendshapes from targets to exclude transformations due to skeletal deformation
-# Write skeletal transformations to a separate .skeltargets file
+# Recalculate blendshapes so they exclude the deformation caused by the skeleton following the helper geometry, and
+# store that skeletal movement on each blendshape as SkelTargetAPI joint translation offsets (see schema/schema.usda).
 
 import os
+import sys
 from pxr import Usd, UsdSkel, UsdGeom, Gf, Sdf, Vt
 import numpy as np
 import json
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "buildusd"))
+import humanschema  # noqa: E402
 
-def blendshape_to_skeltarget(prim: Usd.Prim, blendshape_name: str, output_path: str):
-    """Creates a .skeltarget file for a given blendshape. The file contains the transformations applied to the skeleton
-    joints when referencing the joint helper geometry after the blendshape has been applied."""
+# Joint offsets smaller than this are treated as unmoved and left out of SkelTargetAPI
+JOINT_EPSILON = 1e-7
 
-    # Apply the blendshape to the mesh at 100% weight
-    points = compute_blendshape_points(prim, blendshape_name, 1)
 
-    # Move the skeleton to the points defined by the helper geometry
+def get_skeleton(prim: Usd.Prim) -> UsdSkel.Skeleton:
+    """The skeleton bound to the skel root. We assume the first target is the one that deforms the body."""
     skel_path = UsdSkel.BindingAPI(prim).GetSkeletonRel().GetTargets()[0]
-    skel = UsdSkel.Skeleton.Get(prim.GetStage(), skel_path)
-    xforms = joints_from_points(skel, points, 0)
+    return UsdSkel.Skeleton.Get(prim.GetStage(), skel_path)
+
+
+def compute_skeltarget(prim: Usd.Prim, blendshape_name: str) -> Vt.Matrix4dArray:
+    """Local joint transforms of the skeleton after it follows the helper geometry with the blendshape applied at 100%
+    weight. Joints are built from helper-cube centroids, so the transforms are translation-only."""
+    points = compute_blendshape_points(prim, blendshape_name, 1)
+    return joints_from_points(get_skeleton(prim), points, 0)
+
+
+def blendshape_to_skeltarget(prim: Usd.Prim, blendshape_name: str, output_path: str, xforms=None):
+    """Write a blendshape's joint transforms to a .skeltarget JSON file. Debug export only: the pipeline stores them on
+    the blendshape as SkelTargetAPI."""
+    skel = get_skeleton(prim)
+    if xforms is None:
+        xforms = compute_skeltarget(prim, blendshape_name)
 
     # Save the skeletal transformations to a .skeltarget file. A .skeltarget file is named after the blendshape it
     # corresponds to and takes the form of a JSON file with the following structure:
@@ -49,27 +64,17 @@ def blendshape_to_skeltarget(prim: Usd.Prim, blendshape_name: str, output_path: 
     with open(output_path, "w") as f:
         json.dump(data, f, indent=4)
 
-    # Skeltargets are effectively just skeletal animations, so we can also save the skeletal transformations to a .usda
-    # stage = Usd.Stage.CreateInMemory()
-    # skelroot = UsdSkel.Root.Define(stage, prim.GetPath().AppendChild("skeltargets"))
-    # stage.SetDefaultPrim(skelroot.GetPrim())
-    # skel = UsdSkel.Skeleton.Define(stage, skelroot.GetPath().AppendChild(f"skeleton_{blendshape_name}"))
-    # skelCache = UsdSkel.Cache()
-    # skelQuery = skelCache.GetSkelQuery(skel)
-    # skel.CreateJointsAttr(skelQuery.GetJointOrder())
-    # stage.GetRootLayer().Export(f"{output_path}.usda")
 
-
-def calculate_skeltarget_verts(prim: Usd.Prim, skeltarget_path: str) -> Vt.Vec3fArray:
-    """Applies the skeletal transformations defined in a .skeltarget file to the skeleton joints. There should be a mesh
-    in the scene that is already bound and skinned to the skeleton.
+def calculate_skeltarget_verts(prim: Usd.Prim, xforms: Vt.Matrix4dArray) -> Vt.Vec3fArray:
+    """Pose the skeleton with the given local joint transforms and return the skinned body points. There should be a
+    mesh in the scene that is already bound and skinned to the skeleton.
 
     Parameters:
     ------------
     prim: Usd.Prim
         The skelroot containing the skeleton and mesh
-    skeltarget_path: str
-        The path to the .skeltarget file containing the skeletal transformations
+    xforms: Vt.Matrix4dArray
+        Local joint transforms, in the skeleton's joint order (from compute_skeltarget)
 
     Returns:
     ------------
@@ -77,30 +82,7 @@ def calculate_skeltarget_verts(prim: Usd.Prim, skeltarget_path: str) -> Vt.Vec3f
         The new vertices of the mesh after the skeletal transformations have been applied
 
     """
-    # Load the .skeltarget file
-    with open(skeltarget_path, "r") as f:
-        skeltarget = json.load(f)
-
-    # Read the skeletal transformations from the .skeltarget file
-    num_joints = len(skeltarget["skeleton"])
-    translations = Vt.Vec3fArray(num_joints)
-    rotations = Vt.QuatfArray(num_joints)
-    scales = Vt.Vec3hArray(num_joints)
-
-    for i, (joint, data) in enumerate(skeltarget["skeleton"].items()):
-        translations[i] = Gf.Vec3f(*data["translation"])
-
-        rotation = data["rotation"]
-        quatd = Gf.Rotation(rotation["axis"], rotation["angle"]).GetQuat()
-        rotations[i] = Gf.Quatf(quatd)
-
-        scales[i] = Gf.Vec3h(*data["scale"])
-
-    xforms = UsdSkel.MakeTransforms(translations, rotations, scales)
-
-    # Get the skeleton through the binding API. We assume the first target is the skeleton we want to use
-    skel_path = UsdSkel.BindingAPI(prim).GetSkeletonRel().GetTargets()[0]
-    skel = UsdSkel.Skeleton.Get(prim.GetStage(), skel_path)
+    skel = get_skeleton(prim)
     body = prim.GetChild("body")
 
     # Get the animation of the skeleton
@@ -160,17 +142,16 @@ def applyJointAnimation(
     return Vt.Vec3fArray.FromNumpy(pts[:, :3].astype(np.float32))
 
 
-def separate_blendshape(prim: Usd.Prim, blendshape: UsdSkel.BlendShape, skeltarget_path: str) -> UsdSkel.BlendShape:
-    """Subtracts the mesh deformation due to skeletal transformations from deformation caused by the blendshape  to
-    create a new blendshape without the corresponding skeletal transformation deformation. The resulting blendshape is
-    added to the prim."""
+def separate_blendshape(prim: Usd.Prim, blendshape: UsdSkel.BlendShape, xforms: Vt.Matrix4dArray) -> UsdSkel.BlendShape:
+    """Subtract the mesh deformation caused by the skeletal transforms `xforms` from the blendshape, and store those
+    transforms on the blendshape as SkelTargetAPI joint translation offsets (relative to rest)."""
     # Get the mesh
     body = prim.GetChild("body")
     # Get the mesh points before any transformation is applied
     default_points = np.array(body.GetAttribute("points").Get())
 
     # Calculate the new vertices of the blendshape after the skeletal transformations have been applied
-    skel_deformation = np.array(calculate_skeltarget_verts(prim, skeltarget_path))
+    skel_deformation = np.array(calculate_skeltarget_verts(prim, xforms))
 
     # Calculate the offset between the original mesh and the mesh after skeletal deformation
     skeletal_deformation_offset = skel_deformation - default_points
@@ -194,18 +175,28 @@ def separate_blendshape(prim: Usd.Prim, blendshape: UsdSkel.BlendShape, skeltarg
     blendshape.GetOffsetsAttr().Set(Vt.Vec3fArray().FromNumpy(corrected_offsets))
     blendshape.GetPointIndicesAttr().Set(Vt.IntArray().FromNumpy(blendshape_indices))
 
-    # Mark the blendshape as separated so it is never separated a second time
-    blendshape.GetPrim().SetCustomDataByKey("skelfree", True)
-    blendshape.GetPrim().SetCustomDataByKey("skeltarget", os.path.basename(skeltarget_path))
+    # Store the skeletal movement on the blendshape: local translation deltas from rest, for joints that move. This
+    # also marks the blendshape as separated, so it is never separated a second time.
+    skel = get_skeleton(prim)
+    joints = np.array(skel.GetJointsAttr().Get())
+    rest = np.array(UsdSkel.Cache().GetSkelQuery(skel).ComputeJointLocalTransforms(0, True))[:, 3, :3]
+    deltas = np.array(xforms)[:, 3, :3] - rest
+    moved = np.any(np.abs(deltas) > JOINT_EPSILON, axis=1)
+    bs_prim = blendshape.GetPrim()
+    humanschema.apply_api(bs_prim, "SkelTargetAPI")
+    humanschema.set_attr(bs_prim, "SkelTargetAPI", "skelTarget:joints", Vt.TokenArray(list(joints[moved])))
+    humanschema.set_attr(bs_prim, "SkelTargetAPI", "skelTarget:translationOffsets",
+                         Vt.Vec3fArray.FromNumpy(deltas[moved].astype(np.float32)))
     return blendshape
 
 
-def separate_all(src_path: str, out_path: str, skeltargets_dir: str) -> str:
+def separate_all(src_path: str, out_path: str, skeltargets_dir: str = None) -> str:
     """Separate skeletal deformation from every blendshape bound to the body in `src_path`.
 
-    `src_path` is never modified. The corrected blendshapes are written as overrides to a new layer at `out_path`
-    which sublayers `src_path`, and one .skeltarget file per blendshape is written to `skeltargets_dir`. The output
-    layer is rebuilt from scratch on every run, so running this repeatedly gives the same result.
+    `src_path` is never modified. The corrected blendshapes, each with SkelTargetAPI joint offsets, are written as
+    overrides to a new layer at `out_path` which sublayers `src_path`. The output layer is rebuilt from scratch on
+    every run, so running this repeatedly gives the same result. If `skeltargets_dir` is given, the joint transforms
+    are also exported there as .skeltarget JSON files for debugging.
 
     Returns the path of the output layer.
     """
@@ -233,22 +224,24 @@ def separate_all(src_path: str, out_path: str, skeltargets_dir: str) -> str:
     targets = UsdSkel.BindingAPI(mesh).GetBlendShapeTargetsRel().GetTargets()
 
     # Refuse input that has already been separated, otherwise the skeletal deformation is subtracted twice
-    already = [p.name for p in targets if stage.GetPrimAtPath(p).GetCustomDataByKey("skelfree")]
+    already = [p.name for p in targets if humanschema.has_api(stage.GetPrimAtPath(p), "SkelTargetAPI")]
     if already:
         raise ValueError(
             f"{src_path} contains blendshapes that were already separated (e.g. {already[0]}). "
             "Pass the original human_base.usd produced by buildusd.py."
         )
 
-    os.makedirs(skeltargets_dir, exist_ok=True)
+    if skeltargets_dir:
+        os.makedirs(skeltargets_dir, exist_ok=True)
     for blendshape_path in targets:
         blendshape = UsdSkel.BlendShape.Get(stage, blendshape_path)
         blendshape_name = blendshape.GetPrim().GetName()
-        # Store the skeletal transformations in a .skeltarget file
-        skeltarget_path = os.path.join(skeltargets_dir, f"{blendshape_name}.skeltarget")
-        blendshape_to_skeltarget(prim, blendshape_name, skeltarget_path)
-        # Override the blendshape with a version that excludes the skeletal deformation
-        separate_blendshape(prim, blendshape, skeltarget_path)
+        xforms = compute_skeltarget(prim, blendshape_name)
+        if skeltargets_dir:
+            blendshape_to_skeltarget(prim, blendshape_name,
+                                     os.path.join(skeltargets_dir, f"{blendshape_name}.skeltarget"), xforms)
+        # Override the blendshape with a version that excludes the skeletal deformation, plus its joint offsets
+        separate_blendshape(prim, blendshape, xforms)
         print(f"Removed skeletal deformation from {blendshape_name:>31}")
 
     # Reference the source relative to the output so the pair can be moved together. Edit a detached copy so the open
@@ -376,11 +369,11 @@ if __name__ == "__main__":
     data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
     parser = argparse.ArgumentParser(description="Separate skeletal deformation from blendshapes. Never modifies --src.")
     parser.add_argument("--src", default=os.path.join(data_path, "human_base.usd"), help="stage built by buildusd.py")
-    # Crate (.usd) by default: with every target group the text format is ~8x larger
+    # Crate (.usd) by default: with the macro targets the text format is ~8x larger
     parser.add_argument("--out", default=os.path.join(data_path, "human_base_separated.usd"),
                         help="override layer to (re)write; sublayers --src")
-    parser.add_argument("--skeltargets-dir", default=os.path.join(data_path, "skeltargets"))
+    parser.add_argument("--skeltargets-dir", help="also export .skeltarget JSON files here (debugging)")
     args = parser.parse_args()
 
     out = separate_all(args.src, args.out, args.skeltargets_dir)
-    print(f"Wrote {out}. Skeltargets have been written to {args.skeltargets_dir}")
+    print(f"Wrote {out}." + (f" Skeltargets exported to {args.skeltargets_dir}" if args.skeltargets_dir else ""))
