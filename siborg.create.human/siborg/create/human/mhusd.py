@@ -306,6 +306,10 @@ def add_to_scene():
         usd_context = omni.usd.get_context()
         stage = usd_context.get_stage()
         default_prim = stage.GetDefaultPrim()
+        if not default_prim:
+            # A stage without a default prim (e.g. an empty new stage): add the human under /World
+            default_prim = UsdGeom.Xform.Define(stage, "/World").GetPrim()
+            stage.SetDefaultPrim(default_prim)
         prim_path = default_prim.GetPath().AppendChild("human")
         
         # Import the human into the scene
