@@ -8,7 +8,7 @@ from meshes import load_basemesh
 from pxr import Sdf, Usd, UsdGeom, UsdSkel
 from skeletons import build_skeleton
 from targets import import_targets
-from modifiers import import_modifiers
+from modifiers import bind_modifier_targets, import_modifiers
 import materials
 
 
@@ -60,9 +60,9 @@ def make_human(save_path: str = None):
     skeleton = build_skeleton(stage, skel_root, ext_path)
 
     prim = skel_root.GetPrim()
-    # Import the modifiers
+    # Define the modifiers (HumanModifierGroup / HumanModifier prims)
     modifiers_path = os.path.join(ext_path, "data", "modifiers", "modeling_modifiers.json")
-    import_modifiers(prim, modifiers_path)
+    modifier_index = import_modifiers(stage, prim, modifiers_path)
 
     # Import the targets
     for group in target_groups(modifiers_path):
@@ -71,6 +71,9 @@ def make_human(save_path: str = None):
             print(f"Skipping missing target folder {targets_path}")
             continue
         import_targets(stage, prim, targets_path)
+
+    # Map each blendshape to the modifiers that drive it (ModifierTargetAPI)
+    bind_modifier_targets(stage, prim, modifier_index)
 
     # Create and bind animation for blendshapes
     build_anim(stage, skeleton, blendshapes=True)
