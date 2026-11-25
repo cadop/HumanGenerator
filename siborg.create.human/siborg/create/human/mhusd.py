@@ -323,33 +323,6 @@ def add_to_scene():
 
         return stage.GetPrimAtPath(prim_path)
 
-def edit_blendshapes(prim: Usd.Prim, blendshapes: Dict[str, float], time = 0):
-    """Edit the blendshapes of a human animation
-
-    Parameters
-    ----------
-    prim : Usd.Prim
-        A prim, containing meshes and 2 skeletons with blendshapes
-    blendshapes : Dict[str, float]
-        A dictionary of blendshape names to weights
-    time : float, optional
-        The time to set the blendshapes at, by default 1
-    """
-    # print(f"Blendshapes: {blendshapes}")
-
-    # Get the stage
-    usd_context = omni.usd.get_context()
-    stage = usd_context.get_stage()
-    skeleton_paths = UsdSkel.BindingAPI(prim).GetSkeletonRel().GetTargets()
-    # Grab the the first skeleton that isn't the target skeleton. This skeleton deforms the meshes
-    skeleton_path = next(path for path in skeleton_paths if path.elementString != "resize_skeleton")
-    skeleton = UsdSkel.Skeleton.Get(stage, skeleton_path)
-    animation_paths = UsdSkel.BindingAPI(skeleton).GetAnimationSourceRel().GetTargets()
-    animation_path = next(path for path in animation_paths if path.elementString == "target_anim")
-    animation = UsdSkel.Animation.Get(stage, animation_path)
-    apply_weights(animation, blendshapes, time)
-
-
 def add_joints_attr(skel_cache, skel, anim):
     skel_query = skel_cache.GetSkelQuery(skel)
     joints = skel_query.GetJointOrder()
@@ -367,26 +340,6 @@ def compose_xforms(source_xforms: Vt.Matrix4dArray, target_skeleton: UsdSkel.Ske
     new_xforms = np.matmul(new_xforms, xforms)
     return Vt.Matrix4dArray().FromNumpy(new_xforms)
 
-
-def apply_weights(animation: UsdSkel.Animation, blendshapes: Dict[str, float], time=0) -> None:
-    # Get existing blendshapes and weights
-    current_blendshapes = animation.GetBlendShapesAttr().Get(time)
-    current_weights = np.array(animation.GetBlendShapeWeightsAttr().Get(time))
-
-    # Convert to numpy arrays
-    current_blendshapes = np.array(current_blendshapes)
-    current_weights = np.array(current_weights)
-
-    for bs, w in blendshapes.items():
-        # print(bs)
-        if bs not in current_blendshapes:
-            continue
-        indices = np.where(current_blendshapes==bs)[0]
-        # print(indices)
-        current_weights[indices] = [w] * len(indices)
-
-    # Set the updated weights
-    animation.GetBlendShapeWeightsAttr().Set(current_weights,time)
 
 def compute_new_points(body: Usd.Prim, animation: UsdSkel.Animation, time=0) -> Vt.Vec3fArray:
     mesh_binding = UsdSkel.BindingAPI(body)
@@ -536,98 +489,3 @@ def compute_transform(head_vertices):
     transform[:3, 3] = head_position
 
     return Gf.Matrix4d(transform.T)
-
-def read_macrovars(human: Usd.Prim) -> Dict[str, float]:
-    """Load the macrovars from a human prim
-
-    Parameters
-    ----------
-    human : Usd.Prim
-        The human prim
-
-    Returns
-    -------
-    Dict[str, float]
-        A dictionary of macrovar names to values
-    """
-    # Get the macrovars
-    customdata = human.GetPrim().GetCustomData()
-    macrovars = customdata.get("macrovars")
-    return macrovars or {}
-
-
-def write_macrovars(human: Usd.Prim, macrovars: Dict[str, float]):
-    """Write the macrovars to a human prim
-
-    Parameters
-    ----------
-    human : Usd.Prim
-        The human prim
-    macrovars : Dict[str, float]
-        A dictionary of macrovar names to values
-    """
-    # Write the macrovars
-    human.SetCustomDataByKey("macrovars", macrovars)
-
-
-def read_modifiers(human: Usd.Prim) -> dict:
-    """Load values for modifiers from the animation data authored on a human prim
-
-    Parameters
-    ----------
-    human : Usd.Prim
-        The human prim
-
-    Returns
-    -------
-    Dict[str, float]
-        A dictionary of modifier names to values
-    """
-    # Get the modifiers
-    customdata = human.GetPrim().GetCustomData()
-    modifiers = customdata.get("modifiers")
-
-    # Get the animation
-    skeleton_path = UsdSkel.BindingAPI(human).GetSkeletonRel().GetTargets()[0]
-    skeleton = UsdSkel.Skeleton.Get(human.GetStage(), skeleton_path)
-    animation_path = UsdSkel.BindingAPI(skeleton).GetAnimationSourceRel().GetTargets()[0]
-    animation = UsdSkel.Animation.Get(human.GetStage(), animation_path)
-
-    # Find any blendshapes with non-zero weights
-    blendshapes = np.array(animation.GetBlendShapesAttr().Get(0))
-    weights = np.array(animation.GetBlendShapeWeightsAttr().Get(0))
-    blendshapes = blendshapes[weights > 0]
-    weights = weights[weights > 0]
-    # Find the modifiers that correspond to these blendshapes. Modifiers customdata is a hierarchical dictionary and
-    # the blendshape names are stored in the "blend," "max_blend," or "minblend" key in the following structure:
-    #     modifier name:
-    #         blend: blendshape name XOR
-    #         max_blend: blendshape name AND
-    #         min_blend: blendshape name
-    for blendshape in blendshapes:
-        # Modifier value is the weight of the blendshape "blend" if a single blendshape is specified, or the weight
-        # of whichever blendshape "min_blend" or "max_blend" is not the same as the center of the weight range
-        # specified by "min_val" and "max_val"
-        
-        # Get the modifier which has the blendshape in its "blend," "max_blend," or "min_blend" key
-        modifier = next(modifier for modifier, data in modifiers.items() if blendshape in data.values())
-        index = np.where(blendshapes == blendshape)[0][0]
-        weight = weights[index]
-        modifiers[modifier]["weight"] = weight
-        # if data.get("blend"):
-        #     blendshape = data["blend"]
-        # else:
-        #     center = (data.get("min_val") + data.get("max_val")) / 2
-        #     blendshape = data["min_blend"] if center == weights[blendshapes == data["min_blend"]] else data["max_blend"]
-        # # Get the weight of the blendshape
-        # weight = weights[blendshapes == blendshape][0]
-        # # Store the modifier value
-        # modifiers[modifier]["weight"] = weight
-
-    # Return all the modifiers so we can use them to build the UI
-    return modifiers
-
-
-def read_groups(human: Usd.Prim) -> dict:
-    """Load modifier groups for building the UI"""
-    return human.GetPrim().GetCustomDataByKey("groups") or {}

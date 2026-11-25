@@ -1,125 +1,189 @@
+import os
+import tempfile
+from typing import Dict, List, Optional
+
+import carb
+
+import omni.kit.commands
 import omni.ui as ui
-from typing import List, Dict
-from pxr import Usd, Tf
+from pxr import Sdf
+
 from siborg.create.human.shared import data_path
-from . import mhusd
+
 from . import styles
-from . import modifiers
+from .humaneval import HumanRig, local_image
+from .humansync import get_sync
+
+# Preview images extracted from the human's .usdz, which image widgets can't read from directly
+PREVIEW_CACHE = os.path.join(tempfile.gettempdir(), "siborg.create.human", "previews")
+PREVIEW_WIDTH, PREVIEW_HEIGHT = 64, 32  # MakeHuman's slider images are 128 x 64
+
 
 class ModifierUI(ui.Frame):
-    """UI Widget for displaying and modifying human parameters dynamically based on custom data on the human prim."""
+    """Sliders for the selected human's HumanModifier prims, one collapsable section per HumanModifierGroup.
+
+    Sliders author HumanModifier.value only; HumanSync derives blendshape weights and joint translations from it. A
+    drag is one undo step (SetHumanModifierValuesCommand). Each slider shows its modifier's preview image (the default
+    thumbnail of AssetPreviewsAPI). Modifiers that drive no blendshapes (their targets aren't installed) are left out.
+    """
 
     def __init__(self, **kwargs):
-        # Subclassing ui.Frame allows us to use styling on the whole widget
         super().__init__(**kwargs)
-        self.slider_entries: List[SliderEntry] = []
-
-        self.modifier_data: Dict[str, dict] = {}
-        self.group_data: Dict[str, dict] = {}
-        self.macrovars: Dict[str, float] = {}
-        self.human_prim = None
-
+        self.rig: Optional[HumanRig] = None
+        self._models: Dict[int, ui.SimpleFloatModel] = {}
+        self._syncing = False  # True while models are updated from the stage, so their callbacks don't write back
+        self._edit_start = None  # Values when the current slider edit began
+        self._sync = get_sync()
+        if self._sync:
+            self._sync.add_listener(self._on_human_changed)
         self.set_build_fn(self._build_widget)
 
-    def _build_widget(self):
-        """Build the widget from scratch every time a human is selected"""
+    # Selection ---------------------------------------------------------------------------------------------------
 
-        with self:
-            with ui.ScrollingFrame():
-                with ui.VStack(spacing=10):
-                    # If there are no modifiers, show a message. We don't want to build a UI with no parameters
-                    if not self.modifier_data:
-                        ui.Label("No parameters available", height=0, alignment=ui.Alignment.CENTER)
-                        return
-                    # Create a collapseable frame for each group in the UI
-                    for group, modifiers_list in self.group_data.items():
-                        with ui.CollapsableFrame(group, style=styles.panel_style, collapsed=True, height=0):
-                            with ui.VStack(name="contents", spacing=8):
-                                for modifier in modifiers_list:
-                                    model = ui.SimpleFloatModel()
-                                    m = self.modifier_data[modifier]
-                                    self.slider_entries.append(
-                                        SliderEntry(
-                                            label=m["label"],
-                                            model=model,
-                                            min=m.get("min_val", 0),
-                                            max=m.get("max_val", 1),
-                                            default=m.get("default", 0),
-                                        )
-                                    )
+    def load_values(self, human_path: Optional[str]):
+        """Show the human at human_path (any prim of it, see humaneval.find_human), or nothing for None."""
+        self.rig = self._sync.get_rig(human_path) if (self._sync and human_path) else None
+        self.rebuild()
 
-        # Set the values of the sliders to the values of the modifiers
-        for entry in self.slider_entries:
-            if entry.label in self.modifier_data:
-                default = self.modifier_data[entry.label].get("default", 0)
-                v = self.modifier_data[entry.label].get("weight", default)
-                entry.model.set_value(v)
-                # Create a callback for when the value is changed
-                callback = self.create_callback(self.modifier_data[entry.label])
-                entry.model.add_value_changed_fn(callback)
-
-    def create_callback(self, m: dict):
-        """Callback for when a modifier value is changed.
-
-        Parameters
-        m : dict
-            dictionary containing the modifier data"""
-
-        def callback(v):
-            blendshapes = modifiers.get_blendshape_vals(m, v)
-            mhusd.edit_blendshapes(self.human_prim, blendshapes)
-
-        return callback
-
-    def load_values(self, human_prim: Usd.Prim):
-        """Load values from the human prim into the UI. Specifically, this function
-        loads the values of the modifiers from the prim and updates any which
-        have changed.
-
-        Parameters
-        ----------
-        HumanPrim : Usd.Prim
-            The USD prim representing the human
-        """
-
-        # Make sure the prim exists
-        if not human_prim.IsValid():
-            self.human_prim = None
-            self.macrovars = {}
-            # Destroy the modifier models
-            for m in self.group_widgets.values():
-                m.destroy()
+    def reset(self):
+        """Reset every modifier of the shown human to its default value (one undo step)."""
+        if not self.rig:
             return
-        self.human_prim = human_prim
-        self.macrovars = mhusd.read_macrovars(human_prim)
-        self.modifier_data = mhusd.read_modifiers(human_prim)
-        self.group_data = mhusd.read_groups(human_prim)
-        self._build_widget()
+        old = self.rig.read_values()
+        self._commit(old, self.rig.default_values())
+
+    # Building ----------------------------------------------------------------------------------------------------
+
+    def _build_widget(self):
+        self._models = {}
+        rig = self.rig
+        with ui.ScrollingFrame(horizontal_scrollbar_policy=ui.ScrollBarPolicy.SCROLLBAR_ALWAYS_OFF):
+            with ui.VStack(spacing=4, height=0):
+                if rig is None:
+                    ui.Label("No parameters available", height=0, alignment=ui.Alignment.CENTER)
+                    return
+                values = rig.read_values()
+                hidden = 0
+                first = True
+                for group, _depth in rig.groups():
+                    members = [rig.index[c.GetPath()] for c in group.GetChildren()
+                               if c.GetPath() in rig.index]
+                    active = [i for i in members if rig.modifiers[i].shape_count]
+                    hidden += len(members) - len(active)
+                    if not active:
+                        continue
+                    title = group.GetAttribute("label").Get() or group.GetName()
+                    with ui.CollapsableFrame(title, collapsed=not first, height=0, style=styles.frame_style):
+                        with ui.VStack(name="contents", spacing=6, height=0, style=styles.panel_style):
+                            for i in active:
+                                self._build_slider(i, values[i])
+                    first = False
+                if not self._models:
+                    ui.Label("No parameters available", height=0, alignment=ui.Alignment.CENTER)
+                if hidden:
+                    ui.Label(f"{hidden} modifiers hidden: their targets aren't installed in data/targets.",
+                             height=0, alignment=ui.Alignment.CENTER, name="hint", style={"color": 0xFF808080})
+
+    def _build_slider(self, i: int, value: float):
+        m = self.rig.modifiers[i]
+        model = ui.SimpleFloatModel(float(value))
+        self._models[i] = model
+        with ui.HStack(height=0, spacing=6, style=styles.sliderentry_style):
+            image = self._preview(m.image)
+            if image:
+                ui.Image(image, width=PREVIEW_WIDTH, height=PREVIEW_HEIGHT,
+                         fill_policy=ui.FillPolicy.PRESERVE_ASPECT_FIT, tooltip=m.label)
+            else:
+                ui.Spacer(width=PREVIEW_WIDTH)  # Keep the sliders aligned
+            ui.Label(m.label, width=ui.Percent(30), name="label_param", tooltip=m.path.pathString,
+                     elided_text=True)
+            ui.FloatSlider(model=model, min=m.min, max=m.max, step=0.01, precision=3)
+            ui.Button("Reset", width=0, tooltip=f"Reset to {m.default:g}",
+                      clicked_fn=lambda i=i: self._reset_one(i))
+        model.add_begin_edit_fn(lambda _m: self._begin_edit())
+        model.add_value_changed_fn(lambda mdl, i=i: self._on_value_changed(i, mdl.get_value_as_float()))
+        model.add_end_edit_fn(lambda _m: self._end_edit())
+
+    @staticmethod
+    def _preview(resolved_path: str) -> str:
+        try:
+            return local_image(resolved_path, PREVIEW_CACHE)
+        except Exception as e:  # A missing preview mustn't cost the slider
+            carb.log_warn(f"siborg.create.human: preview image {resolved_path}: {e}")
+            return ""
+
+    # Editing -----------------------------------------------------------------------------------------------------
+
+    def _begin_edit(self):
+        if self.rig and self._edit_start is None:
+            self._edit_start = self.rig.read_values()
+
+    def _on_value_changed(self, i: int, value: float):
+        if self._syncing or not self.rig:
+            return
+        current = self.rig.read_values()
+        updates = self.rig.normalized(i, value, current)
+        self.rig.write_values(updates)
+        # Normalization moved other sliders
+        self._set_models({j: v for j, v in updates.items() if j != i})
+        if self._edit_start is None:  # A change outside a begin/end edit pair (e.g. typed value): its own undo step
+            self._commit(current, self.rig.read_values())
+
+    def _end_edit(self):
+        if self.rig and self._edit_start is not None:
+            start, self._edit_start = self._edit_start, None
+            self._commit(start, self.rig.read_values())
+
+    def _reset_one(self, i: int):
+        if not self.rig:
+            return
+        current = self.rig.read_values()
+        updates = self.rig.normalized(i, self.rig.modifiers[i].default, current)
+        new = current.copy()
+        for j, v in updates.items():
+            new[j] = v
+        self._commit(current, new)
+
+    def _commit(self, old, new):
+        """Record the change from old to new values as one undoable command (which also authors new)."""
+        changed = [i for i in range(len(new)) if abs(new[i] - old[i]) > 1e-9]
+        if not changed:
+            return
+        paths = [self.rig.modifiers[i].path.pathString for i in changed]
+        omni.kit.commands.execute(
+            "SetHumanModifierValues",
+            new_values={p: float(new[i]) for p, i in zip(paths, changed)},
+            old_values={p: float(old[i]) for p, i in zip(paths, changed)},
+        )
+
+    # Stage -> UI -------------------------------------------------------------------------------------------------
+
+    def _set_models(self, values: Dict[int, float]):
+        self._syncing = True
+        try:
+            for i, v in values.items():
+                model = self._models.get(i)
+                if model and abs(model.get_value_as_float() - v) > 1e-6:
+                    model.set_value(float(v))
+        finally:
+            self._syncing = False
+
+    def _on_human_changed(self, root: Sdf.Path):
+        """HumanSync re-evaluated a human: refresh the sliders if it's the one shown (undo, property panel, ...)."""
+        if self.rig and root == self.rig.path and self._edit_start is None:
+            if not self.rig.root.IsValid():
+                self.load_values(None)
+                return
+            values = self.rig.read_values()
+            self._set_models({i: values[i] for i in self._models})
 
     def destroy(self):
-        """Destroys the ParamPanel instance as well as the models attached to each group of parameters"""
-        for w in self.group_widgets:
-            w.destroy()
-        self.group_widgets = []
+        if self._sync:
+            self._sync.remove_listener(self._on_human_changed)
+            self._sync = None
+        self._models = {}
+        self.rig = None
         super().destroy()
-
-
-class DemoUI(ModifierUI):
-    """UI widget for modifying one blendshape on a demo mesh. Demonstrates helper-driving-skeleton functionality."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def _init_groups_and_mods(self):
-        """For the demo, we have one group with one modifier that we define explicitly"""
-        # Define the group and modifier
-        group = "Demo"
-        modifier = Modifier(group, {})
-        modifier.blend = Tf.MakeValidIdentifier("length")
-        modifier.label = "Length"
-        modifier.fn = lambda model: {modifier.blend: model.get_value_as_float()}
-        mods = [modifier]
-        return {group: mods}, mods
 
 
 class NoSelectionNotification:
@@ -159,57 +223,3 @@ class NoSelectionNotification:
         messages = message.split("\n")
         self._message_label.text = messages[0]
         self._suggestion_label.text = messages[1]
-
-
-class SliderEntry:
-    def __init__(
-        self,
-        label: str,
-        model: ui.SimpleFloatModel,
-        min: float = 0,
-        max: float = 1,
-        default: float = 0,
-    ):
-        """Constructs an instance of SliderEntry
-
-        Parameters
-        ----------
-        label : str
-            Label to display for slider/field
-        model : ui.SimpleFloatModel
-            Model to publish changes to
-        min : float, optional
-            Minimum value, by default None
-        max : float, optional
-            Maximum value, by default None
-        default : float, optional
-            Default parameter value, by default 0
-        """
-        self.label = label
-        self.model = model
-        self.min = min
-        self.max = max
-        self.default = default
-        self._build_widget()
-
-    def _build_widget(self):
-        """Construct the UI elements"""
-        with ui.HStack(height=0, style=styles.sliderentry_style):
-            # Stack the label and slider on top of each other
-            with ui.VStack(spacing=5):
-                ui.Label(
-                    self.label,
-                    height=15,
-                    alignment=ui.Alignment.CENTER,
-                    name="label_param",
-                )
-                # Limit drag values to within min and max if provided
-                if self.min and self.max:
-                    self.drag = ui.FloatSlider(
-                        model=self.model,
-                        step=0.01,
-                        min=self.min,
-                        max=self.max,
-                    )
-                    return
-                self.drag = ui.FloatSlider(model=self.model, step=0.01)

@@ -5,10 +5,11 @@ import carb.events
 import omni
 from functools import partial
 import asyncio
+import omni.kit.commands
 import omni.usd
-from pxr import Usd
-from typing import Union
 
+from . import humansync
+from .humaneval import find_human
 from .window import MHWindow, WINDOW_TITLE, MENU_PATH
 
 class MakeHumanExtension(omni.ext.IExt):
@@ -16,6 +17,13 @@ class MakeHumanExtension(omni.ext.IExt):
     # # this extension is located on filesystem.
 
     def on_startup(self, ext_id):
+        self._window = None
+        self._menu = None
+
+        # Derive blendshape weights and joints from modifier values for every human on the stage, and make the
+        # undoable SetHumanModifierValues command available. Before the window, whose panel listens to the sync.
+        omni.kit.commands.register_all_commands_in_module(humansync)
+        self._sync = humansync.HumanSync()
 
         # subscribe to stage events
         # see https://github.com/mtw75/kit_customdata_view
@@ -57,6 +65,10 @@ class MakeHumanExtension(omni.ext.IExt):
         # Unsubscribe from stage events
         self._stage_event_sub.unsubscribe()
 
+        self._sync.destroy()
+        self._sync = None
+        omni.kit.commands.unregister_module_commands(humansync)
+
     async def _destroy_window_async(self):
         # wait one frame, this is due to the one frame defer
         # in Window::_moveToMainOSWindow()
@@ -96,7 +108,6 @@ class MakeHumanExtension(omni.ext.IExt):
             if not selection:
                 # Push an event to the message bus with "None" as a payload
                 # This event will be picked up by the window and used to update the UI
-                carb.log_warn("Human deselected")
                 self._bus.push(self._human_selection_event, payload={"prim_path": None})
             else:
                 # Get the stage
@@ -106,40 +117,15 @@ class MakeHumanExtension(omni.ext.IExt):
                 if selection and stage:
                     if len(selection) > 0:
                         path = selection.pop()
-                        print(path)
-                        prim = stage.GetPrimAtPath(path)
-                        prim = self._get_typed_parent(prim, "SkelRoot")
+                        # The human SkelRoot at, above or just below the selection (selecting the prim the
+                        # human was added under also counts)
+                        prim = find_human(stage.GetPrimAtPath(path))
                         # If the selection is a human, push an event to the event stream with the prim as a payload
                         # This event will be picked up by the window and used to update the UI
-                        if prim and prim.GetCustomDataByKey("human"):
+                        if prim:
                             # carb.log_warn("Human selected")
                             path = prim.GetPath().pathString
                             self._bus.push(self._human_selection_event, payload={"prim_path": path})
                         else:
                             # carb.log_warn("Human deselected")
                             self._bus.push(self._human_selection_event, payload={"prim_path": None})
-
-    def _get_typed_parent(self, prim: Union[Usd.Prim, None], type_name: str, level: int = 5):
-        """Returns the first parent of the given prim with the given type name. If no parent is found, returns None.
-
-        Parameters:
-        -----------
-        prim : Usd.Prim or None
-            The prim to search from. If None, returns None.
-        type_name : str
-            The parent type name to search for
-        level : int
-            The maximum number of levels to traverse. Defaults to 5.
-
-        Returns:
-        --------
-        Usd.Prim
-            The first parent of the given prim with the given type name. If no match is found, returns None.
-        """
-
-        if (not prim) or level == 0:
-            return None
-        elif prim and prim.GetTypeName() == type_name:
-            return prim
-        else:
-            return self._get_typed_parent(prim.GetParent(), type_name, level - 1)

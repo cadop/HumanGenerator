@@ -85,11 +85,6 @@ class MHWindow(ui.Window):
                         clicked_fn=self.reset_human,
                         enabled=False,
                     )
-                    # Build a human from scratch
-                    ui.Button(
-                        "Build Human",
-                        clicked_fn=mhusd.make_human,
-                    )
 
 
     def _on_selection_changed(self, event):
@@ -107,10 +102,11 @@ class MHWindow(ui.Window):
 
         prim_path = event.payload["prim_path"]
 
-        # If a valid human prim is selected, 
-        if not prim_path or not stage.GetPrimAtPath(prim_path):
+        # If a valid human prim is selected,
+        if not prim_path or not stage or not stage.GetPrimAtPath(prim_path):
             # Hide the property panel
             self.property_panel.visible = False
+            self.modifier_ui.load_values(None)
 
             # Show the no selection notification
             self.no_selection_notification.visible = True
@@ -129,23 +125,13 @@ class MHWindow(ui.Window):
             # Activate the reset button
             self.reset_button.enabled = True
 
-            # Get the prim from the path in the event payload
-            prim = stage.GetPrimAtPath(prim_path)
-            self.modifier_ui.load_values(prim)
+            self.modifier_ui.load_values(prim_path)
 
 
 
     def reset_human(self):
-        # """Resets the current human in the scene"""
-        # # Reset the human
-        # self._human.reset()
-
-        # # Delete the proxy prims
-        # self._human.delete_proxies()
-
-        # # Update the human in the scene and reset parameter widgets
-        # self.update_human()
-        pass
+        """Resets the selected human's modifiers to their default values (one undo step)"""
+        self.modifier_ui.reset()
 
     def destroy(self):
         """Called when the window is destroyed. Unsuscribes from human selection events"""
