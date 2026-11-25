@@ -21,3 +21,10 @@ link_app.sh
 
 # Deprecated files
 *.old
+
+# Generated artifacts: rebuilt from source, never tracked
+# human USD: scripts/build_human.py (buildusd.py, separate_skeltargets.py, evaluate_human.py, package_human.py)
+siborg.create.human/data/human_base.usd
+siborg.create.human/data/human_base_separated.usd
+siborg.create.human/data/human.usdz
+siborg.create.human/data/human.usdc
