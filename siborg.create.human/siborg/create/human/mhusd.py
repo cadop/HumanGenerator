@@ -300,7 +300,8 @@ def add_to_scene():
         manager = omni.kit.app.get_app().get_extension_manager()
         ext_id = manager.get_enabled_extension_id("siborg.create.human")
         ext_path = manager.get_extension_path(ext_id)
-        filepath = os.path.join(ext_path, "data", "human_base.usd")
+        # The human and its modifier preview images in one package, built by scripts/build_human.py
+        filepath = os.path.join(ext_path, "data", "human.usdz")
 
         # Get the stage
         usd_context = omni.usd.get_context()
