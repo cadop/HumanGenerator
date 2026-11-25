@@ -1,5 +1,6 @@
 # Build the human USD file outside of Omniverse
 
+import json
 import os
 
 from animation import build_anim
@@ -11,7 +12,14 @@ from modifiers import import_modifiers
 import materials
 
 
-def make_human():
+def target_groups(modifiers_path: str):
+    """Target folders (under data/targets) that the modifiers in modifiers_path drive, so only targets a slider can
+    reach become blendshapes. A modifier group "macrodetails-height" uses the folder "macrodetails"."""
+    with open(modifiers_path) as f:
+        return sorted({entry["group"].split("-")[0] for entry in json.load(f)})
+
+
+def make_human(save_path: str = None):
     # Create a stage
     stage = Usd.Stage.CreateInMemory()
 
@@ -57,17 +65,25 @@ def make_human():
     import_modifiers(prim, modifiers_path)
 
     # Import the targets
-    targets_path = os.path.join(ext_path, "data", "targets", "armslegs")
-    import_targets(stage, prim, targets_path)
+    for group in target_groups(modifiers_path):
+        targets_path = os.path.join(ext_path, "data", "targets", group)
+        if not os.path.isdir(targets_path):
+            print(f"Skipping missing target folder {targets_path}")
+            continue
+        import_targets(stage, prim, targets_path)
 
     # Create and bind animation for blendshapes
     build_anim(stage, skeleton, blendshapes=True)
 
     # Save the stage to a file
-    save_path = os.path.join(ext_path, "data", "human_base.usd")
+    save_path = save_path or os.path.join(ext_path, "data", "human_base.usd")
     print(f"Saving to {save_path}")
     stage.Export(save_path)
 
 
 if __name__ == "__main__":
-    make_human()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Build the human USD stage outside of Omniverse.")
+    parser.add_argument("--out", help="output path (default: data/human_base.usd)")
+    make_human(parser.parse_args().out)
