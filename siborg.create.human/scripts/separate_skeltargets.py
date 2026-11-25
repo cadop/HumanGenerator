@@ -376,7 +376,8 @@ if __name__ == "__main__":
     data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
     parser = argparse.ArgumentParser(description="Separate skeletal deformation from blendshapes. Never modifies --src.")
     parser.add_argument("--src", default=os.path.join(data_path, "human_base.usd"), help="stage built by buildusd.py")
-    parser.add_argument("--out", default=os.path.join(data_path, "human_base_separated.usda"),
+    # Crate (.usd) by default: with every target group the text format is ~8x larger
+    parser.add_argument("--out", default=os.path.join(data_path, "human_base_separated.usd"),
                         help="override layer to (re)write; sublayers --src")
     parser.add_argument("--skeltargets-dir", default=os.path.join(data_path, "skeltargets"))
     args = parser.parse_args()
